@@ -212,3 +212,6 @@ los otros dos circuitos y la parrilla.
   gana un 11 %, a fondo pierde un 90 %, la CPU deja al mejor a 1,18 s).
 
 De ~7.500 líneas a ~3.900.
+
+Y un favicon propio (`favicon.svg`): la U de La horquilla con sus dos carriles plateados
+y los coches rojo y azul. Es también el icono de su ficha en pnyk.es.

@@ -18,7 +18,6 @@ modo). Antes de crecer, que esté en su sitio:
 - [ ] Propiedad de GA4 propia y su ID en `analitica.js` (`GA4_ID`, hoy vacío).
 - [ ] Ficha en `pnyk/proyectos.js` (slug `slot-panic`, los siete idiomas) y propagar
       `vendor/pnyk/` para que la red de la familia lo enlace.
-- [ ] Favicon propio (hoy es el de Race Panic).
 - [ ] Playtest en el móvil: a dos en una pantalla, ¿se estorban los dedos?
 - [ ] ¿5 vueltas (~65 s) es mucho para una revancha?
 
