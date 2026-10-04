@@ -13,11 +13,8 @@ real de cada fase. **Ante una discrepancia, manda `TODO.md`.**
 Lo que hereda de Race Panic ya es jugable («sólido y jugable» tras cuatro playtests como
 modo). Antes de crecer, que esté en su sitio:
 
-- [ ] Repo en GitHub y despliegue en Plesk (`https://slot.pnyk.es`): un push a `master`
-      publica.
-- [ ] Propiedad de GA4 propia y su ID en `analitica.js` (`GA4_ID`, hoy vacío).
-- [ ] Ficha en `pnyk/proyectos.js` (slug `slot-panic`, los siete idiomas) y propagar
-      `vendor/pnyk/` para que la red de la familia lo enlace.
+- [ ] Propiedad de GA4 propia y su ID en `analitica.js` (`GA4_ID`, hoy vacío), y
+      `privacy` en su ficha de `pnyk/proyectos.js`.
 - [ ] Playtest en el móvil: a dos en una pantalla, ¿se estorban los dedos?
 - [ ] ¿5 vueltas (~65 s) es mucho para una revancha?
 
