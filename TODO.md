@@ -22,7 +22,9 @@ modo). Antes de crecer, que esté en su sitio:
 
 Por decidir el orden, con el filtro de siempre («¿hace la carrera más divertida?»):
 
-- [ ] Circuitos de piezas y más de un circuito.
+- [ ] Playtest de las piezas: ¿se nota la curva de derrape?, ¿los choques en la X y el
+      cruce divierten o frustran?, ¿el peralte y los baches se leen antes de llegar?
+- [ ] Constructor de circuitos (con `construirDePiezas` ya hecho) y más circuitos.
 - [ ] Estética de juguete: piezas con juntas, trencillas, la mesa.
 - [ ] Niveles de CPU (hoy una, `CPU_SLOT`, ~1,2 s por vuelta del mejor piloto).
 - [ ] Récords (y fantasma) por circuito y carril.

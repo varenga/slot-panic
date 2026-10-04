@@ -11,7 +11,7 @@
 
 import { AGARRE_SLOT, BAJA_POTENCIA, INERCIA_SOLTAR, PASO_EJE } from '../config.js';
 import { azar } from './decorado.js';
-import { radioAgarre } from './slot.js';
+import { lateralEn, radioAgarre } from './slot.js';
 
 /*
  * `variacion` y `fallo` hacen humano al piloto, que sin ellos calcula cada
@@ -45,10 +45,13 @@ export function decidirSlot(piloto, slot, circuito) {
   const { v } = slot;
   const horizonte = v / PERDIDA_PREVISTA + v * REACCION + 20;
   for (let d = 0; d <= horizonte; d += PASO_EJE) {
-    const p = circuito.puntoEn(slot.s + d);
-    if (p.radio === Infinity) continue;
-    const agarre = AGARRE_SLOT * prudenciaCurva(piloto, circuito, p.indice, Math.floor((slot.progreso + d) / circuito.largo));
-    const permitida = Math.sqrt(agarre * radioAgarre(p, slot.lateral));
+    const { indice } = circuito.puntoEn(slot.s + d);
+    const p = circuito.eje[indice];
+    // Con el carril que llevará ahí (en una X cambia) y lo que la pieza agarre.
+    const radio = radioAgarre(p, lateralEn(circuito, slot.lateral, slot.s + d));
+    if (radio === Infinity) continue;
+    const agarre = AGARRE_SLOT * prudenciaCurva(piloto, circuito, indice, Math.floor((slot.progreso + d) / circuito.largo));
+    const permitida = Math.sqrt(agarre * radio);
     const llegaria = v - PERDIDA_PREVISTA * Math.max(0, d - v * REACCION);
     if (llegaria > permitida) return { acelerar: false, frenar: false, giro: 0 };
   }
@@ -72,10 +75,13 @@ function prudenciaCurva(piloto, circuito, indice, vuelta) {
   return piloto.elegidas.get(clave);
 }
 
+/** Lo que obliga a soltar: una curva, o una recta de baches, que agarra como una. */
+const limita = (p) => p.radio !== Infinity || p.efecto === 'baches';
+
 function inicioCurva(circuito, indice) {
   const { eje } = circuito;
   const n = eje.length;
   let i = indice;
-  for (let k = 0; k < n && eje[(i - 1 + n) % n].radio !== Infinity; k++) i = (i - 1 + n) % n;
+  for (let k = 0; k < n && limita(eje[(i - 1 + n) % n]); k++) i = (i - 1 + n) % n;
   return i;
 }

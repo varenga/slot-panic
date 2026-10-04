@@ -23,9 +23,23 @@ export function guardarEscenario(nombre) {
   try { localStorage.setItem(`${GAME_SLUG}.escenario`, nombre); } catch (error) { /* modo privado */ }
 }
 
+/** El circuito elegido, por su clave: también se recuerda. */
+export function leerCircuito(claves) {
+  try {
+    const guardado = localStorage.getItem(`${GAME_SLUG}.circuito`);
+    return claves.includes(guardado) ? guardado : claves[0];
+  } catch (error) {
+    return claves[0];
+  }
+}
+
+export function guardarCircuito(clave) {
+  try { localStorage.setItem(`${GAME_SLUG}.circuito`, clave); } catch (error) { /* modo privado */ }
+}
+
 export const estado = {
   fase: 'portada',     // 'portada' | 'carrera' | 'fin'
-  circuito: null,      // el que se corre (de momento, siempre La horquilla)
+  circuito: null,      // el que se corre, de CIRCUITOS (circuitos/indice.js)
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario
   hora: 'dia',         // 'dia' | 'atardecer' | 'noche': cosmética, combinable con el escenario

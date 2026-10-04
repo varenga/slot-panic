@@ -53,6 +53,7 @@ export const ANCHO_COCHE = 11;
 export const ANCHO_PIANO = 10;          // px por fuera del asfalto, en las curvas
 export const ESCAPATORIA = 26;          // px de grava hasta el muro
 export const ESCAPATORIA_CURVA = 50;    // px por fuera de las curvas
+export const ESCAPATORIA_DERRAPE = 80;  // px por fuera de una curva de derrape: es la pieza ancha
 export const PENDIENTE_MURO = 0.5;      // px de cambio del muro por px de pista
 
 // --- La pista y la carrera --------------------------------------------------
@@ -118,6 +119,26 @@ export const GIRO_TROMPO = 14;          // rad/s de trompo al salirse a tope
 export const ESPERA_MANO = 0.35;        // s parado antes de que llegue la mano
 export const DURACION_MANO = 0.4;       // s que tarda la mano en devolverlo al carril
 export const FUERA_MAXIMO = 2.2;        // s fuera, como mucho, antes de que llegue la mano
+/*
+ * Las piezas especiales (`nucleo/piezas.js`). Cambian lo que el coche aguanta
+ * en ellas; la geometría la dan sus datos.
+ *
+ * - El PERALTE agarra más: el radio con que se mide el agarre se multiplica.
+ * - La CURVA DE DERRAPE es ancha y plana: se puede entrar pasado y la cola
+ *   sale mucho, porque el derrape se acumula más despacio y frena menos (sale
+ *   un 2-3 % más rápido de ella). El límite para salirse de golpe es el de
+ *   siempre (`limite` lo multiplica): con él más alto se pasaba a tope, porque
+ *   el propio derrape frena el coche hasta que agarra. Por eso son cerradas
+ *   (radio 95).
+ * - Los BACHES sacuden la guía: en la recta agarra como en una curva, y por
+ *   encima de VELOCIDAD_BACHES derrapa.
+ * - El CHOQUE: dos coches en el carril a menos de esto (en una X o un cruce)
+ *   salen los dos. Menos que los 2 · CARRIL de dos carriles en paralelo.
+ */
+export const AGARRE_PERALTE = 1.4;
+export const CURVA_DERRAPE = { acumula: 0.4, freno: 0.5, limite: 1, coleteo: 1.6 };
+export const VELOCIDAD_BACHES = 330;    // px/s
+export const CHOQUE = 14;               // px entre los centros de los dos coches
 /*
  * La CPU que lleva el carril que nadie toca (ver `crearPiloto`). Perfecta, «no
  * había quien le ganara» (0,7 s por vuelta del mejor piloto); con 0,95 ± 30 % y

@@ -9,9 +9,9 @@ import {
   ALTO, ANCHO, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, ESPERA_REINICIO, LARGO_COCHE,
   TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
-import { estado, guardarEscenario, leerEscenario } from './estado.js';
+import { estado, guardarCircuito, guardarEscenario, leerCircuito, leerEscenario } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
-import { PRIMERO } from './circuitos/primero.js';
+import { CIRCUITOS } from './circuitos/indice.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
 import { avanzarSlot, crearCarreraSlot } from './nucleo/slot.js';
 import { generarDecorado } from './nucleo/decorado.js';
@@ -24,7 +24,7 @@ import {
   botonesFin, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, opcionesPortada
 } from './pantalla.js';
 import {
-  actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxClac, sfxCuenta, sfxFin, sfxSale,
+  actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
   sfxSalida, sfxVuelta, vibrar
 } from './audio.js';
 import { cambiarIdioma, t } from './i18n.js';
@@ -57,6 +57,15 @@ function cambiarEscenario() {
   estado.escenario = ORDEN_ESCENARIOS[(i + 1) % ORDEN_ESCENARIOS.length];
   guardarEscenario(estado.escenario);
   estado.decorado = generarDecorado(estado.circuito, estado.escenario);
+}
+
+/** El circuito siguiente: su decorado y, en la portada, la exhibición en él. */
+function cambiarCircuito() {
+  const i = CIRCUITOS.indexOf(estado.circuito);
+  estado.circuito = CIRCUITOS[(i + 1) % CIRCUITOS.length];
+  guardarCircuito(estado.circuito.clave);
+  estado.decorado = generarDecorado(estado.circuito, estado.escenario);
+  irAPortada();
 }
 
 function limpiarPista() {
@@ -178,7 +187,8 @@ for (const tipo of ['pointerup', 'pointercancel', 'lostpointercapture']) {
 }
 
 function opcionPulsada(id) {
-  if (id === 'sonido') alternarSilencio();
+  if (id === 'circuito') cambiarCircuito();
+  else if (id === 'sonido') alternarSilencio();
   else if (id === 'idioma') { cambiarIdioma(1); textosDelDocumento(); }
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
@@ -208,6 +218,11 @@ function avanzarMundo(mandosCoches, dt) {
   const { carrera } = estado;
   avanzarSlot(carrera, mandosCoches, dt);
   for (const evento of carrera.eventos) {
+    if (evento.tipo === 'choque') {
+      for (const [nx, ny] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        emitirChispas(estado.particulas, { x: evento.x, y: evento.y, nx, ny }, 0, 0, 8);
+      }
+    }
     if (evento.tipo !== 'sale') continue;
     const { coche } = carrera.coches[evento.coche];
     const v = Math.hypot(coche.vx, coche.vy) || 1;
@@ -269,6 +284,7 @@ const ESCENAS = {
       if (empezar(codigo)) empezarCarrera();
       else if (codigo === 'KeyL') { cambiarIdioma(1); textosDelDocumento(); }
       else if (codigo === 'KeyE') cambiarEscenario();
+      else if (codigo === 'KeyC') cambiarCircuito();
       else if (codigo === 'KeyH') cambiarHora();
     },
     pulsar(p) {
@@ -291,6 +307,7 @@ const ESCENAS = {
           sfxSale();
           if (estado.tactil && estado.humanos[evento.coche]) vibrar(200);
         }
+        else if (evento.tipo === 'choque') sfxChoque();
         else if (evento.tipo === 'clac') sfxClac();
         else if (evento.tipo === 'vuelta') {
           sfxVuelta();
@@ -376,7 +393,8 @@ function bucle(tActual) {
 estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
-estado.circuito = PRIMERO;
+const elegido = leerCircuito(CIRCUITOS.map((c) => c.clave));
+estado.circuito = CIRCUITOS.find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);
 iniciarLienzo(lienzo);
 textosDelDocumento();

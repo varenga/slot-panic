@@ -13,15 +13,20 @@
  * «mano» lo devuelve al carril en la `s` donde se salió, parado. El carril de dentro de una curva es más corto pero más
  * cerrado: se recorre antes y se sale antes.
  *
+ * Las piezas especiales (`piezas.js`) cambian eso donde están: el peralte
+ * agarra más, la curva de derrape aguanta más pasado, los baches agarran como
+ * una curva, y en la X el carril cruza al otro lado. Dos coches que se
+ * encuentran en una X o en un cruce chocan y salen los dos.
+ *
  * Los mandos siguen siendo `{ acelerar, frenar, giro }`: aquí solo cuenta
  * `acelerar`. No toca el DOM: el arnés lo ejecuta tal cual.
  */
 
 import {
-  ACUMULA_DERRAPE, AGARRE_SLOT, RADIO_GUIA, ALTO, ANCHO, BAJA_POTENCIA, CARRIL, COLETEO_DERRAPE, COLETEO_DESDE,
-  COLETEO_MAXIMO, CUENTA_ATRAS, DURACION_MANO, ESPERA_MANO, FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO,
-  GIRO_TROMPO, INERCIA_MOTOR, INERCIA_SOLTAR, LARGO_COCHE, LIMITE_SLOT, PASO_FISICA, RECUPERA_DERRAPE,
-  SUBE_POTENCIA, VELOCIDAD_SLOT, VUELTAS_SLOT
+  ACUMULA_DERRAPE, AGARRE_PERALTE, AGARRE_SLOT, RADIO_GUIA, ALTO, ANCHO, BAJA_POTENCIA, CARRIL, CHOQUE,
+  COLETEO_DERRAPE, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, DURACION_MANO, ESPERA_MANO,
+  FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, INERCIA_MOTOR, INERCIA_SOLTAR, LARGO_COCHE, LIMITE_SLOT, PASO_FISICA, RECUPERA_DERRAPE,
+  SUBE_POTENCIA, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from '../config.js';
 import { normalizarAngulo } from './geometria.js';
 
@@ -41,14 +46,39 @@ const ATRAS_SALIDA = 30;            // px detrás de la meta en que se sale, com
  */
 export const CARRILES = [-CARRIL, CARRIL];
 
-/** Radio del carril en un punto del eje: por dentro de la curva, más cerrado. */
+/*
+ * Dónde va de verdad el carril de un coche. `slot.lateral` es su carril al
+ * salir de la meta; en una X el carril cruza al otro lado (`punto.carril`
+ * pasa de 1 a -1) y, si hay un número impar de X, cada vuelta empieza por el
+ * otro carril.
+ */
+function signoVuelta(circuito, s) {
+  if (circuito.cambiosCarril % 2 === 0) return 1;
+  return Math.abs(Math.floor(s / circuito.largo)) % 2 ? -1 : 1;
+}
+
+/** El desplazamiento del carril en la coordenada `s` de un coche que salió por `lateral`. */
+export function lateralEn(circuito, lateral, s) {
+  return lateral * signoVuelta(circuito, s) * circuito.eje[buscar(circuito, s).indice].carril;
+}
+
+/** Radio del carril en un punto del eje, con su desplazamiento ahí: por dentro de la curva, más cerrado. */
 export function radioCarril(punto, lateral) {
   return punto.radio === Infinity ? Infinity : punto.radio - punto.curva * lateral;
 }
 
-/** El radio con el que se mide el agarre: la guía sujeta más en las cerradas. */
+const RADIO_BACHES = VELOCIDAD_BACHES * VELOCIDAD_BACHES / AGARRE_SLOT;
+
+/*
+ * El radio con el que se mide el agarre: la guía sujeta más en las cerradas,
+ * el peralte agarra más y los baches agarran como una curva. Infinity: ahí no
+ * hay límite.
+ */
 export function radioAgarre(punto, lateral) {
-  return Math.max(RADIO_GUIA, radioCarril(punto, lateral));
+  if (punto.efecto === 'baches') return RADIO_BACHES;
+  const radio = radioCarril(punto, lateral);
+  if (radio === Infinity) return Infinity;
+  return Math.max(RADIO_GUIA, radio) * (punto.efecto === 'peralte' ? AGARRE_PERALTE : 1);
 }
 
 const trazados = new WeakMap();
@@ -67,21 +97,30 @@ export function trazadoCarril(circuito, lateral) {
     porCarril.set(lateral, eje.map((p, i) => {
       const anterior = eje[(i - 1 + n) % n];
       const medio = anterior.angulo + normalizarAngulo(p.angulo - anterior.angulo) / 2;
-      const d = lateral / Math.cos(normalizarAngulo(p.angulo - anterior.angulo) / 2);
+      const d = lateral * p.carril / Math.cos(normalizarAngulo(p.angulo - anterior.angulo) / 2);
       return { x: p.x - Math.sin(medio) * d, y: p.y + Math.cos(medio) * d };
     }));
   }
   return porCarril.get(lateral);
 }
 
-/** Lo que mide una vuelta por el carril. */
+/** Lo que mide la primera vuelta por el carril (con un número impar de X, la segunda es la del otro). */
 export function largoCarril(circuito, lateral) {
-  return circuito.eje.reduce((total, p) => total + p.largo * factorCarril(p, lateral), 0);
+  return circuito.eje.reduce((total, p, i) => total + p.largo * factorCarril(circuito, i, lateral * p.carril), 0);
 }
 
-/** px de carril por px de eje: menos de 1 por dentro de las curvas. */
-function factorCarril(p, lateral) {
-  return p.radio === Infinity ? 1 : radioCarril(p, lateral) / p.radio;
+/*
+ * px de carril por px de eje: menos de 1 por dentro de las curvas, y algo más
+ * de 1 en la X, que el carril cruza en diagonal. `lateral` es el
+ * desplazamiento en ese punto.
+ */
+function factorCarril(circuito, i, lateral) {
+  const p = circuito.eje[i];
+  if (p.radio !== Infinity) return radioCarril(p, lateral) / p.radio;
+  if (p.tipo !== 'x') return 1;
+  const siguiente = circuito.eje[(i + 1) % circuito.eje.length];
+  const cambio = Math.abs(lateral) * Math.abs(siguiente.carril - p.carril);
+  return Math.hypot(1, cambio / p.largo);
 }
 
 /** Índice del punto del eje en que cae `s` y la fracción hasta el siguiente. */
@@ -99,9 +138,14 @@ function buscar(circuito, s) {
 
 /** Posición y rumbo sobre el carril en la coordenada `s` del eje. */
 export function poseEnCarril(circuito, s, lateral) {
-  const trazado = trazadoCarril(circuito, lateral);
+  const propio = lateral * signoVuelta(circuito, s);
+  const trazado = trazadoCarril(circuito, propio);
   const { indice, t } = buscar(circuito, s);
-  const a = trazado[indice], b = trazado[(indice + 1) % trazado.length];
+  // El último tramo de la vuelta acaba en el primer punto de la siguiente.
+  const b = indice + 1 < trazado.length
+    ? trazado[indice + 1]
+    : trazadoCarril(circuito, propio * (circuito.cambiosCarril % 2 ? -1 : 1))[0];
+  const a = trazado[indice];
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, angulo: Math.atan2(b.y - a.y, b.x - a.x) };
 }
 
@@ -144,6 +188,7 @@ export function crearCarreraSlot(circuito, colores, turno = 0) {
     tiempo: 0,
     tiempoSalida: 0,
     ganador: null,      // índice del primero en terminar
+    solapados: false,   // si los dos coches se tocaban en el paso anterior (ver `comprobarChoque`)
     eventos: []         // { tipo, coche } del último avance: cuenta, salida, sale, clac, vuelta, fin
   };
 }
@@ -182,6 +227,32 @@ function pasoCarreraSlot(carrera, mandos, dt) {
     if (evento) carrera.eventos.push({ tipo: evento, coche: i });
     if (carrera.fase === 'carrera') contarVueltas(carrera, slot, i);
   });
+  if (carrera.coches.length === 2) comprobarChoque(carrera);
+}
+
+/*
+ * Dos coches en el carril que se tocan (en una X o un cruce: en paralelo van
+ * a 2 · CARRIL) chocan y salen los dos, cada uno hacia su lado. Solo cuenta
+ * al empezar a tocarse y si se acercan: la mano puede dejar uno encima del
+ * otro, parados, y no vuelven a chocar al arrancar.
+ */
+function comprobarChoque(carrera) {
+  const [a, b] = carrera.coches;
+  const dx = b.coche.x - a.coche.x, dy = b.coche.y - a.coche.y;
+  const solapados = Math.hypot(dx, dy) < CHOQUE;
+  const empiezan = solapados && !carrera.solapados;
+  carrera.solapados = solapados;
+  if (!empiezan || a.estado !== 'carril' || b.estado !== 'carril') return;
+  const acercandose = (b.coche.vx - a.coche.vx) * dx + (b.coche.vy - a.coche.vy) * dy < 0;
+  if (!acercandose) return;
+  carrera.eventos.push({ tipo: 'choque', coche: 0, x: (a.coche.x + b.coche.x) / 2, y: (a.coche.y + b.coche.y) / 2 });
+  [[a, 1], [b, -1]].forEach(([slot, signo], i) => {
+    // Hacia el lado contrario del otro: `soltar` empuja hacia -curva · normal.
+    const rumbo = slot.coche.angulo - slot.coleteo;
+    const lado = (-Math.sin(rumbo) * dx + Math.cos(rumbo) * dy) * signo;
+    soltar(slot, lado > 0 ? 1 : -1);
+    carrera.eventos.push({ tipo: 'sale', coche: i });
+  });
 }
 
 /** Un paso de un coche. Devuelve 'sale' o 'clac' si se ha salido o ha vuelto al carril. */
@@ -196,32 +267,38 @@ function pasoSlot(slot, circuito, acelerar, dt) {
   slot.v += (pide - slot.v) * dt / (pide > slot.v ? INERCIA_MOTOR : INERCIA_SOLTAR);
   slot.coche.frenando = pide < slot.v - 40;
 
-  const p = circuito.eje[buscar(circuito, slot.s).indice];
-  const radio = radioAgarre(p, slot.lateral);
+  const { indice } = buscar(circuito, slot.s);
+  const p = circuito.eje[indice];
+  const lateral = lateralEn(circuito, slot.lateral, slot.s);
+  const radio = radioAgarre(p, lateral);
   slot.exigencia = radio === Infinity ? 0 : slot.v * slot.v / radio / AGARRE_SLOT;
+  // En la curva de derrape se aguanta más pasado.
+  const ancha = p.efecto === 'derrape' ? CURVA_DERRAPE : null;
   // Pasado el agarre, derrapa: pierde velocidad y el derrape se acumula. Sin
   // pasarse, se recupera.
   const exceso = slot.exigencia - 1;
   if (exceso > 0) {
-    slot.v *= Math.exp(-FRENO_DERRAPE_SLOT * exceso * dt);
-    slot.derrape = Math.min(1, slot.derrape + ACUMULA_DERRAPE * exceso * dt);
+    slot.v *= Math.exp(-FRENO_DERRAPE_SLOT * (ancha ? ancha.freno : 1) * exceso * dt);
+    slot.derrape = Math.min(1, slot.derrape + ACUMULA_DERRAPE * (ancha ? ancha.acumula : 1) * exceso * dt);
   } else {
     slot.derrape = Math.max(0, slot.derrape - RECUPERA_DERRAPE * dt);
   }
   // Avanza por el carril: por dentro de una curva, más `s` por cada px.
-  const ds = slot.v * dt / factorCarril(p, slot.lateral);
+  const ds = slot.v * dt / factorCarril(circuito, indice, lateral);
   slot.s += ds;
   slot.progreso += ds;
 
   // La cola sale hacia fuera al acercarse al límite, y más derrapando: el
   // aviso de que viene. En las rectas vuelve a su sitio.
   const cerca = Math.max(0, Math.min(1, (slot.exigencia - COLETEO_DESDE) / (1 - COLETEO_DESDE)));
-  const objetivo = (cerca * COLETEO_MAXIMO + slot.derrape * COLETEO_DERRAPE) * (p.curva || Math.sign(slot.coleteo));
+  // En los baches la cola va de un lado a otro.
+  const hacia = p.curva || (p.efecto === 'baches' ? (Math.floor(slot.s / 40) % 2 ? 1 : -1) : Math.sign(slot.coleteo));
+  const objetivo = (cerca * COLETEO_MAXIMO + slot.derrape * COLETEO_DERRAPE) * (ancha ? ancha.coleteo : 1) * hacia;
   slot.coleteo += (objetivo - slot.coleteo) * Math.min(1, 10 * dt);
   colocarEnCarril(slot, circuito);
 
-  if (slot.derrape >= 1 || slot.exigencia > LIMITE_SLOT) {
-    soltar(slot, p.curva);
+  if (slot.derrape >= 1 || slot.exigencia > LIMITE_SLOT * (ancha ? ancha.limite : 1)) {
+    soltar(slot, hacia || 1);
     return 'sale';
   }
   return null;

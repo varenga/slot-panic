@@ -171,6 +171,12 @@ export function sfxSale() {
   noiseBurst({ dur: 0.12, gain: 0.12, filterFreq: 2400 });
 }
 
+/** Dos coches que se encuentran en una X o un cruce: un golpe sordo y plástico que cruje. */
+export function sfxChoque() {
+  tone({ type: 'sine', freq: 140, freqEnd: 50, dur: 0.3, gain: 0.22 });
+  noiseBurst({ dur: 0.22, gain: 0.25, filterFreq: 1400 });
+}
+
 /** La pieza encaja en el carril: un clic seco de plástico. */
 export function sfxClac() {
   noiseBurst({ dur: 0.03, gain: 0.25, filterFreq: 5000, q: 2 });
