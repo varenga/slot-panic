@@ -1,0 +1,8 @@
+{
+  "appId": "es.pnyk.slot",
+  "appName": "Slot Panic",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#12141a"
+  }
+}

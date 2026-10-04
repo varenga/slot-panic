@@ -16,7 +16,6 @@ modo). Antes de crecer, que esté en su sitio:
 - [ ] Propiedad de GA4 propia y su ID en `analitica.js` (`GA4_ID`, hoy vacío), y
       `privacy` en su ficha de `pnyk/proyectos.js`.
 - [ ] Playtest en el móvil: a dos en una pantalla, ¿se estorban los dedos?
-- [ ] ¿5 vueltas (~65 s) es mucho para una revancha?
 
 # Fase 2 — Lo que lo hace suyo
 
@@ -29,7 +28,13 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] Niveles de CPU (hoy una, `CPU_SLOT`, ~1,2 s por vuelta del mejor piloto).
 - [ ] Récords (y fantasma) por circuito y carril.
 
-# Fase 3 — Plataforma
+# Fase 3 — La app de Google Play
 
-- [ ] Páginas por idioma generadas, SEO y PWA: copiarlos de Race Panic cuando los tenga,
-      como plantilla.
+El camino entero, con lo hecho marcado, en `APP.md` §8. Lo que queda:
+
+- [ ] Instalar la de Android por USB y probarla en un móvil (APP.md, Fase B).
+- [ ] Slot Panic en la política de privacidad común de pnyk.es (`privacy` en
+      `pnyk/proyectos.js`): la ficha de Play la enlaza.
+- [ ] Crear la app en la consola de Play (`es.pnyk.slot`), rellenar la ficha con
+      `app/store/` y subir el bundle a pruebas internas; luego, pública.
+- [ ] Más adelante, la de iOS (necesita un Mac).

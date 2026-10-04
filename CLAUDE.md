@@ -4,13 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.2.0): carreras de slot en tres circuitos (*La horquilla*, y *El
+Prototipo jugable (v0.3.0): carreras de slot en tres circuitos (*La horquilla*, y *El
 ocho* y *El nudo*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X y los cruces y una mano que devuelve el
 coche; uno
 contra una CPU que falla o dos en la misma pantalla. Cuatro escenarios de día, al
-atardecer o de noche, siete idiomas, sonido, teclado y táctil. Publicado en https://slot.pnyk.es. Lo
+atardecer o de noche, siete idiomas (una página por idioma, con SEO), sonido, teclado y
+táctil; instalable como PWA y sin red. La app de Android (Capacitor, `es.pnyk.slot`) está
+en `/app`, con el bundle firmado listo para Play: el camino, en `APP.md`. Publicado en https://slot.pnyk.es. Lo
 siguiente, en `TODO.md`.
 
 Nació como el modo Slot de **Race Panic** (`C:\html\roadpanic`, `race.pnyk.es`) y se
@@ -32,6 +34,7 @@ lo que ha pasado el arnés; el trabajo se hace en ramas.
   primeras entradas vienen de Race Panic.
 - `IDEAS.md` — tormenta de ideas a futuro. No compromete nada: una idea entra en
   `TODO.md` cuando toca.
+- `APP.md` — la app de las tiendas (Capacitor en `/app`): decisiones y roadmap por fases.
 
 **Ante una discrepancia, manda `TODO.md`.** Al terminar un bloque de trabajo, muévelo de
 `TODO.md` a `BITACORA.md` con lo que se haya medido: `TODO.md` no acumula tareas marcadas.
@@ -74,6 +77,18 @@ propia propiedad (nunca la de Race Panic). Nunca se carga gtag.js directamente.
 ## Ejecución y verificación
 
 Módulos ES: hay que **servir por HTTP**; con doble clic falla por CORS.
+
+**Las páginas se generan**: `index.html`, `en/`… `fr/`, `manifest.webmanifest`,
+`service-worker.js`, `sitemap.xml`, `robots.txt` y `llms.txt` no se editan a mano. Tras
+tocar **cualquier fichero del juego** (no solo los textos) y antes de publicar:
+
+```bash
+node tools/gen-pages.mjs     # páginas, PWA y la versión de la caché del service worker
+node tools/gen-icons.mjs     # solo si cambia favicon.svg (necesita Chrome)
+```
+
+El service worker solo se registra en HTTPS; en local se prueba con `?sw`, y después hay
+que quitarlo (DevTools › Application, o seguirá sirviendo su caché).
 
 ```bash
 python -m http.server 8124   # y abrir http://127.0.0.1:8124
@@ -128,6 +143,18 @@ demás, en `BITACORA.md`). Mide y comprueba:
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).
 
+La app de Android se compila desde `/app` (el único sitio con `package.json`), con el SDK
+de Android (`sdk.dir` en `app/android/local.properties`, sin versionar) y el JDK 21 de
+`JAVA_HOME`:
+
+```bash
+cd app && npm install && sh sync.sh && npx cap sync android
+cd android && ./gradlew assembleDebug     # APK para el móvil por USB
+cd android && ./gradlew bundleRelease     # para Play, firmado con ~/.slotpanic/
+node store/screenshots.mjs                # capturas de la ficha (con la web en el 8124)
+sh store/generate.sh                      # icono, arranque e imagen destacada
+```
+
 ## Arquitectura
 
 Módulos ES nativos, sin bundler. El grafo no tiene ciclos y la flecha va en un solo
@@ -175,7 +202,15 @@ pantalla.js            lo que va encima: marcador, avisos, portada, cartel de fi
                        opcionesPortada() y botonesFin() sirven al dibujo Y a la
                        pulsación
 arnes.mjs              el arnés (no lo carga el juego)
+
+tools/gen-pages.mjs    genera las páginas por idioma, el manifest y el service worker;
+                       PRECACHE sigue los import desde juego.js
+tools/gen-icons.mjs    los PNG de iconos/ desde favicon.svg
+app/                   la envoltura Capacitor (APP.md); no se sirve (404)
 ```
+
+`enApp()` (`config.js`) es el único sitio que sabe de Capacitor: dentro de la app no hay
+service worker, prosa, pie, analítica ni depuración.
 
 ## Reglas del motor
 
@@ -210,9 +245,15 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
 - **Chocar es empezar a tocarse acercándose**: así la mano puede dejar dos coches uno
   encima del otro sin que vuelvan a chocar en bucle.
 - **Lo que publica un push no puede romper con la caché vieja.** Los módulos ES no
-  llevan `?v=`: el `.htaccess` hace revalidar HTML, JS y CSS (`no-cache`). Una
-  exportación nueva va mejor en un módulo nuevo que en uno que el móvil ya tenga.
-- **La depuración solo sale sirviendo en local** (`DEPURACION` en `config.js`).
+  llevan `?v=`: con service worker, cada versión tiene su caché (la huella de todo lo que
+  precarga) y no se mezclan; sin él, el `.htaccess` hace revalidar HTML, JS y CSS
+  (`no-cache`). Por eso hay que regenerar las páginas tras tocar cualquier módulo: si no,
+  el service worker no cambia y quien tiene la PWA se queda con lo viejo.
+- **La depuración solo sale sirviendo en local** (`DEPURACION` en `config.js`), y nunca
+  en la app, cuyo origen es `https://localhost`.
+- **Lo que precarga el service worker es lo que empaqueta la app**: `PRECACHE` (generado)
+  es la única lista. Un fichero que el juego cargue sin `import` desde `juego.js` (como los
+  de `vendor/pnyk/`) hay que añadirlo a mano en `tools/gen-pages.mjs`.
 - **El decorado nunca usa `Math.random()` ni pisa nada que juegue.** Los escenarios son
   cosméticos.
 - **Lo pulsable se define una vez**: la misma función da la caja para dibujarla y para

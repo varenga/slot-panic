@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Slot Panic</string>
+    <string name="title_activity_main">Slot Panic</string>
+    <string name="package_name">es.pnyk.slot</string>
+    <string name="custom_url_scheme">es.pnyk.slot</string>
+</resources>

@@ -1,0 +1,7 @@
+# Generado: la copia de la web (sync.sh) y las dependencias. Los proyectos
+# nativos traen su propio .gitignore.
+node_modules/
+www/
+
+# La imagen destacada se regenera desde store/feature.svg (store/generate.sh).
+store/feature.png

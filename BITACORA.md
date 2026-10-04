@@ -281,3 +281,40 @@ enlaza a Slot Panic. `pnyk.json` pasa a `"web": true`. Falta GA4 (TODO › Fase 
   Chocar pide llegar a la vez: es raro, y por eso asusta.
 - El hueco del marcador del ocho queda a 3 px de la pista: cabe justo.
 
+## PWA, páginas por idioma y la app de Android (04/10/2026, rama `06-pwa-y-app`, v0.3.0)
+
+> «Este juego es perfecto para ser PWA + APP estilo Orbit Panic o Phabetia.» Se copia el
+> camino de Orbit Panic (su `APP.md`, su generador, su `/app`). Decisiones del usuario:
+> `appId` **`es.pnyk.slot`**, la política de privacidad **común de pnyk.es** y llegar
+> **hasta el bundle firmado para Play**. Las 5 vueltas se quedan: «no se hace largo».
+
+- **`tools/gen-pages.mjs`** (el `gen-pages.js` de Orbit Panic pasado a módulo ES, porque el
+  juego lo es: importa `i18n.js`, `config.js` y `circuitos/` tal cual) genera las siete
+  páginas —SEO, hreflang, JSON-LD y una prosa bajo el lienzo para los buscadores—, el
+  manifest, el service worker, el sitemap, `robots.txt` y `llms.txt`. `index.html` deja de
+  editarse a mano. Regenerar sin cambios no produce diff (el sitemap lleva la fecha del
+  último commit).
+- **`PRECACHE` sigue los `import` desde `juego.js`**: con 25 módulos, una lista a mano se
+  habría olvidado del siguiente. Es también lo que empaqueta la app (`app/sync.sh`).
+- **Los módulos no llevan `?v=`**: lo que impide mezclar uno viejo con uno nuevo es la caché
+  del service worker, una por versión (la huella de todo lo que precarga). Sin service
+  worker sigue valiendo el `no-cache` del `.htaccess`.
+- **El idioma de la página manda** (`data-idioma` en `/en/`, `/pt/`…), como en Orbit
+  Panic; la raíz y la app usan la preferencia guardada o la del teléfono.
+- **`enApp()`** en `config.js`, el único sitio que sabe de Capacitor. Dentro de la app: sin
+  service worker, sin prosa ni pie, sin analítica y **sin depuración**: el origen de
+  Capacitor es `https://localhost`, que contaba como «sirviendo en local» y sacaba el panel
+  de FPS. Lo destapó la primera tanda de capturas.
+- **`/app`**: Capacitor 7, `es.pnyk.slot`, `targetSdk` 36, horizontal (`sensorLandscape`) y
+  pantalla completa (`MainActivity` esconde las barras del sistema). Icono y arranque desde
+  `favicon.svg`; imagen destacada y cinco capturas por idioma (1920×1080, CPU contra CPU en
+  marcha: el juego es de módulos y no deja tocar su estado, así que las preferencias se
+  siembran en `localStorage` y la carrera se empieza con un Enter).
+- **La clave de subida** está en `~/.slotpanic/`, fuera del repositorio. El bundle sale
+  firmado (`jarsigner -verify`: «jar verified», CN=Slot Panic).
+
+### Lo que queda (APP.md §8)
+
+Probarla en un móvil por USB, poner Slot Panic en la política común de pnyk.es y crear la
+app en la consola de Play.
+

@@ -1,0 +1,20 @@
+{
+  "name": "slotpanic-app",
+  "private": true,
+  "description": "La envoltura Capacitor de Slot Panic para las tiendas (APP.md). La única dependencia npm del repositorio, y solo aquí: la web se sirve tal cual.",
+  "scripts": {
+    "sync": "sh sync.sh && cap sync",
+    "assets": "sh store/generate.sh"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.0",
+    "@capacitor/cli": "^7.0.0"
+  },
+  "allowScripts": {
+    "sharp@0.32.6": true
+  }
+}

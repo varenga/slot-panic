@@ -29,10 +29,11 @@ export const PASO_FISICA = 1 / 120; // s. El fotograma se trocea en pasos de est
 
 /*
  * El panel de depuración solo aparece sirviendo en local. El `typeof` es
- * porque config.js también se importa desde Node, donde no hay `location`.
+ * porque config.js también se importa desde Node, donde no hay `location`. Y
+ * nunca en la app: dentro de Capacitor el origen es https://localhost.
  */
 export const DEPURACION = typeof location !== 'undefined' &&
-  /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) && !enApp();
 
 /*
  * ¿Dentro de la app de las tiendas? Capacitor deja `window.Capacitor` antes de
