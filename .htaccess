@@ -1,0 +1,45 @@
+# Slot Panic — configuración de Apache (slot.pnyk.es).
+#
+# No servir lo que es del repositorio y no del sitio: la documentación, el
+# arnés y la configuración de git. Todo va dentro de <IfModule> porque un
+# alojamiento compartido puede no tener el módulo, y un .htaccess que falla se
+# lleva por delante el sitio entero con un 500. Es el de Orbit Panic, recortado.
+
+<IfModule mod_authz_core.c>
+	<FilesMatch "(?i)\.(md|markdown|mjs|log|ini|conf|sql|bak|sh|bat|ps1|ya?ml|toml|env)$">
+		Require all denied
+	</FilesMatch>
+
+	<FilesMatch "(?i)^(\.htaccess|\.gitignore|pnyk\.json)$">
+		Require all denied
+	</FilesMatch>
+
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+	<FilesMatch "(?i)\.(md|markdown|mjs|log|ini|conf|sql|bak|sh|bat|ps1|ya?ml|toml|env)$">
+		Order allow,deny
+		Deny from all
+	</FilesMatch>
+
+	<FilesMatch "(?i)^(\.htaccess|\.gitignore|pnyk\.json)$">
+		Order allow,deny
+		Deny from all
+	</FilesMatch>
+
+</IfModule>
+
+# Los módulos ES tienen que servirse como JavaScript.
+<IfModule mod_mime.c>
+	AddType text/javascript .js
+</IfModule>
+
+# Revalidar siempre el HTML, el JavaScript y el CSS (con el ETag: un 304 si no
+# ha cambiado). Sin cabecera, el navegador cachea a ojo y, tras publicar,
+# podía mezclar un módulo nuevo con otro viejo: un import que no existe y el
+# juego no arranca. Los módulos ES no llevan ?v=, así que es la única defensa.
+<IfModule mod_headers.c>
+	<FilesMatch "(?i)\.(html|js|css)$">
+		Header set Cache-Control "no-cache"
+	</FilesMatch>
+</IfModule>

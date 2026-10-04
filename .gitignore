@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Archivos generados
+*.log
+*.swp
+*.swo
+.DS_Store
+
+# Build
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.user
+
+# OS
+Thumbs.db
+
+# Entorno
+.env
+.env.local
+

@@ -1,0 +1,115 @@
+/* Slot Panic — la paleta de Rail Panic y el encaje del lienzo.
+   Toda la interfaz del juego se dibuja dentro del canvas; el CSS solo
+   se ocupa de centrarlo y escalarlo conservando la proporción 16:9. */
+
+:root {
+  --fondo: #12141a;
+  --fondo-lienzo: #1b1e26;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--fondo);
+  color: #e6e8ee;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+#escena {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* Resolución lógica fija (1280x720) escalada por CSS hasta lo que quepa, pero
+   nunca por encima de 960 px de ancho: como en Rail Panic, un píxel lógico
+   mide 0,75 px reales y todo se ve un 25 % más pequeño que sus números. */
+#lienzo {
+  width: min(100vw, calc(100vh * 16 / 9), 960px);
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: var(--fondo-lienzo);
+  display: block;
+  cursor: pointer;
+
+  /* Táctil: el lienzo se come el gesto. Sin esto, arrastrar desplaza la página
+     y un doble toque hace zoom justo cuando se intenta frenar. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Pie: enlaces a los demás juegos Panic y «Cookies» (reabre el aviso de cookies
+   común, vendor/pnyk/consentimiento.js). Discreto, pegado abajo, para no
+   competir con el juego. */
+#pie {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 2px 12px;
+  padding: 0 8px;
+  color: #8b93a7;
+  font: 12px system-ui, -apple-system, "Segoe UI", sans-serif;
+  opacity: 0.6;
+}
+
+#pie:hover,
+#pie:focus-within {
+  opacity: 1;
+}
+
+#otros {
+  margin: 0;
+}
+
+#pie a {
+  color: inherit;
+}
+
+#cookies {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* En vertical el lienzo 16:9 queda diminuto. El texto lo pone juego.js (i18n). */
+#gira {
+  display: none;
+  position: absolute;
+  padding: 0 24px;
+  color: #8b93a7;
+  font-size: 15px;
+  text-align: center;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  #lienzo {
+    opacity: 0.12;
+  }
+
+  #gira {
+    display: block;
+  }
+}
