@@ -12,14 +12,18 @@
 
 import { GAME_SLUG } from './config.js';
 
+/*
+ * Los siete idiomas. `dir` es la carpeta de su página (el español, en la raíz)
+ * y `locale` el de Open Graph: los usa el generador (tools/gen-pages.mjs).
+ */
 export const IDIOMAS = [
-  { codigo: 'es', nombre: 'Español' },
-  { codigo: 'en', nombre: 'English' },
-  { codigo: 'pt', nombre: 'Português' },
-  { codigo: 'gl', nombre: 'Galego' },
-  { codigo: 'ca', nombre: 'Català' },
-  { codigo: 'it', nombre: 'Italiano' },
-  { codigo: 'fr', nombre: 'Français' }
+  { codigo: 'es', nombre: 'Español', dir: '', locale: 'es_ES' },
+  { codigo: 'en', nombre: 'English', dir: 'en/', locale: 'en_US' },
+  { codigo: 'pt', nombre: 'Português', dir: 'pt/', locale: 'pt_PT' },
+  { codigo: 'gl', nombre: 'Galego', dir: 'gl/', locale: 'gl_ES' },
+  { codigo: 'ca', nombre: 'Català', dir: 'ca/', locale: 'ca_ES' },
+  { codigo: 'it', nombre: 'Italiano', dir: 'it/', locale: 'it_IT' },
+  { codigo: 'fr', nombre: 'Français', dir: 'fr/', locale: 'fr_FR' }
 ];
 
 const POR_DEFECTO = 'es';
@@ -65,6 +69,32 @@ export const CATALOGOS = {
     'aviso.ultima': 'ÚLTIMA VUELTA',
     'fin.tiempo': 'TIEMPO {tiempo}',
     'fin.repetir': 'ENTER O R PARA REPETIR · ESC MENÚ',
+    'seo.title': 'Slot Panic — carreras de slot gratis: suelta antes de la curva',
+    'seo.description': 'Carreras de slot con vista cenital: solo apretar y soltar. Suelta antes de la curva o el coche se sale. Contra la CPU o a dos en la misma pantalla.',
+    'seo.ogDesc': 'Carreras de slot: solo apretar y soltar. Suelta antes de la curva.',
+    'seo.keywords': 'slot, carreras de slot, coches de slot, juego de carreras, dos jugadores, juego HTML5, gratis',
+    'page.h1': 'Slot Panic: carreras de slot con un solo mando',
+    'page.intro': 'Dos coches enganchados a su carril y un solo control, el gatillo: apretar acelera y soltar frena. Si entras en la curva demasiado deprisa la cola sale de lado; si insistes, el coche se sale, da vueltas sobre la mesa y una mano lo devuelve a la pista. Gratis, sin registro, en el navegador o instalado como app.',
+    'page.howTitle': 'Cómo se juega',
+    'page.how1': 'Mantén pulsado para acelerar y suelta para frenar. A toques, la potencia se queda a medias.',
+    'page.how2': 'Pasado el agarre, el coche derrapa y pierde velocidad; solo se sale si sigue pasado.',
+    'page.how3': 'Salirse cuesta tiempo, no la carrera: la mano devuelve el coche a donde se salió.',
+    'page.how4': 'Cinco vueltas. Cada carrera los coches se cambian de carril; en una X y en un cruce, si llegan a la vez, chocan.',
+    'page.controlsTitle': 'Controles',
+    'page.colWho': 'Coche',
+    'page.colKeys': 'Teclado',
+    'page.colTouch': 'Táctil',
+    'page.p1': 'J1 (rojo)',
+    'page.p2': 'J2 (azul)',
+    'page.touchLeft': 'mitad izquierda',
+    'page.touchRight': 'mitad derecha',
+    'page.keysMore': 'En la portada: Enter empieza, C cambia de circuito, E de escenario, H de hora, L de idioma y M quita el sonido. En carrera, R repite y Esc vuelve al menú. El carril que nadie toque lo lleva la CPU.',
+    'page.circuitsTitle': 'Circuitos',
+    'page.circ.primero': 'dos curvas rápidas y un dedo con una horquilla cerrada.',
+    'page.circ.ocho': 'un ocho con cruce, una horquilla peraltada, una chicane y dos curvas de derrape.',
+    'page.circ.nudo': 'una X en la que los coches cambian de carril, una recta de baches, una horquilla y una chicane.',
+    'page.langTitle': 'Idiomas',
+    "page.privacy": "Privacidad"
   },
   en: {
     'slot.lema': 'Lift before the bend.',
@@ -105,6 +135,32 @@ export const CATALOGOS = {
     'aviso.ultima': 'FINAL LAP',
     'fin.tiempo': 'TIME {tiempo}',
     'fin.repetir': 'ENTER OR R TO RETRY · ESC MENU',
+    'seo.title': 'Slot Panic — free slot car racing: lift before the bend',
+    'seo.description': 'Top-down slot car racing: just press and release. Lift before the bend or the car flies off. Against the CPU or two players on the same screen.',
+    'seo.ogDesc': 'Slot car racing: just press and release. Lift before the bend.',
+    'seo.keywords': 'slot cars, slot car racing, racing game, two players, HTML5 game, free',
+    'page.h1': 'Slot Panic: slot car racing with a single control',
+    'page.intro': 'Two cars locked into their lanes and a single control, the trigger: press to accelerate, release to slow down. Take a bend too fast and the tail slides out; keep pushing and the car flies off, spins across the table and a hand puts it back on the track. Free, no sign-up, in the browser or installed as an app.',
+    'page.howTitle': 'How to play',
+    'page.how1': 'Hold to accelerate and release to slow down. Tap it and the power stays halfway.',
+    'page.how2': 'Past the grip limit the car slides and loses speed; it only flies off if you keep pushing.',
+    'page.how3': 'Flying off costs time, not the race: the hand puts the car back where it left the track.',
+    'page.how4': 'Five laps. The cars swap lanes every race; at a crossover or a crossing, if they arrive together, they crash.',
+    'page.controlsTitle': 'Controls',
+    'page.colWho': 'Car',
+    'page.colKeys': 'Keyboard',
+    'page.colTouch': 'Touch',
+    'page.p1': 'P1 (red)',
+    'page.p2': 'P2 (blue)',
+    'page.touchLeft': 'left half',
+    'page.touchRight': 'right half',
+    'page.keysMore': 'On the title screen: Enter starts, C changes the track, E the scenery, H the time of day, L the language and M mutes. While racing, R restarts and Esc goes back to the menu. Any lane nobody touches is driven by the CPU.',
+    'page.circuitsTitle': 'Tracks',
+    'page.circ.primero': 'two fast bends and a finger with a tight hairpin.',
+    'page.circ.ocho': 'a figure eight with a crossing, a banked hairpin, a chicane and two drift bends.',
+    'page.circ.nudo': 'a crossover where the cars swap lanes, a bumpy straight, a hairpin and a chicane.',
+    'page.langTitle': 'Languages',
+    "page.privacy": "Privacy"
   },
   pt: {
     'slot.lema': 'Larga antes da curva.',
@@ -145,6 +201,32 @@ export const CATALOGOS = {
     'aviso.ultima': 'ÚLTIMA VOLTA',
     'fin.tiempo': 'TEMPO {tiempo}',
     'fin.repetir': 'ENTER OU R PARA REPETIR · ESC MENU',
+    'seo.title': 'Slot Panic — corridas de slot grátis: solta antes da curva',
+    'seo.description': 'Corridas de slot vistas de cima: só carregar e soltar. Solta antes da curva ou o carro sai. Contra a CPU ou a dois no mesmo ecrã.',
+    'seo.ogDesc': 'Corridas de slot: só carregar e soltar. Solta antes da curva.',
+    'seo.keywords': 'slot, corridas de slot, carros de slot, jogo de corridas, dois jogadores, jogo HTML5, grátis',
+    'page.h1': 'Slot Panic: corridas de slot com um só comando',
+    'page.intro': 'Dois carros presos à sua pista e um só comando, o gatilho: carregar acelera e soltar trava. Se entras na curva depressa demais a traseira sai de lado; se insistires, o carro sai, gira sobre a mesa e uma mão devolve-o à pista. Grátis, sem registo, no navegador ou instalado como app.',
+    'page.howTitle': 'Como se joga',
+    'page.how1': 'Mantém carregado para acelerar e solta para travar. Aos toques, a potência fica a meio.',
+    'page.how2': 'Passada a aderência, o carro derrapa e perde velocidade; só sai se continuar a passar.',
+    'page.how3': 'Sair custa tempo, não a corrida: a mão devolve o carro onde saiu.',
+    'page.how4': 'Cinco voltas. Em cada corrida os carros trocam de pista; num X e num cruzamento, se chegarem ao mesmo tempo, chocam.',
+    'page.controlsTitle': 'Controlos',
+    'page.colWho': 'Carro',
+    'page.colKeys': 'Teclado',
+    'page.colTouch': 'Tátil',
+    'page.p1': 'J1 (vermelho)',
+    'page.p2': 'J2 (azul)',
+    'page.touchLeft': 'metade esquerda',
+    'page.touchRight': 'metade direita',
+    'page.keysMore': 'No ecrã inicial: Enter começa, C muda de circuito, E de cenário, H de hora, L de idioma e M tira o som. Na corrida, R repete e Esc volta ao menu. A pista que ninguém tocar é conduzida pela CPU.',
+    'page.circuitsTitle': 'Circuitos',
+    'page.circ.primero': 'duas curvas rápidas e um dedo com um gancho fechado.',
+    'page.circ.ocho': 'um oito com cruzamento, um gancho inclinado, uma chicane e duas curvas de derrapagem.',
+    'page.circ.nudo': 'um X onde os carros trocam de pista, uma reta de lombas, um gancho e uma chicane.',
+    'page.langTitle': 'Idiomas',
+    "page.privacy": "Privacidade"
   },
   gl: {
     'slot.lema': 'Solta antes da curva.',
@@ -185,6 +267,32 @@ export const CATALOGOS = {
     'aviso.ultima': 'ÚLTIMA VOLTA',
     'fin.tiempo': 'TEMPO {tiempo}',
     'fin.repetir': 'ENTER OU R PARA REPETIR · ESC MENÚ',
+    'seo.title': 'Slot Panic — carreiras de slot de balde: solta antes da curva',
+    'seo.description': 'Carreiras de slot vistas desde arriba: só apertar e soltar. Solta antes da curva ou o coche sae. Contra a CPU ou a dous na mesma pantalla.',
+    'seo.ogDesc': 'Carreiras de slot: só apertar e soltar. Solta antes da curva.',
+    'seo.keywords': 'slot, carreiras de slot, coches de slot, xogo de carreiras, dous xogadores, xogo HTML5, de balde',
+    'page.h1': 'Slot Panic: carreiras de slot cun só mando',
+    'page.intro': 'Dous coches enganchados ao seu carril e un só control, o gatillo: apertar acelera e soltar frea. Se entras na curva demasiado rápido a cola sae de lado; se insistes, o coche sae, dá voltas sobre a mesa e unha man devólveo á pista. De balde, sen rexistro, no navegador ou instalado como app.',
+    'page.howTitle': 'Como se xoga',
+    'page.how1': 'Mantén premido para acelerar e solta para frear. A toques, a potencia queda a medias.',
+    'page.how2': 'Pasado o agarre, o coche derrapa e perde velocidade; só sae se segue pasado.',
+    'page.how3': 'Saír custa tempo, non a carreira: a man devolve o coche a onde saíu.',
+    'page.how4': 'Cinco voltas. En cada carreira os coches cambian de carril; nunha X e nun cruzamento, se chegan á vez, chocan.',
+    'page.controlsTitle': 'Controis',
+    'page.colWho': 'Coche',
+    'page.colKeys': 'Teclado',
+    'page.colTouch': 'Táctil',
+    'page.p1': 'X1 (vermello)',
+    'page.p2': 'X2 (azul)',
+    'page.touchLeft': 'metade esquerda',
+    'page.touchRight': 'metade dereita',
+    'page.keysMore': 'Na portada: Enter comeza, C cambia de circuíto, E de escenario, H de hora, L de idioma e M quita o son. En carreira, R repite e Esc volve ao menú. O carril que ninguén toque lévao a CPU.',
+    'page.circuitsTitle': 'Circuítos',
+    'page.circ.primero': 'dúas curvas rápidas e un dedo cunha gancha pechada.',
+    'page.circ.ocho': 'un oito con cruzamento, unha gancha peraltada, unha chicane e dúas curvas de derrape.',
+    'page.circ.nudo': 'unha X na que os coches cambian de carril, unha recta de fochancas, unha gancha e unha chicane.',
+    'page.langTitle': 'Idiomas',
+    "page.privacy": "Privacidade"
   },
   ca: {
     'slot.lema': 'Deixa anar abans del revolt.',
@@ -225,6 +333,32 @@ export const CATALOGOS = {
     'aviso.ultima': 'ÚLTIMA VOLTA',
     'fin.tiempo': 'TEMPS {tiempo}',
     'fin.repetir': 'ENTER O R PER REPETIR · ESC MENÚ',
+    'seo.title': 'Slot Panic — curses de slot gratis: deixa anar abans del revolt',
+    'seo.description': 'Curses de slot vistes des de dalt: només prémer i deixar anar. Deixa anar abans del revolt o el cotxe surt. Contra la CPU o a dos a la mateixa pantalla.',
+    'seo.ogDesc': 'Curses de slot: només prémer i deixar anar. Deixa anar abans del revolt.',
+    'seo.keywords': 'slot, curses de slot, cotxes de slot, joc de curses, dos jugadors, joc HTML5, gratis',
+    'page.h1': 'Slot Panic: curses de slot amb un sol comandament',
+    'page.intro': 'Dos cotxes enganxats al seu carril i un sol control, el gallet: prémer accelera i deixar anar frena. Si entres al revolt massa de pressa la cua surt de costat; si insisteixes, el cotxe surt, dona voltes sobre la taula i una mà el torna a la pista. Gratis, sense registre, al navegador o instal·lat com a app.',
+    'page.howTitle': 'Com es juga',
+    'page.how1': 'Mantén premut per accelerar i deixa anar per frenar. A tocs, la potència es queda a mitges.',
+    'page.how2': "Passat l'agafament, el cotxe derrapa i perd velocitat; només surt si continua passat.",
+    'page.how3': 'Sortir costa temps, no la cursa: la mà torna el cotxe on ha sortit.',
+    'page.how4': 'Cinc voltes. A cada cursa els cotxes es canvien de carril; en una X i en un encreuament, si hi arriben alhora, xoquen.',
+    'page.controlsTitle': 'Controls',
+    'page.colWho': 'Cotxe',
+    'page.colKeys': 'Teclat',
+    'page.colTouch': 'Tàctil',
+    'page.p1': 'J1 (vermell)',
+    'page.p2': 'J2 (blau)',
+    'page.touchLeft': 'meitat esquerra',
+    'page.touchRight': 'meitat dreta',
+    'page.keysMore': "A la portada: Enter comença, C canvia de circuit, E d'escenari, H d'hora, L d'idioma i M treu el so. En cursa, R repeteix i Esc torna al menú. El carril que ningú no toqui el porta la CPU.",
+    'page.circuitsTitle': 'Circuits',
+    'page.circ.primero': 'dos revolts ràpids i un dit amb una forquilla tancada.',
+    'page.circ.ocho': 'un vuit amb encreuament, una forquilla peraltada, una xicana i dos revolts de derrapada.',
+    'page.circ.nudo': 'una X on els cotxes canvien de carril, una recta de sots, una forquilla i una xicana.',
+    'page.langTitle': 'Idiomes',
+    "page.privacy": "Privadesa"
   },
   it: {
     'slot.lema': 'Rilascia prima della curva.',
@@ -265,6 +399,32 @@ export const CATALOGOS = {
     'aviso.ultima': 'ULTIMO GIRO',
     'fin.tiempo': 'TEMPO {tiempo}',
     'fin.repetir': 'INVIO O R PER RIPROVARE · ESC MENU',
+    'seo.title': 'Slot Panic — corse di slot gratis: rilascia prima della curva',
+    'seo.description': "Corse di slot viste dall'alto: solo premere e rilasciare. Rilascia prima della curva o l'auto esce. Contro la CPU o in due sullo stesso schermo.",
+    'seo.ogDesc': 'Corse di slot: solo premere e rilasciare. Rilascia prima della curva.',
+    'seo.keywords': 'slot, corse di slot, auto slot, gioco di corse, due giocatori, gioco HTML5, gratis',
+    'page.h1': 'Slot Panic: corse di slot con un solo comando',
+    'page.intro': "Due auto agganciate alla loro corsia e un solo comando, il grilletto: premere accelera e rilasciare frena. Se entri in curva troppo veloce la coda scivola di lato; se insisti, l'auto esce, gira sul tavolo e una mano la rimette in pista. Gratis, senza registrazione, nel browser o installato come app.",
+    'page.howTitle': 'Come si gioca',
+    'page.how1': 'Tieni premuto per accelerare e rilascia per frenare. A colpetti, la potenza resta a metà.',
+    'page.how2': "Oltre l'aderenza l'auto sbanda e perde velocità; esce solo se continui a esagerare.",
+    'page.how3': "Uscire costa tempo, non la gara: la mano rimette l'auto dove è uscita.",
+    'page.how4': 'Cinque giri. A ogni gara le auto si scambiano la corsia; in una X e in un incrocio, se arrivano insieme, si scontrano.',
+    'page.controlsTitle': 'Comandi',
+    'page.colWho': 'Auto',
+    'page.colKeys': 'Tastiera',
+    'page.colTouch': 'Touch',
+    'page.p1': 'G1 (rossa)',
+    'page.p2': 'G2 (blu)',
+    'page.touchLeft': 'metà sinistra',
+    'page.touchRight': 'metà destra',
+    'page.keysMore': "Nella schermata iniziale: Invio inizia, C cambia circuito, E scenario, H ora, L lingua e M toglie l'audio. In gara, R ricomincia ed Esc torna al menu. La corsia che nessuno tocca la guida la CPU.",
+    'page.circuitsTitle': 'Circuiti',
+    'page.circ.primero': 'due curve veloci e un dito con un tornante stretto.',
+    'page.circ.ocho': 'un otto con incrocio, un tornante sopraelevato, una chicane e due curve di derapata.',
+    'page.circ.nudo': 'una X dove le auto cambiano corsia, un rettilineo di dossi, un tornante e una chicane.',
+    'page.langTitle': 'Lingue',
+    "page.privacy": "Privacy"
   },
   fr: {
     'slot.lema': 'Lâche avant le virage.',
@@ -305,6 +465,32 @@ export const CATALOGOS = {
     'aviso.ultima': 'DERNIER TOUR',
     'fin.tiempo': 'TEMPS {tiempo}',
     'fin.repetir': 'ENTRÉE OU R POUR REJOUER · ÉCHAP MENU',
+    'seo.title': 'Slot Panic — courses de slot gratuites : lâche avant le virage',
+    'seo.description': "Courses de slot vues du dessus : il suffit d'appuyer et de relâcher. Lâche avant le virage ou la voiture sort. Contre le CPU ou à deux sur le même écran.",
+    'seo.ogDesc': 'Courses de slot : appuyer et relâcher. Lâche avant le virage.',
+    'seo.keywords': 'slot, courses de slot, voitures de slot, jeu de course, deux joueurs, jeu HTML5, gratuit',
+    'page.h1': 'Slot Panic : courses de slot avec une seule commande',
+    'page.intro': "Deux voitures accrochées à leur rail et une seule commande, la gâchette : appuyer accélère et relâcher freine. Si tu entres trop vite dans le virage, l'arrière glisse ; si tu insistes, la voiture sort, tourne sur la table et une main la remet en piste. Gratuit, sans inscription, dans le navigateur ou installé comme appli.",
+    'page.howTitle': 'Comment jouer',
+    'page.how1': 'Maintiens pour accélérer et relâche pour freiner. Par petites touches, la puissance reste à mi-chemin.',
+    'page.how2': "Au-delà de l'adhérence, la voiture dérape et perd de la vitesse ; elle ne sort que si tu insistes.",
+    'page.how3': 'Sortir coûte du temps, pas la course : la main remet la voiture là où elle est sortie.',
+    'page.how4': 'Cinq tours. À chaque course, les voitures changent de rail ; sur un X et un croisement, si elles arrivent ensemble, elles se percutent.',
+    'page.controlsTitle': 'Commandes',
+    'page.colWho': 'Voiture',
+    'page.colKeys': 'Clavier',
+    'page.colTouch': 'Tactile',
+    'page.p1': 'J1 (rouge)',
+    'page.p2': 'J2 (bleue)',
+    'page.touchLeft': 'moitié gauche',
+    'page.touchRight': 'moitié droite',
+    'page.keysMore': "Sur l'écran titre : Entrée démarre, C change de circuit, E de décor, H d'heure, L de langue et M coupe le son. En course, R recommence et Échap revient au menu. Le rail que personne ne touche est piloté par le CPU.",
+    'page.circuitsTitle': 'Circuits',
+    'page.circ.primero': 'deux virages rapides et un doigt avec une épingle serrée.',
+    'page.circ.ocho': 'un huit avec croisement, une épingle relevée, une chicane et deux virages de dérapage.',
+    'page.circ.nudo': 'un X où les voitures changent de rail, une ligne droite à bosses, une épingle et une chicane.',
+    'page.langTitle': 'Langues',
+    "page.privacy": "Confidentialité"
   }
 };
 
@@ -343,13 +529,17 @@ function fijarIdioma(codigo, guardar) {
 }
 
 /*
- * Orden: ?lang= en la URL, la preferencia guardada, el idioma del navegador y
- * el español. Las páginas por idioma en subcarpetas, cuando las haya, irán
- * antes que la preferencia, como en Orbit Panic.
+ * Orden: ?lang= en la URL, el de la página (las de /en/, /pt/… lo llevan en
+ * `data-idioma`; la raíz no, aunque sea la española), la preferencia
+ * guardada, el idioma del navegador y el español. Como en Orbit Panic: quien
+ * entra por /en/ juega en inglés, y quien abre la raíz o el juego instalado,
+ * en el suyo.
  */
 function resolverIdioma() {
   const deUrl = new URLSearchParams(location.search).get('lang');
   if (deUrl && CATALOGOS[deUrl]) return deUrl;
+  const dePagina = document.documentElement.dataset.idioma;
+  if (dePagina && CATALOGOS[dePagina]) return dePagina;
   try {
     const guardado = localStorage.getItem(CLAVE_IDIOMA);
     if (guardado && CATALOGOS[guardado]) return guardado;

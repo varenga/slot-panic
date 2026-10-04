@@ -1,9 +1,9 @@
 {
   "slug": "slot-panic",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "etapa": "prototipo",
   "comun": "1.2.2",
   "langs": ["es", "en", "pt", "gl", "ca", "it", "fr"],
-  "plataformas": { "web": true, "pwa": false, "android": false, "ios": false },
-  "generador": ""
+  "plataformas": { "web": true, "pwa": true, "android": false, "ios": false },
+  "generador": "node tools/gen-pages.mjs"
 }

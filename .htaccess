@@ -29,9 +29,22 @@
 
 </IfModule>
 
-# Los módulos ES tienen que servirse como JavaScript.
+# Los módulos ES tienen que servirse como JavaScript, y sin esto Apache sirve
+# el manifest de la PWA como texto plano y Chrome lo ignora.
 <IfModule mod_mime.c>
 	AddType text/javascript .js
+	AddType application/manifest+json .webmanifest
+</IfModule>
+
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteRule "(^|/)\." - [F,L]
+	# Herramientas de mantenimiento (generador de páginas e iconos): no se sirven.
+	RewriteRule ^tools/ - [F,L]
+	# La envoltura de la app de las tiendas (APP.md §4). El push de master
+	# publica todo el repositorio, /app incluido, y no debe servirse: se
+	# contesta como si no estuviera.
+	RewriteRule ^app(/|$) - [R=404,L]
 </IfModule>
 
 # Revalidar siempre el HTML, el JavaScript y el CSS (con el ETag: un 304 si no
@@ -41,5 +54,11 @@
 <IfModule mod_headers.c>
 	<FilesMatch "(?i)\.(html|js|css)$">
 		Header set Cache-Control "no-cache"
+	</FilesMatch>
+	# El manifest va sin ?v= (su dirección identifica la PWA instalada) y el
+	# service worker también: el navegador lo compara byte a byte para saber si
+	# hay versión nueva. Los dos revalidan siempre.
+	<FilesMatch "(?i)^(manifest\.webmanifest|service-worker\.js)$">
+		Header set Cache-Control "no-cache, must-revalidate"
 	</FilesMatch>
 </IfModule>

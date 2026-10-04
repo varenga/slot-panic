@@ -12,13 +12,15 @@ Hermano de **Race Panic** (`race.pnyk.es`), del que nació como modo de juego.
 
 Prototipo publicado en **https://slot.pnyk.es**: tres circuitos (La horquilla, y El ocho y
 El nudo, de piezas: X, cruce, chicane, peralte, curva de derrape y baches) con dos
-carriles, cinco vueltas, uno contra una CPU que falla o dos en la misma pantalla, cuatro escenarios de día, al atardecer o
+carriles, cinco vueltas, uno contra una CPU que falla o dos en la misma pantalla,
+instalable como PWA y con la app de Android preparada para Google Play (`APP.md`), cuatro escenarios de día, al atardecer o
 de noche, siete idiomas, sonido, teclado y táctil.
 
 - `TODO.md` — lo pendiente y el alcance de la fase en curso.
 - `BITACORA.md` — lo ya hecho, con las medidas y el porqué de cada decisión.
 - `CLAUDE.md` — el mapa de módulos y las invariantes del motor.
 - `IDEAS.md` — tormenta de ideas para más adelante, sin compromiso.
+- `APP.md` — la app de las tiendas: Capacitor en `/app`, por fases.
 
 Este README es la **especificación de diseño a largo plazo**: describe el juego que se
 quiere, no el que hay hoy. Ante una discrepancia, manda `TODO.md`.
