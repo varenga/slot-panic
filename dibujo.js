@@ -127,8 +127,44 @@ function pintarPista(circuito) {
   ctx.lineWidth = circuito.ancho;
   polilinea(circuito.eje);
   pintarPianos(circuito);
+  pintarPiezas(circuito);
   pintarSectores(circuito);
   pintarMeta(circuito);
+}
+
+/*
+ * Las marcas de las piezas especiales (`nucleo/piezas.js`), para que se lean
+ * antes de llegar: el peralte, una banda clara rayada por fuera (la pista sube);
+ * la curva de derrape, su arcén plano y gris por fuera del piano; los baches,
+ * franjas oscuras a lo ancho.
+ */
+function pintarPiezas(circuito) {
+  const { eje, ancho } = circuito;
+  const n = eje.length;
+  // Un punto a `d` px del eje, hacia el lado `lado`.
+  const a = (p, lado, d) => ({ x: p.x - Math.sin(p.angulo) * lado * d, y: p.y + Math.cos(p.angulo) * lado * d });
+  ctx.lineCap = 'butt';
+  for (let i = 0; i < n; i++) {
+    const p = eje[i], q = eje[(i + 1) % n];
+    if (!p.efecto || p.efecto === 'chicane') continue;
+    const fuera = -p.curva;
+    if (p.efecto === 'peralte') {
+      ctx.fillStyle = i % 2 ? 'rgba(230, 232, 238, 0.10)' : 'rgba(230, 232, 238, 0.22)';
+      poligono([a(p, fuera, ancho / 2 - 12), a(q, fuera, ancho / 2 - 12), a(q, fuera, ancho / 2), a(p, fuera, ancho / 2)]);
+    } else if (p.efecto === 'derrape') {
+      const k = fuera < 0 ? 0 : 1;
+      ctx.fillStyle = 'rgba(201, 204, 214, 0.32)';
+      poligono([a(p, fuera, p.borde[k]), a(q, fuera, q.borde[k]), a(q, fuera, q.borde[k] + 30), a(p, fuera, p.borde[k] + 30)]);
+    } else if (p.efecto === 'baches' && i % 2 === 0) {
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.lineWidth = 3;
+      const [u, v] = [a(p, -1, ancho / 2), a(p, 1, ancho / 2)];
+      ctx.beginPath();
+      ctx.moveTo(u.x, u.y);
+      ctx.lineTo(v.x, v.y);
+      ctx.stroke();
+    }
+  }
 }
 
 /** Una línea tenue a lo ancho de la pista donde acaba cada sector (el último es la meta). */
@@ -348,7 +384,7 @@ export function dibujarCarriles(circuito) {
     dibujarEn(capaCarriles, () => {
       ctx.strokeStyle = 'rgba(11, 12, 16, 0.6)';
       ctx.lineWidth = 1.5;
-      for (let s = 0; s < circuito.largo; s += JUNTA) {
+      for (const s of juntas(circuito)) {
         const p = circuito.puntoEn(s);
         const nx = -Math.sin(p.angulo) * circuito.ancho / 2, ny = Math.cos(p.angulo) * circuito.ancho / 2;
         ctx.beginPath();
@@ -357,19 +393,41 @@ export function dibujarCarriles(circuito) {
         ctx.stroke();
       }
       ctx.lineJoin = 'round';
-      for (const lateral of CARRILES) {
-        const trazado = trazadoCarril(circuito, lateral);
-        ctx.strokeStyle = COLOR.carril;
-        ctx.lineWidth = 7;
-        polilinea(trazado);
-        ctx.strokeStyle = COLOR.ranura;
-        ctx.lineWidth = 3;
-        polilinea(trazado);
+      // Con un número impar de X, el carril que sale por un lado vuelve por el
+      // otro: cada trazado acaba en el primer punto del otro, y abierto.
+      const impar = circuito.cambiosCarril % 2 === 1;
+      const trazados = CARRILES.map((lateral) =>
+        [...trazadoCarril(circuito, lateral), trazadoCarril(circuito, impar ? -lateral : lateral)[0]]);
+      for (const [color, grosor] of [[COLOR.carril, 7], [COLOR.ranura, 3]]) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = grosor;
+        for (const trazado of trazados) polilinea(trazado, false);
       }
     });
     claveCarriles = circuito.clave;
   }
   ctx.drawImage(capaCarriles, 0, 0);
+}
+
+/*
+ * Dónde van las juntas, en s. Un circuito de piezas las tiene donde acaba
+ * cada pieza, y las rectas largas, partidas en piezas de unos JUNTA px; uno
+ * de vértices, cada JUNTA px.
+ */
+function juntas(circuito) {
+  const { eje } = circuito;
+  if (eje[0].pieza === undefined) {
+    const lista = [];
+    for (let s = 0; s < circuito.largo; s += JUNTA) lista.push(s);
+    return lista;
+  }
+  const inicios = eje.filter((p) => p.junta).map((p) => p.s);
+  return inicios.flatMap((s, i) => {
+    const fin = inicios[i + 1] ?? circuito.largo;
+    const p = eje.find((q) => q.s === s);
+    const partes = p.radio === Infinity ? Math.max(1, Math.round((fin - s) / JUNTA)) : 1;
+    return Array.from({ length: partes }, (_, k) => s + (fin - s) * k / partes);
+  });
 }
 
 /** Un coche: el de Race Panic, más grande y con más sombra mientras la mano lo levanta. */

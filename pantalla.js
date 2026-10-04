@@ -91,7 +91,7 @@ export function dibujarAvisos(avisos, circuito) {
 // --- Portada -------------------------------------------------------------------
 
 /* Las opciones de la portada, en la banda de arriba. Dibujo y pulsación. */
-const OPCIONES = ['sonido', 'idioma', 'escenario', 'hora'];
+const OPCIONES = ['circuito', 'sonido', 'idioma', 'escenario', 'hora'];
 
 export function opcionesPortada() {
   const alto = 30, hueco = 10;
@@ -102,7 +102,7 @@ export function opcionesPortada() {
   }));
 }
 
-const TECLA_OPCION = { sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
+const TECLA_OPCION = { circuito: 'C', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
 
 export function dibujarPortada(circuito, tiempo, escenario, tactil, hora) {
   const { x, y } = circuito.interior;
@@ -119,6 +119,7 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora) {
 
   bandas();
   const valores = {
+    circuito: nombreCircuito(circuito),
     sonido: t(silenciado() ? 'sonido.no' : 'sonido.si'),
     idioma: idiomaActual().nombre.toUpperCase(),
     escenario: t('escenario.' + escenario),

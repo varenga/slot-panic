@@ -4,12 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.1.0): carreras de slot en *La horquilla*, dos coches enganchados a
-carriles que se cambian en cada carrera, solo apretar y soltar (un gatillo que se
-dosifica a toques), derrape antes de salirse y una mano que devuelve el coche; uno
+Prototipo jugable (v0.2.0): carreras de slot en tres circuitos (*La horquilla*, y *El
+ocho* y *El nudo*, de piezas), dos coches enganchados a carriles que se cambian en cada
+carrera, solo apretar y soltar (un gatillo que se
+dosifica a toques), derrape antes de salirse, choques en las X y los cruces y una mano que devuelve el
+coche; uno
 contra una CPU que falla o dos en la misma pantalla. Cuatro escenarios de día, al
 atardecer o de noche, siete idiomas, sonido, teclado y táctil. Publicado en https://slot.pnyk.es. Lo
-siguiente, en `TODO.md` › Fase 1.
+siguiente, en `TODO.md`.
 
 Nació como el modo Slot de **Race Panic** (`C:\html\roadpanic`, `race.pnyk.es`) y se
 separó del tag `v0.9.3` de aquel repo (`BITACORA.md`). Tendrá su propio desarrollo: sus
@@ -88,17 +90,20 @@ node arnes.mjs
 ```
 
 Importa los módulos reales del núcleo (no tocan el DOM) y corre carreras enteras con
-pilotos automáticos en unos segundos. Sale con código 1 si algo falla. No admite
+pilotos automáticos en unos segundos (hoy, ~3 s). Si las piezas de un circuito no
+cierran, ni arranca: lo dice `construirDePiezas` al importarlo. Sale con código 1 si algo falla. No admite
 argumentos: siempre corre las cuatro secciones enteras. Es `.mjs` a propósito: el
 `.htaccess` deniega `*.mjs` (y `*.md`, `pnyk.json`), así que no se publica; por lo
 mismo, un módulo que cargue el navegador tiene que ser `.js`. **Pásalo tras
-cualquier cambio en la física, la pista o las reglas.** Las secciones 1 y 2 corren en
-cada circuito de `CIRCUITOS`. Mide y comprueba:
+cualquier cambio en la física, la pista o las reglas.** Las secciones 1 a 3 corren en
+cada circuito de `CIRCUITOS`; las cifras de abajo son las de La horquilla (las de los
+demás, en `BITACORA.md`). Mide y comprueba:
 
 1. **El circuito**: cabe en el lienzo y dos tramos lejanos por la pista (> 300 px de `s`)
    nunca quedan a menos de un ancho + 40 px. Ningún punto del muro cae en la zona de otro
    tramo ni fuera del lienzo, y en todas partes hay al menos 14 px de grava más allá del
-   piano (hoy 15). El hueco del marcador no pisa el asfalto ni el piano.
+   piano (hoy 15). El hueco del marcador no pisa el asfalto ni el piano. Los dos tramos
+   de un cruce (`enCruce`, ±128 px de `s`) quedan exentos.
 2. **Decorado**, en los cuatro escenarios: es determinista, caben al menos 40 piezas y
    ninguna pieza, neumático, grada ni torre de iluminación pisa la pista, el marcador ni
    las bandas de texto; hay al menos 8 torres (hoy 20).
@@ -113,7 +118,11 @@ cada circuito de `CIRCUITOS`. Mide y comprueba:
    alguna vez y con la misma semilla repite la carrera. La mano devuelve siempre el coche
    a la `s` donde se salió, en ≤ 2,6 s (hoy ~1,4). Nada sale de la mesa ni es no finito,
    el progreso no retrocede, los carriles se separan < 8 % con el mismo piloto (hoy
-   1,7 %) y con el turno cambiado los coches se cambian de carril.
+   1,7 %; con una X, < 2 %) y con el turno cambiado los coches se cambian de carril.
+   Las medidas del piloto se toman con **cada coche solo** en la pista. Juntos, dos
+   coches iguales sin X ni cruces no chocan nunca; en cada X y cada cruce, lanzados con
+   21 desfases, chocan en alguno y nunca dos veces seguidas. Las curvas a tope incluyen
+   el peralte, la de derrape y los baches.
 4. **Idiomas**: los siete catálogos tienen las mismas claves.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
@@ -139,18 +148,23 @@ juego.js               bucle, escenas (portada/carrera/fin), teclado y punteros
                        (táctil). Único módulo que toca el DOM
 
 nucleo/geometria.js    geometría pura: proyección en segmento, redondear un polígono
-nucleo/circuito.js     de datos a pista: eje denso con `s`, proyectar(p, índice),
-                       puntoEn(s), y el borde y el muro de cada lado (para dibujar
-                       la pista y medir el decorado)
-nucleo/slot.js         el núcleo: carriles, el coche enganchado (s y velocidad),
-                       derrape, salirse, la mano, la carrera y formatearTiempo. Sin DOM
+nucleo/circuito.js     de vértices a pista, y completarCircuito(): eje denso con `s`,
+                       proyectar(p, índice), puntoEn(s), los cruces, y el borde y el
+                       muro de cada lado (para dibujar la pista y medir el decorado)
+nucleo/piezas.js       construirDePiezas(): de la lista de piezas al eje, con su
+                       efecto y el factor del carril (la X) en cada punto
+nucleo/slot.js         el núcleo: carriles (lateralEn), el coche enganchado (s y
+                       velocidad), efectos de pieza, derrape, salirse, el choque, la
+                       mano, la carrera y formatearTiempo. Sin DOM
 nucleo/piloto.js       la CPU, la exhibición y el instrumento del arnés: decidirSlot()
 nucleo/decorado.js     DÓNDE va cada pieza del decorado: PRNG propio, cabe(),
                        barreras de neumáticos. No dibuja
 nucleo/lienzo.js       `ctx` (enlace vivo), primitivas y capas fuera de pantalla
 
-circuitos/indice.js    CIRCUITOS: la lista
-circuitos/primero.js   «La horquilla», como datos (heredada de Race Panic)
+circuitos/indice.js    CIRCUITOS: la lista, en el orden de la portada (tecla C)
+circuitos/primero.js   «La horquilla», por vértices (heredada de Race Panic)
+circuitos/ocho.js      «El ocho», de piezas: cruce, peralte, chicane, derrape
+circuitos/nudo.js      «El nudo», de piezas: X, baches, horquilla, derrape, chicane
 dibujo.js              el mundo: suelo, decorado y pista (en una capa que se pinta
                        una vez), carriles y coches
 particulas.js          chispas, humo y confeti. Presentación: aquí sí vale Math.random()
@@ -186,8 +200,15 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   salió, parado.
 - **Las vueltas son progreso**, no cruces de línea: la `s` desenrollada.
 - **Lo que pasa en un fotograma se acumula de todos sus subpasos** (`carrera.eventos`).
-- **Un circuito se declara, no se dibuja**: hoy, vértices con radio, meta, sectores e
-  interior (`circuito.js`). Los de piezas vendrán con su propio módulo.
+- **Un circuito se declara, no se dibuja**: por vértices con radio (`circuito.js`) o por
+  piezas desde la meta (`piezas.js`), con sectores e interior. Las piezas tienen que
+  cerrar; la última, recta (la parrilla sale 30 px detrás de la meta). El cruce no se
+  declara: se encuentra.
+- **El carril lo da la pieza**: el desplazamiento real es `lateralEn(circuito, lateral,
+  s)`, nunca `slot.lateral` a secas (en la X cambia de lado, y con un número impar de
+  X, cada vuelta). Lo que agarra cada punto, `radioAgarre(punto, lateral)`.
+- **Chocar es empezar a tocarse acercándose**: así la mano puede dejar dos coches uno
+  encima del otro sin que vuelvan a chocar en bucle.
 - **Lo que publica un push no puede romper con la caché vieja.** Los módulos ES no
   llevan `?v=`: el `.htaccess` hace revalidar HTML, JS y CSS (`no-cache`). Una
   exportación nueva va mejor en un módulo nuevo que en uno que el móvil ya tenga.

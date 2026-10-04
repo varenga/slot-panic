@@ -224,3 +224,60 @@ En **https://slot.pnyk.es**: repo `github.com/varenga/slot-panic`, Plesk desplie
 `master` con webhook. Ficha en pnyk.es (`/slot-panic/`, saga Panic, número 6) y
 `comun` 1.2.2 propagado: el pie de Asteroids, Horizon, Orbit, Gravity y Race Panic ya
 enlaza a Slot Panic. `pnyk.json` pasa a `"web": true`. Falta GA4 (TODO › Fase 1).
+
+## Circuitos de piezas: El ocho y El nudo (04/10/2026, rama `05-circuitos-de-piezas`, v0.2.0)
+
+> Primera tarea de la Fase 2. El usuario pidió piezas nuevas («la típica en X, cruce,
+> chicane, curva de derrape… todas las que se te ocurran») y dos circuitos con ellas.
+> Decidió: dos coches que coinciden en un cruce **chocan y se salen**; la pista se sigue
+> viendo como la de Race Panic, con una marca por pieza (la estética de juguete va aparte).
+
+- **`nucleo/piezas.js`**: un circuito de piezas se declara desde la meta, pieza tras
+  pieza, y se recorre con una tortuga. Los arcos salen exactos, con su radio. Si no
+  cierra (0,5 px, 0,1°), `construirDePiezas` lanza un error: el arnés ni arranca.
+  `construirCircuito` se partió para compartir `completarCircuito` (s, muros, sectores).
+- **Las piezas**: recta, curva, `x` (los carriles se cruzan y cada coche pasa al otro),
+  `chicane` (S de tres arcos, giro/−2·giro/giro, que sale en la misma línea) y tres
+  efectos: `peralte` (agarre ×1,4), `derrape` y `baches` (agarran como una curva de
+  radio 330²/800: por encima de 330 px/s derrapan). El cruce del ocho no es pieza:
+  `circuito.js` encuentra solo dónde se corta el eje (`circuito.cruces`), y ahí ni los
+  muros se recortan ni el arnés exige separación (`enCruce`, ±128 px de s).
+- **El carril según `s`**: `punto.carril` va de 1 a −1 en la X (un coseno, sin
+  esquinas). Con un número impar de X, cada vuelta empieza por el otro carril
+  (`lateralEn`). El coche sigue teniendo solo `s` y velocidad.
+- **El choque**: dos coches en el carril a menos de 14 px (`CHOQUE`; en paralelo van a
+  30) salen los dos, cada uno hacia su lado. Solo cuenta **al empezar a tocarse y si se
+  acercan**: la mano puede dejar uno encima del otro, parados, y al arrancar no vuelven
+  a chocar. Así la mano sigue devolviendo cada coche a la `s` donde se salió.
+- **La curva de derrape** costó: con el límite para salirse más alto, se pasaba a
+  tope, porque el propio derrape frena el coche hasta que agarra (pasaba también con
+  el límite ×1,35 y radio 192). Se quedó con el límite de siempre, el derrape que se
+  acumula al 40 % y frena al 50 %, y radio 95: sale un 2-3 % más rápida y la cola se
+  va más (×1,6). Poca diferencia en números: el playtest dirá si se nota.
+- **La CPU** mira el carril que llevará en cada punto y lo que agarra la pieza; trata
+  los baches como una curva. No esquiva los choques, como en el juguete.
+- **El arnés** corre la sección 3 en los tres circuitos, con cada coche **solo** en la
+  pista (si no, el choque ensucia «el prudente no se sale»), y añade: dos coches iguales
+  sin X ni cruces no chocan; en cada encuentro (X o cruce), lanzados con 21 desfases,
+  chocan en alguno y nunca dos veces seguidas; con una X, los carriles quedan a < 2 %.
+- **La portada** tiene una opción más, **CIRCUITO** (tecla C), que se recuerda. Marcas:
+  rayas claras por fuera del peralte, arcén gris por fuera de la curva de derrape,
+  franjas oscuras en los baches, y las juntas en los límites de las piezas. Un golpe
+  sordo (`sfxChoque`) y chispas en el punto del choque.
+
+### Medidas (arnés, 5 vueltas)
+
+| | La horquilla | El ocho | El nudo |
+|---|---|---|---|
+| Eje | 3627 px | 2945 px | 3623 px |
+| Vuelta del prudente | 13,5 s | 10,4 s | 12,4 s |
+| Entrar derrapando gana | 11 % | 12 % | 11 % |
+| A fondo pierde | 90 % | 40 % | 32 % |
+| CPU, por vuelta, tras el mejor | 1,18 s | 0,76 s | 0,77 s |
+| Entre carriles | 1,7 % | 1,6 % | 0,3 % (la X) |
+| Choques en el encuentro (21 desfases) | — | 8 | 6 |
+
+- La CPU contra el mejor piloto, juntos: 0 choques en seis carreras en cada circuito.
+  Chocar pide llegar a la vez: es raro, y por eso asusta.
+- El hueco del marcador del ocho queda a 3 px de la pista: cabe justo.
+

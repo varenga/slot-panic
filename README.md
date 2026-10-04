@@ -10,8 +10,9 @@ Hermano de **Race Panic** (`race.pnyk.es`), del que nació como modo de juego.
 
 # Estado actual
 
-Prototipo publicado en **https://slot.pnyk.es**: La horquilla con dos carriles, cinco vueltas, uno contra
-una CPU que falla o dos en la misma pantalla, cuatro escenarios de día, al atardecer o
+Prototipo publicado en **https://slot.pnyk.es**: tres circuitos (La horquilla, y El ocho y
+El nudo, de piezas: X, cruce, chicane, peralte, curva de derrape y baches) con dos
+carriles, cinco vueltas, uno contra una CPU que falla o dos en la misma pantalla, cuatro escenarios de día, al atardecer o
 de noche, siete idiomas, sonido, teclado y táctil.
 
 - `TODO.md` — lo pendiente y el alcance de la fase en curso.
@@ -48,8 +49,8 @@ local más sencillo posible: uno aprieta a la izquierda y otro a la derecha.
 
 # Lo que se quiere
 
-- **Circuitos de piezas** (recta, curva de 45°, de 90°…) y un **constructor** para el
-  jugador.
+- **Circuitos de piezas** (recta, curva, X, cruce, chicane, peralte, derrape, baches;
+  ya hay dos) y un **constructor** para el jugador.
 - **Sus coches** y una **estética de juguete**: piezas negras con juntas, trencillas
   plateadas, una mesa o el suelo de un salón.
 - Cambio de carril y cruces como en los slot digitales.
@@ -63,7 +64,7 @@ Detalle y más, en `IDEAS.md`.
 | J1 | W, A, Mayús izquierda o Espacio | mitad izquierda |
 | J2 | ↑, L, Mayús derecha o 0 del teclado numérico | mitad derecha |
 
-En la portada: Enter empieza, M sonido, L idioma, E escenario, H hora. En carrera: R
+En la portada: Enter empieza, C circuito, M sonido, L idioma, E escenario, H hora. En carrera: R
 repite y Esc vuelve al menú.
 
 # Técnica

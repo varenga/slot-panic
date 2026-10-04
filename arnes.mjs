@@ -7,13 +7,16 @@
  * 1 si alguna aserción falla.
  *
  *   node arnes.mjs
+ *
+ * Si las piezas de un circuito no cierran, ni siquiera arranca: lo dice
+ * `construirDePiezas` al importarlo.
  */
 
 import {
   ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { CIRCUITOS } from './circuitos/indice.js';
-import { PRIMERO } from './circuitos/primero.js';
+import { enCruce } from './nucleo/circuito.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
 import {
   avanzarSlot, CARRILES, crearCarreraSlot, formatearTiempo, largoCarril, mejorVueltaSlot, trazadoCarril
@@ -37,7 +40,8 @@ function comprobar(condicion, mensaje) {
 for (const circuito of CIRCUITOS) {
   // --- 1. El circuito ----------------------------------------------------------
 
-  console.log(`\nCircuito «${circuito.clave}»: ${circuito.largo.toFixed(0)} px de eje, ${circuito.eje.length} puntos`);
+  console.log(`\nCircuito «${circuito.clave}»: ${circuito.largo.toFixed(0)} px de eje, ${circuito.eje.length} puntos, ` +
+    `${circuito.cruces.length} cruces y ${circuito.cambiosCarril} X`);
   {
     /*
      * Ningún tramo del eje se acerca a otro que esté lejos por la pista: si dos
@@ -52,7 +56,8 @@ for (const circuito of CIRCUITOS) {
     for (let i = 0; i < eje.length; i++) {
       for (let j = i + 1; j < eje.length; j++) {
         const porPista = Math.min(eje[j].s - eje[i].s, largo - (eje[j].s - eje[i].s));
-        if (porPista < LEJOS) continue;
+        // En un cruce los dos tramos se pisan: es lo que es.
+        if (porPista < LEJOS || enCruce(circuito, eje[i].s, eje[j].s)) continue;
         minimo = Math.min(minimo, Math.hypot(eje[i].x - eje[j].x, eje[i].y - eje[j].y));
       }
     }
@@ -75,7 +80,7 @@ for (const circuito of CIRCUITOS) {
         // Dentro de la zona de un tramo lejano: a menos de su muro, por su lado.
         const dentro = eje.some((q) => {
           const porPista = Math.min(Math.abs(q.s - p.s), largo - Math.abs(q.s - p.s));
-          if (porPista < LEJOS) return false;
+          if (porPista < LEJOS || enCruce(circuito, p.s, q.s)) return false;
           const dx = w.x - q.x, dy = w.y - q.y;
           const ladoQ = -dx * Math.sin(q.angulo) + dy * Math.cos(q.angulo) < 0 ? 0 : 1;
           return Math.hypot(dx, dy) < q.muro[ladoQ] - 1;
@@ -159,19 +164,24 @@ for (const circuito of CIRCUITOS) {
 // --- 3. La carrera de slot -----------------------------------------------------
 
 /**
- * Una carrera de Slot con un piloto por carril, hasta que terminan los
- * dos (aunque el primero ya haya ganado). Vigila en cada paso lo que se puede
- * romper sin que se note: coordenadas, mesa, progreso y la mano.
+ * Una carrera de Slot con un piloto por coche, hasta que terminan todos
+ * (aunque el primero ya haya ganado). Vigila en cada paso lo que se puede
+ * romper sin que se note: coordenadas, mesa, progreso y la mano; y cuenta los
+ * choques, y si alguno se repite sin que los coches hayan avanzado.
  */
-function correrSlot(opciones, { limite = 400 } = {}) {
-  const carrera = crearCarreraSlot(PRIMERO, ['#f00', '#00f']);
+function correrUna(circuito, opciones, turno, limite) {
+  const carrera = crearCarreraSlot(circuito, opciones.map((_, i) => ['#f00', '#00f'][i]), turno);
   const pilotos = opciones.map((o) => crearPiloto(o));
-  const medida = { noFinito: false, fueraDeMesa: false, retrocede: false, manoMax: 0, manos: [], recolocaLejos: 0 };
+  const medida = {
+    noFinito: false, fueraDeMesa: false, retrocede: false, manoMax: 0, manos: [], recolocaLejos: 0,
+    choques: 0, choqueRepetido: 0
+  };
   const salida = carrera.coches.map(() => null);
+  let ultimoChoque = null;
   let t = 0;
   while (carrera.coches.some((c) => c.terminado === null) && t < limite) {
     const antes = carrera.coches.map((c) => c.progreso);
-    avanzarSlot(carrera, carrera.coches.map((c, i) => decidirSlot(pilotos[i], c, PRIMERO)), DT);
+    avanzarSlot(carrera, carrera.coches.map((c, i) => decidirSlot(pilotos[i], c, circuito)), DT);
     t += DT;
     // Para medir los dos carriles, la carrera sigue tras el ganador.
     if (carrera.fase === 'fin') carrera.fase = 'carrera';
@@ -183,6 +193,13 @@ function correrSlot(opciones, { limite = 400 } = {}) {
     });
     for (const e of carrera.eventos) {
       const c = carrera.coches[e.coche];
+      if (e.tipo === 'choque') {
+        medida.choques++;
+        // Dos choques sin que ninguno de los dos haya avanzado 100 px: la mano los ha dejado chocando.
+        const progreso = carrera.coches.map((k) => k.progreso);
+        if (ultimoChoque && progreso.every((p, k) => p - ultimoChoque[k] < 100)) medida.choqueRepetido++;
+        ultimoChoque = progreso;
+      }
       if (e.tipo === 'sale') salida[e.coche] = { t, s: c.s };
       if (e.tipo === 'clac' && salida[e.coche]) {
         const dura = t - salida[e.coche].t;
@@ -196,27 +213,58 @@ function correrSlot(opciones, { limite = 400 } = {}) {
   return { carrera, ...medida };
 }
 
-console.log('\nSlot');
-{
+/*
+ * Lo que mide al piloto, cada coche solo en la pista y por su carril (el
+ * primero por el carril 0 y el segundo por el 1): así los choques no
+ * ensucian las medidas. `juntos` los pone a los dos en la misma carrera.
+ */
+function correrSlot(circuito, opciones, { limite = 400, juntos = false } = {}) {
+  if (juntos) return correrUna(circuito, opciones, 0, limite);
+  const partes = opciones.map((o, i) => correrUna(circuito, [o], i, limite));
+  return {
+    carrera: { coches: partes.map((p) => p.carrera.coches[0]) },
+    noFinito: partes.some((p) => p.noFinito),
+    fueraDeMesa: partes.some((p) => p.fueraDeMesa),
+    retrocede: partes.some((p) => p.retrocede),
+    manos: partes.flatMap((p) => p.manos),
+    manoMax: Math.max(...partes.map((p) => p.manoMax)),
+    recolocaLejos: partes.reduce((n, p) => n + p.recolocaLejos, 0),
+    choques: 0,
+    choqueRepetido: 0
+  };
+}
+
+/** Un coche solo, por el carril `turno`, ya en carrera: para las pruebas que lo colocan a mano. */
+function cocheSolo(circuito, turno) {
+  const c = crearCarreraSlot(circuito, ['#f00'], turno);
+  c.fase = 'carrera';
+  return c;
+}
+
+/** Lo que limita la velocidad: una curva o una recta de baches. */
+const limita = (p) => p.radio !== Infinity || p.efecto === 'baches';
+
+for (const circuito of CIRCUITOS) {
+  console.log(`\nSlot en «${circuito.clave}»`);
   // Los carriles van por el asfalto, caben en el lienzo y no se acercan a otro tramo.
   const margen = ANCHO_PISTA / 2 - Math.max(...CARRILES.map(Math.abs)) - ANCHO_COCHE / 2;
   comprobar(margen >= 4, `un coche en el carril se queda a ${margen} px del borde del asfalto`);
-  const n = PRIMERO.eje.length;
+  const n = circuito.eje.length;
   let cercania = Infinity, fuera = 0;
-  const trazados = CARRILES.map((l) => trazadoCarril(PRIMERO, l));
+  const trazados = CARRILES.map((l) => trazadoCarril(circuito, l));
   for (const trazado of trazados) {
     for (const p of trazado) if (p.x < LARGO_COCHE || p.x > ANCHO - LARGO_COCHE || p.y < LARGO_COCHE || p.y > ALTO - LARGO_COCHE) fuera++;
   }
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
-      const d = Math.abs(PRIMERO.eje[i].s - PRIMERO.eje[j].s);
-      if (Math.min(d, PRIMERO.largo - d) < 300) continue;
+      const d = Math.abs(circuito.eje[i].s - circuito.eje[j].s);
+      if (Math.min(d, circuito.largo - d) < 300 || enCruce(circuito, circuito.eje[i].s, circuito.eje[j].s)) continue;
       for (const a of trazados) for (const b of trazados) {
         cercania = Math.min(cercania, Math.hypot(a[i].x - b[j].x, a[i].y - b[j].y));
       }
     }
   }
-  const largos = CARRILES.map((l) => largoCarril(PRIMERO, l));
+  const largos = CARRILES.map((l) => largoCarril(circuito, l));
   console.log(`  carriles de ${largos.map((l) => l.toFixed(0)).join(' y ')} px; tramos lejanos a ${cercania.toFixed(0)} px como poco`);
   comprobar(fuera === 0, `${fuera} puntos de los carriles caen al borde del lienzo`);
   comprobar(cercania > 60, `dos tramos lejanos de carril quedan a ${cercania.toFixed(0)} px`);
@@ -226,14 +274,14 @@ console.log('\nSlot');
    * playtest, pasado el agarre se derrapa antes de salirse: el prudente no
    * pasa del agarre (×1), el fino entra derrapando y el que va a fondo se sale.
    */
-  const prudente = correrSlot([{ prudencia: 1 }, { prudencia: 1 }]);
+  const prudente = correrSlot(circuito, [{ prudencia: 1 }, { prudencia: 1 }]);
   let fino = null;
   for (const prudencia of [1.2, 1.4, 1.6, 1.8]) {
-    const r = correrSlot([{ prudencia }, { prudencia }]);
+    const r = correrSlot(circuito, [{ prudencia }, { prudencia }]);
     const mejor = Math.min(...r.carrera.coches.map((c) => c.terminado ?? Infinity));
     if (!fino || mejor < fino.mejor) fino = { ...r, mejor, prudencia };
   }
-  const aFondo = correrSlot([{ aFondo: true }, { aFondo: true }]);
+  const aFondo = correrSlot(circuito, [{ aFondo: true }, { aFondo: true }]);
   const resumen = (r) => r.carrera.coches.map((c) =>
     `${c.terminado?.toFixed(2)} s, vuelta ${mejorVueltaSlot(c)?.toFixed(2)}, ${c.salidas} salidas`).join(' | ');
   console.log(`  prudente (x1):          ${resumen(prudente)}`);
@@ -269,16 +317,15 @@ console.log('\nSlot');
    * esa curva. En el primer playtest se salía en la mitad de los arranques.
    */
   let arranques = 0, salenArrancando = 0;
-  for (let s0 = 0; s0 < PRIMERO.largo; s0 += 20) {
-    if (PRIMERO.puntoEn(s0).radio === Infinity) continue;
+  for (let s0 = 0; s0 < circuito.largo; s0 += 20) {
+    if (!limita(circuito.eje[circuito.puntoEn(s0).indice])) continue;
     for (const i of [0, 1]) {
-      const c = crearCarreraSlot(PRIMERO, ['#f00', '#00f']);
-      c.fase = 'carrera';
-      const slot = c.coches[i];
+      const c = cocheSolo(circuito, i);
+      const [slot] = c.coches;
       slot.s = s0;
       for (let k = 0; k < 120 && slot.s - s0 < 150; k++) {
-        avanzarSlot(c, [{ acelerar: true }, { acelerar: true }], DT);
-        if (c.eventos.some((e) => e.tipo === 'sale' && e.coche === i)) { salenArrancando++; break; }
+        avanzarSlot(c, [{ acelerar: true }], DT);
+        if (c.eventos.some((e) => e.tipo === 'sale')) { salenArrancando++; break; }
       }
       arranques++;
     }
@@ -288,14 +335,13 @@ console.log('\nSlot');
 
   // A toques, la potencia se queda a medias: la velocidad se puede dosificar.
   {
-    const c = crearCarreraSlot(PRIMERO, ['#f00', '#00f']);
-    c.fase = 'carrera';
-    const slot = c.coches[0];
+    const c = cocheSolo(circuito, 0);
+    const [slot] = c.coches;
     let menor = Infinity, mayor = 0;
     for (let k = 0; k < 360; k++) {
       // Medio tiempo pulsado, a cinco toques por segundo, en la recta de meta.
       slot.s = 30;
-      avanzarSlot(c, [{ acelerar: k % 12 < 6 }, null], DT);
+      avanzarSlot(c, [{ acelerar: k % 12 < 6 }], DT);
       if (k >= 240) { menor = Math.min(menor, slot.v); mayor = Math.max(mayor, slot.v); }
     }
     const tope = VELOCIDAD_SLOT;
@@ -312,17 +358,16 @@ console.log('\nSlot');
    */
   {
     const salidasHumano = [0, 1].map((turno) => {
-      const c = crearCarreraSlot(PRIMERO, ['#f00', '#00f'], turno);
-      c.fase = 'carrera';
+      const c = cocheSolo(circuito, turno);
       const piloto = crearPiloto({ prudencia: 1.2 });
       const cola = [];
       for (let t = 0; c.coches[0].completadas < VUELTAS_SLOT && t < 300; t += DT) {
-        cola.push(decidirSlot(piloto, c.coches[0], PRIMERO));
-        avanzarSlot(c, [cola.length > Math.round(0.25 / DT) ? cola.shift() : null, null], DT);
+        cola.push(decidirSlot(piloto, c.coches[0], circuito));
+        avanzarSlot(c, [cola.length > Math.round(0.25 / DT) ? cola.shift() : null], DT);
       }
       return c.coches[0].salidas;
     });
-    console.log(`  un humano que reacciona 0,25 s tarde se sale ${salidasHumano.join(' y ')} veces (carril de dentro y de fuera)`);
+    console.log(`  un humano que reacciona 0,25 s tarde se sale ${salidasHumano.join(' y ')} veces (carril 0 y 1)`);
     comprobar(salidasHumano.every((n) => n === 0), `un humano que reacciona tarde se sale ${salidasHumano.join(' y ')} veces`);
   }
 
@@ -335,13 +380,13 @@ console.log('\nSlot');
     const vueltas = [], salidas = [];
     let repetida = null;
     for (let semilla = 1; semilla <= 6; semilla++) {
-      const r = correrSlot([{ ...CPU_SLOT, semilla }, { ...CPU_SLOT, semilla }]);
+      const r = correrSlot(circuito, [{ ...CPU_SLOT, semilla }, { ...CPU_SLOT, semilla }]);
       const [c] = r.carrera.coches;
       vueltas.push(c.terminado / VUELTAS_SLOT);
       salidas.push(c.salidas);
       if (semilla === 1) repetida = c.terminado;
     }
-    const otra = correrSlot([{ ...CPU_SLOT, semilla: 1 }, { ...CPU_SLOT, semilla: 1 }]).carrera.coches[0].terminado;
+    const otra = correrSlot(circuito, [{ ...CPU_SLOT, semilla: 1 }, { ...CPU_SLOT, semilla: 1 }]).carrera.coches[0].terminado;
     const media = vueltas.reduce((a, b) => a + b, 0) / vueltas.length;
     const margen = media - fino.mejor / VUELTAS_SLOT;
     console.log(`  la CPU da vueltas de ${media.toFixed(2)} s de media, ${margen.toFixed(2)} s más que el mejor piloto, y se sale ${salidas.join(', ')} veces en seis carreras`);
@@ -349,42 +394,95 @@ console.log('\nSlot');
     comprobar(margen < 1.4, `la CPU deja ${margen.toFixed(2)} s por vuelta al mejor piloto: es fácil`);
     comprobar(salidas.some((n) => n > 0), 'la CPU no se equivoca nunca');
     comprobar(otra === repetida, 'la CPU con la misma semilla no repite la carrera');
+
+    // Y juntos en la pista, la CPU contra el mejor piloto: cuántas veces chocan.
+    const choques = [1, 2, 3, 4, 5, 6].map((semilla) =>
+      correrSlot(circuito, [{ ...CPU_SLOT, semilla }, { prudencia: fino.prudencia }], { juntos: true }).choques);
+    console.log(`  la CPU contra el mejor piloto, en la misma pista: ${choques.join(', ')} choques en seis carreras`);
   }
 
   /*
    * Ninguna curva se pasa a tope: entrando lanzado y sin soltar, se sale en
    * todas, por los dos carriles. En el tercer playtest, la curva de 80 por
-   * fuera (radio 95) se pasaba a fondo: el derrape la frenaba solo.
+   * fuera (radio 95) se pasaba a fondo: el derrape la frenaba solo. Cuentan
+   * también el peralte, la curva de derrape y los baches.
    */
   {
-    const inicios = PRIMERO.eje.filter((p, i, eje) => p.radio !== Infinity && eje[(i - 1 + eje.length) % eje.length].radio === Infinity);
+    const inicios = circuito.eje.filter((p, i, eje) => limita(p) && !limita(eje[(i - 1 + eje.length) % eje.length]));
     const pasan = [];
     for (const p of inicios) {
       for (const k of [0, 1]) {
-        const c = crearCarreraSlot(PRIMERO, ['#f00', '#00f']);
-        c.fase = 'carrera';
-        const slot = c.coches[k];
+        const c = cocheSolo(circuito, k);
+        const [slot] = c.coches;
         Object.assign(slot, { s: p.s - 40, v: VELOCIDAD_SLOT, potencia: 1 });
         let sale = false;
         for (let i = 0; i < 90 && !sale; i++) {
-          avanzarSlot(c, [{ acelerar: true }, { acelerar: true }], DT);
-          sale = c.eventos.some((e) => e.tipo === 'sale' && e.coche === k);
+          avanzarSlot(c, [{ acelerar: true }], DT);
+          sale = c.eventos.some((e) => e.tipo === 'sale');
         }
-        if (!sale) pasan.push(`la de ${p.radio} por el carril ${slot.lateral > 0 ? '+' : '-'}`);
+        const nombre = p.efecto === 'baches' ? 'los baches' : `la de ${p.radio}${p.efecto ? ' (' + p.efecto + ')' : ''}`;
+        if (!sale) pasan.push(`${nombre} por el carril ${k}`);
       }
     }
     console.log(`  a tope contra las ${inicios.length} curvas, por los dos carriles: se pasan ${pasan.length}`);
     comprobar(pasan.length === 0, `se pasan a tope ${pasan.join(', ')}`);
   }
 
-  // Los carriles no son iguales, por eso se cambian en cada carrera.
+  /*
+   * Los carriles no son iguales, por eso se cambian en cada carrera. Con una
+   * X, cada coche corre la mitad de las vueltas por cada uno: casi iguales.
+   */
   const [t1, t2] = prudente.carrera.coches.map((c) => c.terminado);
   const desigualdad = Math.abs(t1 - t2) / Math.min(t1, t2);
   console.log(`  entre carriles, con el mismo piloto: ${(desigualdad * 100).toFixed(1)} % (se cambian en cada carrera)`);
   comprobar(desigualdad < 0.08, `un carril saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
-  const cambiada = crearCarreraSlot(PRIMERO, ['#f00', '#00f'], 1);
+  if (circuito.cambiosCarril % 2) comprobar(desigualdad < 0.02, `con una X, un carril aún saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
+  const cambiada = crearCarreraSlot(circuito, ['#f00', '#00f'], 1);
   comprobar(cambiada.coches[0].lateral === CARRILES[1] && cambiada.coches[1].lateral === CARRILES[0],
     'con el turno cambiado los coches no se cambian de carril');
+
+  /*
+   * Los choques. En paralelo, dos coches no se tocan nunca: con el mismo piloto
+   * van juntos toda la carrera y sin X ni cruces no chocan. En cada X y cada cruce, dos coches que llegan a la vez chocan, y una
+   * vez devueltos por la mano no vuelven a chocar sin haber avanzado.
+   */
+  {
+    const juntos = correrSlot(circuito, [{ prudencia: 1 }, { prudencia: 1 }], { juntos: true });
+    const completa = juntos.carrera.coches.every((c) => c.vueltas.length === VUELTAS_SLOT);
+    console.log(`  dos coches iguales en la misma pista: ${juntos.choques} choques`);
+    // Con una X pueden chocar (si llegan a la vez); sin X ni cruces, nunca.
+    if (!circuito.cambiosCarril && !circuito.cruces.length) comprobar(juntos.choques === 0, `dos coches iguales chocan ${juntos.choques} veces sin X ni cruces`);
+    comprobar(completa, 'dos coches juntos no terminan la carrera');
+    comprobar(juntos.choqueRepetido === 0, `la mano deja dos coches chocando ${juntos.choqueRepetido} veces`);
+
+    // Los encuentros: cada cruce (dos tramos) y cada X (el mismo tramo).
+    const encuentros = [
+      ...circuito.cruces.map((c) => c.s),
+      ...circuito.eje.filter((p, i, eje) => p.tipo === 'x' && eje[(i - 1 + eje.length) % eje.length].tipo !== 'x')
+        .map((p) => [p.s, p.s])
+    ];
+    for (const [sa, sb] of encuentros) {
+      let chocan = 0, repetidos = 0;
+      // Los dos lanzados a la misma velocidad, el segundo algo adelantado o retrasado.
+      for (let desfase = -40; desfase <= 40; desfase += 4) {
+        const c = crearCarreraSlot(circuito, ['#f00', '#00f']);
+        c.fase = 'carrera';
+        c.coches[0].s = sa - 150;
+        c.coches[1].s = sb - 150 + desfase;
+        for (const slot of c.coches) Object.assign(slot, { v: 250, potencia: 250 / VELOCIDAD_SLOT });
+        let veces = 0;
+        for (let k = 0; k < 4 / DT; k++) {
+          avanzarSlot(c, c.coches.map((slot) => ({ acelerar: slot.v < 250 })), DT);
+          veces += c.eventos.filter((e) => e.tipo === 'choque').length;
+        }
+        if (veces) chocan++;
+        if (veces > 1) repetidos++;
+      }
+      console.log(`  en el encuentro de s ${sa.toFixed(0)} y ${sb.toFixed(0)}: chocan en ${chocan} de 21 desfases`);
+      comprobar(chocan > 0, `dos coches que llegan a la vez al encuentro de s ${sa.toFixed(0)} no chocan`);
+      comprobar(repetidos === 0, `en el encuentro de s ${sa.toFixed(0)} chocan dos veces seguidas ${repetidos} veces`);
+    }
+  }
 }
 
 // --- 4. Los idiomas -----------------------------------------------------------

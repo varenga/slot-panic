@@ -12,7 +12,7 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_PIANO, ANCHO_PISTA, ESCAPATORIA, ESCAPATORIA_CURVA, PASO_EJE, PENDIENTE_MURO,
+  ALTO, ANCHO, ANCHO_PIANO, ANCHO_PISTA, ESCAPATORIA, ESCAPATORIA_CURVA, ESCAPATORIA_DERRAPE, PASO_EJE, PENDIENTE_MURO,
   VENTANA_PROYECCION
 } from '../config.js';
 import { distancia, proyectarEnSegmento, redondearPoligono } from './geometria.js';
@@ -21,6 +21,11 @@ const LEJOS = 300;              // px de pista a partir de los que otro punto de
 const HOLGURA_LIENZO = 2;       // px entre el muro y el borde del lienzo
 const HOLGURA_GRADA = 8;        // px entre el muro y una grada
 const RADIO_PIANO_INTERIOR = 3; // px que el piano interior deja hasta el centro de la curva
+/*
+ * px de pista, a cada lado de un cruce, en que los dos tramos se pisan sin
+ * que eso sea invadir: más allá, el otro tramo queda a más de un ancho + 40.
+ */
+export const VENTANA_CRUCE = 128;
 
 export function construirCircuito(datos) {
   const crudo = redondearPoligono(datos.vertices, PASO_EJE);
@@ -28,14 +33,26 @@ export function construirCircuito(datos) {
   // El eje empieza en la meta: s = 0 es la línea de llegada.
   let inicio = 0;
   crudo.forEach((p, i) => { if (distancia(p, datos.meta) < distancia(crudo[inicio], datos.meta)) inicio = i; });
-  const eje = crudo.slice(inicio).concat(crudo.slice(0, inicio));
+  return completarCircuito(crudo.slice(inicio).concat(crudo.slice(0, inicio)), datos);
+}
 
+/*
+ * Lo común a todo circuito, se declare como se declare: un eje cerrado que
+ * empieza en la meta, con `radio` y `curva` en cada punto. Le pone `s`, el
+ * rumbo, los cruces (donde la pista pasa por encima de sí misma), los muros y
+ * los sectores. Lo usan `construirCircuito` y `construirDePiezas`
+ * (`piezas.js`).
+ */
+export function completarCircuito(eje, datos) {
   let s = 0;
   eje.forEach((p, i) => {
     const siguiente = eje[(i + 1) % eje.length];
     p.s = s;
     p.largo = distancia(p, siguiente);
     p.angulo = Math.atan2(siguiente.y - p.y, siguiente.x - p.x);
+    // Lo que añaden las piezas; un circuito de vértices no tiene nada de eso.
+    p.carril ??= 1;
+    p.efecto ??= null;
     s += p.largo;
   });
 
@@ -46,15 +63,58 @@ export function construirCircuito(datos) {
     eje,
     largo: s,
     ancho: datos.ancho || ANCHO_PISTA,
+    // Cuántas X tiene: con un número impar, cada coche cambia de carril cada vuelta.
+    cambiosCarril: datos.cambiosCarril || 0,
     proyectar: (p, indicePrevio) => proyectar(circuito, p, indicePrevio),
     puntoEn: (sBuscada) => puntoEn(circuito, sBuscada),
     muroCercano: (p, indicePrevio) => muroCercano(circuito, p, indicePrevio),
     bordeEn: (proyeccion) => bordeEn(circuito, proyeccion)
   };
+  circuito.cruces = buscarCruces(circuito);
   calcularMuros(circuito);
   // Dónde acaba cada sector, en s; el último, en la meta (una vuelta entera).
   circuito.sectores = (datos.sectores || []).map((p) => circuito.proyectar(p).s).concat(circuito.largo);
   return circuito;
+}
+
+/*
+ * Los cruces: los puntos donde el eje se corta a sí mismo, como el centro de
+ * un ocho. Cada uno, como el par de `s` de los dos tramos que se cortan.
+ */
+function buscarCruces(circuito) {
+  const { eje, largo } = circuito;
+  const n = eje.length;
+  const cruces = [];
+  for (let i = 0; i < n; i++) {
+    const a = eje[i], b = eje[(i + 1) % n];
+    for (let j = i + 2; j < n; j++) {
+      const d = eje[j].s - a.s;
+      if (Math.min(d, largo - d) < LEJOS) continue;
+      const c = eje[j], e = eje[(j + 1) % n];
+      const t = corte(a, b, c, e);
+      if (t) cruces.push({ s: [a.s + a.largo * t[0], c.s + c.largo * t[1]], x: a.x + (b.x - a.x) * t[0], y: a.y + (b.y - a.y) * t[0] });
+    }
+  }
+  return cruces;
+}
+
+/** Dónde se cortan los segmentos a→b y c→d, como fracción de cada uno; null si no se cortan. */
+function corte(a, b, c, d) {
+  const rx = b.x - a.x, ry = b.y - a.y, sx = d.x - c.x, sy = d.y - c.y;
+  const den = rx * sy - ry * sx;
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((c.x - a.x) * sy - (c.y - a.y) * sx) / den;
+  const u = ((c.x - a.x) * ry - (c.y - a.y) * rx) / den;
+  return t >= 0 && t < 1 && u >= 0 && u < 1 ? [t, u] : null;
+}
+
+/** ¿Están los puntos `s1` y `s2` del eje en los dos tramos de un mismo cruce? */
+export function enCruce(circuito, s1, s2) {
+  const cerca = (s, c) => {
+    const d = Math.abs(s - c);
+    return Math.min(d, circuito.largo - d) < VENTANA_CRUCE;
+  };
+  return circuito.cruces.some(({ s: [a, b] }) => (cerca(s1, a) && cerca(s2, b)) || (cerca(s1, b) && cerca(s2, a)));
 }
 
 /**
@@ -174,7 +234,7 @@ function calcularMuros(circuito) {
   // Lo que se quiere: el ancho de la escapatoria por fuera de las curvas se
   // extiende a los lados con la pendiente del muro.
   const quiere = eje.map((p) => [-1, 1].map((lado) =>
-    p.curva !== 0 && lado !== p.curva ? ESCAPATORIA_CURVA : ESCAPATORIA));
+    p.curva !== 0 && lado !== p.curva ? (p.efecto === 'derrape' ? ESCAPATORIA_DERRAPE : ESCAPATORIA_CURVA) : ESCAPATORIA));
   const deseado = eje.map((_, i) => [0, 1].map((k) => {
     let mayor = 0;
     for (let j = 0; j < n; j++) {
@@ -190,7 +250,7 @@ function calcularMuros(circuito) {
     let limite = deseado[i][k];
     const nx = -Math.sin(p.angulo) * lado, ny = Math.cos(p.angulo) * lado;
     for (let j = 0; j < n; j++) {
-      if (porPista(i, j) < LEJOS) continue;
+      if (porPista(i, j) < LEJOS || enCruce(circuito, p.s, eje[j].s)) continue;
       const dx = eje[j].x - p.x, dy = eje[j].y - p.y;
       if (dx * nx + dy * ny <= 0) continue;
       limite = Math.min(limite, Math.hypot(dx, dy) / 2 - 2);
