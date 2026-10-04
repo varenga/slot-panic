@@ -34,6 +34,17 @@ export const PASO_FISICA = 1 / 120; // s. El fotograma se trocea en pasos de est
 export const DEPURACION = typeof location !== 'undefined' &&
   /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
 
+/*
+ * ¿Dentro de la app de las tiendas? Capacitor deja `window.Capacitor` antes de
+ * que corra la página. Es el único sitio del juego que sabe que Capacitor
+ * existe (APP.md §5): el resto pregunta enApp(). En el navegador y en Node,
+ * false.
+ */
+export function enApp() {
+  const cap = typeof window !== 'undefined' ? window.Capacitor : null;
+  return Boolean(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+}
+
 // --- El coche -------------------------------------------------------------
 
 /*

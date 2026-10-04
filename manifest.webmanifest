@@ -1,0 +1,41 @@
+{
+  "id": "/",
+  "name": "Slot Panic",
+  "short_name": "Slot Panic",
+  "description": "Carreras de slot: solo apretar y soltar. Suelta antes de la curva.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#12141a",
+  "theme_color": "#12141a",
+  "categories": [
+    "games"
+  ],
+  "icons": [
+    {
+      "src": "iconos/icon-192.png?v=cc0e9575",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "iconos/icon-512.png?v=e9c91cf6",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "iconos/icon-maskable-192.png?v=4869011c",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "iconos/icon-maskable-512.png?v=84d281c1",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

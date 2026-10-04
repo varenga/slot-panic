@@ -13,23 +13,114 @@
   box-sizing: border-box;
 }
 
-html,
-body {
-  height: 100%;
-}
-
 body {
   background: var(--fondo);
   color: #e6e8ee;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Sin rebote elástico: el juego ocupa la primera pantalla entera y la prosa
+     para los buscadores va debajo. */
+  overscroll-behavior: none;
+}
+
+/* En la app no hay prosa ni pie: nada que desplazar. */
+.app,
+.app body {
+  height: 100%;
   overflow: hidden;
 }
 
+/* La primera pantalla, entera: 100dvh sigue a la barra de direcciones del
+   móvil (100vh es el respaldo). Las muescas, con las áreas seguras. Sin gestos
+   de scroll en toda ella: en horizontal en el móvil quedan bandas a los lados
+   del lienzo, y un dedo ahí no debe mover la página en mitad de una carrera. */
 #escena {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+  touch-action: none;
+}
+
+/* La prosa bajo el lienzo (la generan tools/gen-pages.mjs). */
+.info {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 72px;
+  color: #8b93a7;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.info h1 {
+  margin: 8px 0 12px;
+  color: #e6e8ee;
+  font-size: 1.4rem;
+}
+
+.info h2 {
+  margin: 24px 0 8px;
+  color: #e6e8ee;
+  font-size: 1.1rem;
+}
+
+.info ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.info b {
+  color: #c9ccd6;
+}
+
+.info table {
+  margin: 8px 0;
+  border-collapse: collapse;
+}
+
+.info th,
+.info td {
+  padding: 4px 14px 4px 8px;
+  border: 1px solid #2c313f;
+  text-align: left;
+}
+
+.info th {
+  color: #c9ccd6;
+}
+
+.info a {
+  color: #88aede;
+}
+
+kbd {
+  padding: 0 5px;
+  border: 1px solid #2c313f;
+  border-radius: 3px;
+  background: #1b1e26;
+  color: #e6e8ee;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.idiomas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  padding: 0 !important;
+  list-style: none;
+}
+
+.idiomas [aria-current] {
+  color: #e6e8ee;
+  font-weight: 600;
+}
+
+.legal {
+  margin-top: 24px;
+  font-size: 13px;
 }
 
 /* Resolución lógica fija (1280x720) escalada por CSS hasta lo que quepa, pero
@@ -92,6 +183,12 @@ body {
   font: inherit;
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* En la app el lienzo llena lo que haya, también en una tableta: el tope de
+   960 px es para no verlo enorme en un monitor. */
+.app #lienzo {
+  width: min(100vw, calc(100dvh * 16 / 9));
 }
 
 /* En vertical el lienzo 16:9 queda diminuto. El texto lo pone juego.js (i18n). */

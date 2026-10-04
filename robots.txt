@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /tools/
+Disallow: /app/
+
+Sitemap: https://slot.pnyk.es/sitemap.xml

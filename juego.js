@@ -6,7 +6,7 @@
  */
 
 import {
-  ALTO, ANCHO, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, ESPERA_REINICIO, LARGO_COCHE,
+  ALTO, ANCHO, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
   TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { estado, guardarCircuito, guardarEscenario, leerCircuito, leerEscenario } from './estado.js';
@@ -390,6 +390,30 @@ function bucle(tActual) {
   requestAnimationFrame(bucle);
 }
 
+/*
+ * El service worker (jugar sin red e instalar la PWA), solo en la web
+ * publicada: en la app los ficheros ya van dentro (y en iOS no funcionaría), y
+ * sirviendo en local seguiría dando lo de antes al recargar; ahí se prueba con
+ * ?sw. Sin él el juego funciona igual, solo no se abre sin red.
+ */
+function registrarServiceWorker() {
+  if (enApp() || !('serviceWorker' in navigator)) return;
+  if (location.protocol !== 'https:' && !new URLSearchParams(location.search).has('sw')) return;
+  const base = document.documentElement.dataset.base || './';
+  navigator.serviceWorker.register(base + 'service-worker.js').catch(() => { /* sin offline */ });
+}
+
+/*
+ * En la app sobran la prosa para los buscadores y el pie (enlaces fuera y
+ * «Cookies», cuando dentro no hay analítica): se quitan, y la página no hace
+ * scroll.
+ */
+function quitarLoDeLaWeb() {
+  if (!enApp()) return;
+  for (const selector of ['.info', '#pie']) document.querySelector(selector)?.remove();
+  document.documentElement.classList.add('app');
+}
+
 estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
@@ -397,7 +421,9 @@ const elegido = leerCircuito(CIRCUITOS.map((c) => c.clave));
 estado.circuito = CIRCUITOS.find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);
 iniciarLienzo(lienzo);
+quitarLoDeLaWeb();
 textosDelDocumento();
+registrarServiceWorker();
 cargarAnalitica();
 irAPortada();
 requestAnimationFrame(bucle);

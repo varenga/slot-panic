@@ -6,10 +6,11 @@
  * pnyk.es. Nunca cargar gtag.js directamente.
  *
  * No se inicia en DEPURACION (ni, por el propio aviso, en file:// o localhost):
- * cada prueba contaría como una visita. Mientras no haya consentimiento no
+ * cada prueba contaría como una visita. Ni en la app de las tiendas (APP.md
+ * §5.2): dentro no se recoge nada, y así lo declara la ficha. Mientras no haya consentimiento no
  * existe window.gtag y evento() no hace nada.
  */
-import { DEPURACION } from './config.js';
+import { DEPURACION, enApp } from './config.js';
 import { idiomaActual } from './i18n.js';
 
 // Vacío hasta que Slot Panic tenga su propiedad de GA4: sin ella no se inicia
@@ -17,7 +18,7 @@ import { idiomaActual } from './i18n.js';
 const GA4_ID = '';
 
 export function cargarAnalitica() {
-  if (!GA4_ID || DEPURACION || typeof window === 'undefined' || !window.PnykConsentimiento) return;
+  if (!GA4_ID || DEPURACION || enApp() || typeof window === 'undefined' || !window.PnykConsentimiento) return;
   window.PnykConsentimiento.iniciar({ ga4: GA4_ID, lang: idiomaActual().codigo });
 }
 

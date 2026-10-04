@@ -5,5 +5,5 @@
   "comun": "1.2.2",
   "langs": ["es", "en", "pt", "gl", "ca", "it", "fr"],
   "plataformas": { "web": true, "pwa": false, "android": false, "ios": false },
-  "generador": ""
+  "generador": "node tools/gen-pages.mjs"
 }
