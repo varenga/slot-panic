@@ -88,7 +88,10 @@ node arnes.mjs
 ```
 
 Importa los módulos reales del núcleo (no tocan el DOM) y corre carreras enteras con
-pilotos automáticos en unos segundos. Sale con código 1 si algo falla. **Pásalo tras
+pilotos automáticos en unos segundos. Sale con código 1 si algo falla. No admite
+argumentos: siempre corre las cuatro secciones enteras. Es `.mjs` a propósito: el
+`.htaccess` deniega `*.mjs` (y `*.md`, `pnyk.json`), así que no se publica; por lo
+mismo, un módulo que cargue el navegador tiene que ser `.js`. **Pásalo tras
 cualquier cambio en la física, la pista o las reglas.** Las secciones 1 y 2 corren en
 cada circuito de `CIRCUITOS`. Mide y comprueba:
 
