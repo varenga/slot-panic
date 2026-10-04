@@ -4,7 +4,7 @@
 // Red de proyectos PNYK: la usa comun/pie.js (también en vendor/pnyk/ de cada proyecto).
 
 const PNYK_RED = {
-  "version": "1.2.1",
+  "version": "1.2.2",
   "origin": "https://pnyk.es/",
   "proyectos": [
     {
@@ -86,6 +86,24 @@ const PNYK_RED = {
       "type": "VideoGame",
       "category": "saga",
       "sagaOrder": 5,
+      "family": "panic",
+      "langs": [
+        "es",
+        "en",
+        "pt",
+        "gl",
+        "ca",
+        "it",
+        "fr"
+      ]
+    },
+    {
+      "slug": "slot-panic",
+      "name": "Slot Panic",
+      "url": "https://slot.pnyk.es/",
+      "type": "VideoGame",
+      "category": "saga",
+      "sagaOrder": 6,
       "family": "panic",
       "langs": [
         "es",
