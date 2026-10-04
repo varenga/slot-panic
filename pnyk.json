@@ -4,6 +4,6 @@
   "etapa": "prototipo",
   "comun": "1.2.2",
   "langs": ["es", "en", "pt", "gl", "ca", "it", "fr"],
-  "plataformas": { "web": false, "pwa": false, "android": false, "ios": false },
+  "plataformas": { "web": true, "pwa": false, "android": false, "ios": false },
   "generador": ""
 }

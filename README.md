@@ -10,10 +10,9 @@ Hermano de **Race Panic** (`race.pnyk.es`), del que nació como modo de juego.
 
 # Estado actual
 
-Prototipo jugable en local: La horquilla con dos carriles, cinco vueltas, uno contra
+Prototipo publicado en **https://slot.pnyk.es**: La horquilla con dos carriles, cinco vueltas, uno contra
 una CPU que falla o dos en la misma pantalla, cuatro escenarios de día, al atardecer o
-de noche, siete idiomas, sonido, teclado y táctil. Aún sin publicar en
-`https://slot.pnyk.es`.
+de noche, siete idiomas, sonido, teclado y táctil.
 
 - `TODO.md` — lo pendiente y el alcance de la fase en curso.
 - `BITACORA.md` — lo ya hecho, con las medidas y el porqué de cada decisión.

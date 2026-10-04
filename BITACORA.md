@@ -215,3 +215,12 @@ De ~7.500 líneas a ~3.900.
 
 Y un favicon propio (`favicon.svg`): la U de La horquilla con sus dos carriles plateados
 y los coches rojo y azul. Es también el icono de su ficha en pnyk.es.
+
+---
+
+## Publicado (04/10/2026, v0.1.0)
+
+En **https://slot.pnyk.es**: repo `github.com/varenga/slot-panic`, Plesk despliega
+`master` con webhook. Ficha en pnyk.es (`/slot-panic/`, saga Panic, número 6) y
+`comun` 1.2.2 propagado: el pie de Asteroids, Horizon, Orbit, Gravity y Race Panic ya
+enlaza a Slot Panic. `pnyk.json` pasa a `"web": true`. Falta GA4 (TODO › Fase 1).

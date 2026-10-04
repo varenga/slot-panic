@@ -8,7 +8,7 @@ Prototipo jugable (v0.1.0): carreras de slot en *La horquilla*, dos coches engan
 carriles que se cambian en cada carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse y una mano que devuelve el coche; uno
 contra una CPU que falla o dos en la misma pantalla. Cuatro escenarios de día, al
-atardecer o de noche, siete idiomas, sonido, teclado y táctil. Aún sin publicar. Lo
+atardecer o de noche, siete idiomas, sonido, teclado y táctil. Publicado en https://slot.pnyk.es. Lo
 siguiente, en `TODO.md` › Fase 1.
 
 Nació como el modo Slot de **Race Panic** (`C:\html\roadpanic`, `race.pnyk.es`) y se
@@ -18,8 +18,8 @@ circuitos (de piezas), sus coches y un constructor de circuitos.
 **Nunca «Scalextric»**: es una marca registrada. Todo se llama **slot**: Slot Panic,
 `nucleo/slot.js`, `CPU_SLOT`… ni en el código, ni en los textos, ni en los documentos.
 
-Se publicará en **https://slot.pnyk.es** (`SITE_ORIGIN` en `config.js`). Cuando haya
-remoto, Plesk desplegará desde él: **un push a `master` publica**. A `master` solo llega
+Publicado en **https://slot.pnyk.es** (`SITE_ORIGIN` en `config.js`). El remoto es
+`github.com/varenga/slot-panic` y Plesk despliega desde él: **un push a `master` publica**. A `master` solo llega
 lo que ha pasado el arnés; el trabajo se hace en ramas.
 
 ## Documentación
