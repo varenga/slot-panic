@@ -91,7 +91,7 @@ corra la página.
   `bundleRelease`; sin ella el bundle sale sin firmar. **Ese directorio se copia a un sitio
   seguro**: si se pierde, hay que pedir a Play un reemplazo.
 * **Privacidad**: la común de PNYK, https://pnyk.es/privacidad/#juegos. La app no recoge
-  nada; la web, solo GA4 tras consentimiento cuando tenga su propiedad.
+  nada; la web, solo GA4 (`G-LWMERSV8WH`) tras consentimiento.
 * **Ficha**: `app/store/` (textos, respuestas de la consola, imagen destacada, capturas).
 
 ## 7. El flujo de una versión
@@ -132,7 +132,8 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
   `jarsigner -verify`; `versionCode` 1, `versionName` 0.3.0.
 * [x] Ficha: textos en castellano e inglés, capturas de los dos, imagen destacada y
   respuestas de la consola, en `app/store/`.
-* [ ] Slot Panic en la política común de pnyk.es (`privacy` en `pnyk/proyectos.js`).
+* [x] Slot Panic en la política común de pnyk.es (`privacy` en `pnyk/proyectos.js`, con
+  su GA4 `G-LWMERSV8WH` y sin récords). Falta publicar pnyk.es.
 * [ ] Crear la app en la consola de Play con el paquete `es.pnyk.slot`, rellenar la ficha
   y subir el bundle a pruebas internas, aceptando *Play App Signing*.
 * [ ] Pruebas internas, luego pública.

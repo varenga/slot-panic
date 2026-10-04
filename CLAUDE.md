@@ -71,8 +71,10 @@ y `textosDelDocumento()` de `juego.js` pinta con ellos la línea «Otros juegos�
 
 Google Analytics 4 se carga **solo tras consentimiento**: `index.html` carga el aviso común
 (`vendor/pnyk/consentimiento.js`) y `analitica.js` lo inicia; el botón «Cookies» (`#cookies`)
-lo vuelve a abrir. **Hoy `GA4_ID` está vacío** y no se inicia nada: Slot Panic necesita su
-propia propiedad (nunca la de Race Panic). Nunca se carga gtag.js directamente.
+lo vuelve a abrir. La propiedad es la propia de Slot Panic, **`G-LWMERSV8WH`** (nunca la de
+Race Panic), y la declara también su ficha de `pnyk/proyectos.js` (`privacy`), que es lo
+que la política común de pnyk.es enumera. Dentro de la app no se carga. Nunca se carga
+gtag.js directamente.
 
 ## Ejecución y verificación
 

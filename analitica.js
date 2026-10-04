@@ -13,9 +13,10 @@
 import { DEPURACION, enApp } from './config.js';
 import { idiomaActual } from './i18n.js';
 
-// Vacío hasta que Slot Panic tenga su propiedad de GA4: sin ella no se inicia
-// nada (ni el aviso de cookies). No reutilizar la de Race Panic.
-const GA4_ID = '';
+// La propiedad de GA4 de Slot Panic (nunca la de Race Panic). La declara
+// también su ficha de pnyk/proyectos.js (`privacy`), que es la que la política
+// común de pnyk.es enumera.
+const GA4_ID = 'G-LWMERSV8WH';
 
 export function cargarAnalitica() {
   if (!GA4_ID || DEPURACION || enApp() || typeof window === 'undefined' || !window.PnykConsentimiento) return;

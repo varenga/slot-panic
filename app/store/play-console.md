@@ -17,8 +17,8 @@ ya pasó por la consola.
 * **Sitio web**: https://slot.pnyk.es/
 * **Política de privacidad**: https://pnyk.es/privacidad/#juegos, la común de
   PNYK, sección «Juegos de PNYK» (convenciones PNYK: `privacy` en la ficha de
-  `pnyk/proyectos.js`). **Slot Panic tiene que figurar ahí antes de enviar**.
-  Las páginas del juego la enlazan desde su pie.
+  `pnyk/proyectos.js`), donde figura con su GA4 y sin récords. Las páginas
+  del juego la enlazan desde su pie.
 * **Capturas**: teléfono, 1920×1080 (16:9). La imagen destacada, 1024×500.
 
 ## Contenido de la app
@@ -42,7 +42,8 @@ ya pasó por la consola.
 
 **¿Recoge o comparte datos?** No. La app no tiene récords en servidor, ni
 cuentas, ni analítica: dentro de la app no se carga Google Analytics (APP.md
-§5.2), y no hace ninguna petición de red. Lo único que guarda son preferencias
+§5.2; la web sí lo usa, `G-LWMERSV8WH`, solo tras consentimiento, y no cuenta
+aquí), y no hace ninguna petición de red. Lo único que guarda son preferencias
 en el propio dispositivo (`localStorage`: idioma, sonido, circuito, escenario y
 hora), que nunca salen de él y que Play no considera «datos recogidos».
 
