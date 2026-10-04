@@ -2,7 +2,7 @@
   "slug": "slot-panic",
   "version": "0.1.0",
   "etapa": "prototipo",
-  "comun": "1.2.1",
+  "comun": "1.2.2",
   "langs": ["es", "en", "pt", "gl", "ca", "it", "fr"],
   "plataformas": { "web": false, "pwa": false, "android": false, "ios": false },
   "generador": ""
