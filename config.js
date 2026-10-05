@@ -67,11 +67,13 @@ export function enApp() {
 // --- El coche -------------------------------------------------------------
 
 /*
- * El de Race Panic: 22×11 lógicos, que en pantalla son unos 16×8 px, sobre
- * una pista de 64.
+ * 31×15,5 lógicos (en pantalla, unos 22×11 px) sobre una pista de 64: el de
+ * Race Panic (22×11) a ×1,4, que en la pista se perdía. Entre los dos coches
+ * en paralelo quedan 14 px, y 9 hasta el borde del asfalto. Los modelos
+ * (coches.js) se escalan con él; el CHOQUE también.
  */
-export const LARGO_COCHE = 22;
-export const ANCHO_COCHE = 11;
+export const LARGO_COCHE = 31;
+export const ANCHO_COCHE = 15.5;
 
 // --- Pianos y escapatorias ----------------------------------------------------
 
@@ -163,12 +165,14 @@ export const FUERA_MAXIMO = 2.2;        // s fuera, como mucho, antes de que lle
  * - Los BACHES sacuden la guía: en la recta agarra como en una curva, y por
  *   encima de VELOCIDAD_BACHES derrapa.
  * - El CHOQUE: dos coches en el carril a menos de esto (en una X o un cruce)
- *   salen los dos. Menos que los 2 · CARRIL de dos carriles en paralelo.
+ *   salen los dos. Menos que los 2 · CARRIL de dos carriles en paralelo, y
+ *   crece con el coche: se chocan cuando se ve que se tocan (era 14 con el
+ *   coche de 22×11).
  */
 export const AGARRE_PERALTE = 1.4;
 export const CURVA_DERRAPE = { acumula: 0.4, freno: 0.5, limite: 1, coleteo: 1.6 };
 export const VELOCIDAD_BACHES = 330;    // px/s
-export const CHOQUE = 14;               // px entre los centros de los dos coches
+export const CHOQUE = 20;               // px entre los centros de los dos coches
 /*
  * La CPU que lleva el carril que nadie toca (ver `crearPiloto`). Perfecta, «no
  * había quien le ganara» (0,7 s por vuelta del mejor piloto); con 0,95 ± 30 % y

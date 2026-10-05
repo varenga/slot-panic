@@ -198,7 +198,7 @@ circuitos/nudo.js      «El nudo», de piezas: X, baches, horquilla, derrape, ch
 dibujo.js              el mundo: suelo, decorado y pista (en una capa que se pinta
                        una vez), carriles y coches
 coches.js              la forma de cada modelo, vista desde arriba: silueta, ruedas
-                       y detalles. Cosmética: los choques siguen con la caja de 22×11
+                       y detalles. Cosmética: los choques siguen con la caja del coche
 particulas.js          chispas, humo y confeti. Presentación: aquí sí vale Math.random()
 luz.js                 la hora: día, atardecer (un velo) o noche (la pista a media
                        luz, las torres del decorado, faros y halos). Cosmética, y se

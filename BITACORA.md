@@ -423,4 +423,12 @@ app en la consola de Play.
 - El banco de pruebas, `_desarrollo/coches.html` (no se publica): pinta cada modelo a su
   tamaño real (escritorio, lupa ×1,2 y ×2,4) y lo amplía sin suavizar; `?noche`
   oscurece.
+- **Coches más grandes**: con todos los modelos ya dibujados, el coche se perdía en la
+  pista, también el de siempre. La caja pasa de 22×11 a **31×15,5** (×1,4): quedan 14 px
+  entre los dos coches en paralelo y 9 hasta el borde del asfalto (el arnés exige 4). Los
+  modelos se siguen dibujando en 22×11 y `coches.js` los escala. Se probó también ×1,6
+  (35×17,5): pasaba el arnés, pero en las curvas cerradas los dos coches iban demasiado
+  juntos. El **CHOQUE crece con el coche** (de 14 a 20 px entre centros), para que se
+  choquen cuando se ve que se tocan: en cada X o cruce pasan de chocar en 8 y 6 de 21
+  desfases a 12 y 9. Cruzarse es más arriesgado, y nunca chocan dos veces seguidas.
 

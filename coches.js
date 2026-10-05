@@ -1,8 +1,8 @@
 /*
  * Slot Panic — los coches: la forma de cada modelo, vista desde arriba.
  *
- * Presentación, como luz.js: la física y los choques siguen con la caja de
- * LARGO_COCHE × ANCHO_COCHE, y cada modelo cabe en ella (el morro, a +x). Son
+ * Presentación, como luz.js: la física y los choques no saben de modelos, y
+ * cada uno cabe en la caja de LARGO_COCHE × ANCHO_COCHE (el morro, a +x). Son
  * caricaturas de juguete sacadas de los planos de _desarrollo/: a 16 px en
  * pantalla solo se lee lo exagerado (el techo de lona, el morro en punta, las
  * dos filas de faros), así que cada uno tiene un rasgo que lo delata.
@@ -15,10 +15,16 @@
  * `detalles()`, lo que se pinta encima: cristales, techo y luces.
  */
 
-import { ANCHO_COCHE, COLOR, LARGO_COCHE } from './config.js';
+import { COLOR, LARGO_COCHE } from './config.js';
 import { ctx } from './nucleo/lienzo.js';
 
-const L = LARGO_COCHE / 2, A = ANCHO_COCHE / 2;
+/*
+ * Los modelos se dibujan en la caja de Race Panic, 22×11, y se escalan a la
+ * del juego (LARGO_COCHE × ANCHO_COCHE, con la misma proporción): así crecen
+ * todos a la vez sin tocar sus cifras.
+ */
+const L = 11, A = 5.5;
+const ESCALA = LARGO_COCHE / (2 * L);
 const CRISTAL = COLOR.cocheCabina;
 const FARO = '#fff3c4';
 const PILOTO = '#7a2a30';
@@ -236,6 +242,8 @@ export function siguienteModelo(id) {
  * con la sombra ya puesta por quien llama: ruedas, chapa y detalles.
  */
 export function pintarModelo(m, color) {
+  ctx.save();
+  ctx.scale(ESCALA, ESCALA);
   const via = m.via ?? A;
   rellenar('#0d0f14', () => {
     for (const u of m.ejes) {
@@ -245,9 +253,13 @@ export function pintarModelo(m, color) {
   });
   rellenar(color, () => m.silueta());
   m.detalles();
+  ctx.restore();
 }
 
 /** La sombra: la silueta, rellena. */
 export function sombraModelo(m, color) {
+  ctx.save();
+  ctx.scale(ESCALA, ESCALA);
   rellenar(color, () => m.silueta());
+  ctx.restore();
 }
