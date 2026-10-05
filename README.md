@@ -52,7 +52,10 @@ local más sencillo posible: uno aprieta a la izquierda y otro a la derecha.
 # Lo que se quiere
 
 - **Circuitos de piezas** (recta, curva, X, cruce, chicane, peralte, derrape, baches;
-  ya hay dos) y un **constructor** para el jugador.
+  ya hay dos) y un **constructor** para el jugador: se dibuja con el dedo en una
+  cuadrícula, se corre y se publica sin registrarse (un alias y una llave en el
+  dispositivo), y los demás eligen entre los publicados. Lo publicado se puede denunciar.
+- **Todo el campo para la pista**: el marcador va en una barra arriba.
 - **Sus coches** y una **estética de juguete**: piezas negras con juntas, trencillas
   plateadas, una mesa o el suelo de un salón.
 - Cambio de carril y cruces como en los slot digitales.
