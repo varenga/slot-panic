@@ -6,7 +6,7 @@
  */
 
 import {
-  ALTO, ANCHO, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
+  ALTO, ANCHO, ANCHO_LUPA, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
   TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { estado, guardarCircuito, guardarEscenario, leerCircuito, leerEscenario } from './estado.js';
@@ -30,13 +30,27 @@ import {
 import { cambiarIdioma, t } from './i18n.js';
 import { cargarAnalitica, evento } from './analitica.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
+import {
+  altoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
+  dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
+} from './lupa.js';
 
 const lienzo = document.getElementById('lienzo');
-const aviso = document.getElementById('gira');
 const otros = document.getElementById('otros');
 const teclas = {};
 const punteros = new Map();   // pointerId → 'izq' | 'der'
 let reloj = 0;                // s desde que se cargó la página (parpadeos)
+
+/*
+ * El modo lupa (`lupa.js`): en el móvil en vertical, en vez de pedir que se
+ * gire, el lienzo pasa a 9:16 y sigue al J1. Con ?lupa se fuerza (para
+ * probarlo en el ordenador), y ?lupa=1.5 cambia el zoom.
+ */
+const parametros = new URLSearchParams(location.search);
+const LUPA_FORZADA = parametros.has('lupa');
+const ZOOM = zoomLupa(parametros.get('lupa'));
+const VERTICAL = typeof matchMedia !== 'undefined' ? matchMedia('(orientation: portrait) and (max-width: 900px)') : null;
+const camara = crearCamara();
 
 /*
  * Los dos pilotos de la exhibición de la portada (la CPU de la carrera es
@@ -69,6 +83,7 @@ function cambiarCircuito() {
 }
 
 function limpiarPista() {
+  camara.lista = false;
   estado.avisos = [];
   estado.particulas.length = 0;
 }
@@ -130,6 +145,8 @@ function mandos() {
   const lados = new Set(punteros.values());
   const { carrera } = estado;
   return carrera.coches.map((slot, i) => {
+    // En la lupa se juega solo: el otro carril es siempre de la CPU.
+    if (estado.lupa && i === 1) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
     const pulsado = pulsada(CONTROLES_SLOT[i]) || lados.has(i === 0 ? 'izq' : 'der');
     if (pulsado) estado.humanos[i] = true;
     return estado.humanos[i]
@@ -160,12 +177,13 @@ window.addEventListener('blur', () => {
 function aLienzo(evento) {
   const caja = lienzo.getBoundingClientRect();
   return {
-    x: (evento.clientX - caja.left) * ANCHO / caja.width,
-    y: (evento.clientY - caja.top) * ALTO / caja.height
+    x: (evento.clientX - caja.left) * (estado.lupa ? ANCHO_LUPA : ANCHO) / caja.width,
+    y: (evento.clientY - caja.top) * (estado.lupa ? lienzo.height / densidadLupa : ALTO) / caja.height
   };
 }
 
-const ladoDe = (p) => (p.x < ANCHO / 2 ? 'izq' : 'der');
+// En la lupa, toda la pantalla es el acelerador del J1.
+const ladoDe = (p) => (estado.lupa || p.x < ANCHO / 2 ? 'izq' : 'der');
 const dentro = (p, caja) => p.x >= caja.x && p.x <= caja.x + caja.ancho && p.y >= caja.y && p.y <= caja.y + caja.alto;
 
 lienzo.addEventListener('pointerdown', (evento) => {
@@ -196,7 +214,6 @@ function opcionPulsada(id) {
 
 /** Lo único de la interfaz que no se pinta en el lienzo. */
 function textosDelDocumento() {
-  if (aviso) aviso.textContent = t('aviso.gira');
   // Enlaces a la familia Panic: pieRed() de vendor/pnyk/pie.js (script clásico
   // cargado en index.html). Su HTML sale de red.js, generado en pnyk.
   // Si fallara, el juego sigue: sin enlaces, pero sin romper el arranque.
@@ -243,6 +260,14 @@ function avanzarMundo(mandosCoches, dt) {
 }
 
 function dibujarMundo() {
+  if (estado.lupa) {
+    conCamara(camara, ZOOM, pintarMundo);
+    return;
+  }
+  pintarMundo();
+}
+
+function pintarMundo() {
   dibujarFondo(estado.circuito, estado.decorado);
   dibujarCarriles(estado.circuito);
   dibujarHumo(estado.particulas);
@@ -278,6 +303,10 @@ const ESCENAS = {
     },
     dibujar() {
       dibujarMundo();
+      if (estado.lupa) {
+        dibujarPortadaLupa({ ...estado, tiempo: reloj });
+        return;
+      }
       dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora);
     },
     teclear(codigo) {
@@ -288,7 +317,7 @@ const ESCENAS = {
       else if (codigo === 'KeyH') cambiarHora();
     },
     pulsar(p) {
-      const opcion = opcionesPortada().find((caja) => dentro(p, caja));
+      const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada()).find((caja) => dentro(p, caja));
       if (opcion) opcionPulsada(opcion.id);
       else empezarCarrera();
       // El toque que arranca no debe tomar ya un carril.
@@ -324,6 +353,12 @@ const ESCENAS = {
     },
     dibujar() {
       dibujarMundo();
+      if (estado.lupa) {
+        dibujarMapa(estado.circuito, estado.carrera.coches);
+        dibujarMarcadorLupa(estado.carrera, estado.humanos);
+        dibujarAvisosLupa(estado.avisos);
+        return;
+      }
       dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil);
       dibujarAvisos(estado.avisos);
     },
@@ -345,6 +380,10 @@ const ESCENAS = {
     },
     dibujar() {
       dibujarMundo();
+      if (estado.lupa) {
+        dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas);
+        return;
+      }
       dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil);
       dibujarConfeti(estado.particulas);
     },
@@ -354,7 +393,7 @@ const ESCENAS = {
     },
     pulsar(p) {
       if (estado.esperaReinicio > 0) return;
-      const boton = botonesFin().find((caja) => dentro(p, caja));
+      const boton = (estado.lupa ? botonesFinLupa() : botonesFin()).find((caja) => dentro(p, caja));
       if (boton?.id === 'repetir') empezarCarrera();
       else if (boton?.id === 'menu') irAPortada();
       punteros.clear();
@@ -376,6 +415,10 @@ function bucle(tActual) {
   reloj += dt;
 
   ESCENAS[estado.fase].actualizar(dt);
+  if (estado.lupa) {
+    seguirCamara(camara, estado.carrera.coches[0], estado.circuito, dt);
+    empezarFotogramaLupa();
+  }
   ESCENAS[estado.fase].dibujar();
 
   fotogramas++;
@@ -385,7 +428,8 @@ function bucle(tActual) {
     fotogramas = 0;
     acumulado = 0;
   }
-  if (DEPURACION) dibujarDepuracion(estado.fps, estado.carrera.coches[0]);
+  if (DEPURACION && estado.lupa) dibujarDepuracionLupa(estado.fps, estado.carrera.coches[0], ZOOM);
+  else if (DEPURACION) dibujarDepuracion(estado.fps, estado.carrera.coches[0]);
 
   requestAnimationFrame(bucle);
 }
@@ -414,6 +458,38 @@ function quitarLoDeLaWeb() {
   document.documentElement.classList.add('app');
 }
 
+/*
+ * Entra o sale de la lupa según la orientación. La carrera sigue igual: solo
+ * cambia cómo se ve. El lienzo de la lupa tiene la densidad de la pantalla
+ * (hasta 2): ampliado, el mundo se veía borroso.
+ */
+let densidadLupa = 1;
+
+function aplicarVista() {
+  const lupa = LUPA_FORZADA || Boolean(VERTICAL?.matches);
+  // En la lupa, el alto del lienzo sigue la proporción del sitio que hay (sin
+  // las muescas): así no quedan bandas en un móvil alargado.
+  let alto = 0;
+  if (lupa) {
+    const escena = lienzo.parentElement;
+    const estilo = getComputedStyle(escena);
+    const ancho = escena.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+    alto = altoLupa(ancho, escena.clientHeight - parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom));
+  }
+  const vista = lupa ? 'lupa-' + alto : 'mesa';
+  if (vista === lienzo.dataset.vista) return;
+  estado.lupa = lupa;
+  lienzo.dataset.vista = vista;
+  document.documentElement.classList.toggle('lupa', lupa);
+  lienzo.style.setProperty('--alto-lupa', alto || '');
+  densidadLupa = lupa ? Math.min(2, Math.max(1, Math.round(window.devicePixelRatio || 1))) : 1;
+  if (lupa) prepararLupa(densidadLupa, alto);
+  lienzo.width = (lupa ? ANCHO_LUPA : ANCHO) * densidadLupa;
+  lienzo.height = (lupa ? alto : ALTO) * densidadLupa;
+  camara.lista = false;
+  punteros.clear();
+}
+
 estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
@@ -421,6 +497,10 @@ const elegido = leerCircuito(CIRCUITOS.map((c) => c.clave));
 estado.circuito = CIRCUITOS.find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);
 iniciarLienzo(lienzo);
+aplicarVista();
+VERTICAL?.addEventListener?.('change', aplicarVista);
+// La barra de direcciones del móvil cambia el alto sin girar.
+window.addEventListener('resize', aplicarVista);
 quitarLoDeLaWeb();
 textosDelDocumento();
 registrarServiceWorker();

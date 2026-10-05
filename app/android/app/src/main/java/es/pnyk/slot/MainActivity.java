@@ -9,10 +9,10 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 /*
- * Slot Panic a pantalla completa (APP.md §5.4): en horizontal, la barra de
- * estado y la de navegación le quitan un trozo al circuito. Se esconden las
- * dos; un deslizamiento desde el borde las enseña un momento y se vuelven a
- * esconder solas.
+ * Slot Panic a pantalla completa (APP.md §5.4): la barra de estado y la de
+ * navegación le quitan un trozo al circuito (en horizontal) o a la lupa (en
+ * vertical). Se esconden las dos; un deslizamiento desde el borde las enseña
+ * un momento y se vuelven a esconder solas.
  */
 public class MainActivity extends BridgeActivity {
     @Override

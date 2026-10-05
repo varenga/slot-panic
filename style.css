@@ -191,22 +191,17 @@ kbd {
   width: min(100vw, calc(100dvh * 16 / 9));
 }
 
-/* En vertical el lienzo 16:9 queda diminuto. El texto lo pone juego.js (i18n). */
-#gira {
-  display: none;
-  position: absolute;
-  padding: 0 24px;
-  color: #8b93a7;
-  font-size: 15px;
-  text-align: center;
+/* El modo lupa (lupa.js): en el móvil en vertical (la misma condición que
+   VERTICAL en juego.js) el lienzo pasa a vertical, con el alto de la
+   proporción de la pantalla (--alto-lupa), y sigue al coche. Lo pone juego.js
+   con la clase .lupa. Antes, en vertical, se pedía girar el móvil. */
+.lupa #lienzo {
+  width: min(100vw, calc(100dvh * 540 / var(--alto-lupa, 960)));
+  aspect-ratio: 540 / var(--alto-lupa, 960);
 }
 
-@media (orientation: portrait) and (max-width: 900px) {
-  #lienzo {
-    opacity: 0.12;
-  }
-
-  #gira {
-    display: block;
-  }
+/* El pie fijo caía encima del coche: en la lupa va debajo, en su sitio. */
+.lupa #pie {
+  position: static;
+  padding: 8px;
 }

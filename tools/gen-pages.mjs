@@ -211,7 +211,6 @@ ${jsonLd}
 <body>
   <main id="escena">
     <canvas id="lienzo" width="${ANCHO}" height="${ALTO}"></canvas>
-    <p id="gira"></p>
   </main>
 
   <!-- Prosa bajo el lienzo: un canvas es opaco para los buscadores, así que lo
@@ -226,6 +225,7 @@ ${jsonLd}
       <li>${esc(t('page.how2'))}</li>
       <li>${esc(t('page.how3'))}</li>
       <li>${esc(t('page.how4', { vueltas: VUELTAS_SLOT }))}</li>
+      <li>${esc(t('page.how5'))}</li>
     </ul>
 
     <h2>${esc(t('page.controlsTitle'))}</h2>
@@ -276,7 +276,8 @@ ${idiomas}
  * en la subcarpeta desde la que se instaló: ahí el idioma sale de la
  * preferencia guardada o del teléfono, como en la app de las tiendas. El `id`
  * fijo hace que instalar desde /en/ o desde / sea la misma aplicación. En
- * horizontal: el lienzo es 16:9.
+ * cualquier orientación: en horizontal, la mesa entera (16:9); en vertical, la
+ * lupa (lupa.js).
  */
 function manifest() {
   return JSON.stringify({
@@ -289,7 +290,7 @@ function manifest() {
     start_url: './',
     scope: './',
     display: 'fullscreen',
-    orientation: 'landscape',
+    orientation: 'any',
     background_color: FONDO,
     theme_color: FONDO,
     categories: ['games'],
@@ -443,7 +444,8 @@ ${NOMBRE} es un juego de carreras de slot (coches enganchados a un carril) con v
 cenital, jugable gratis en el navegador (HTML5 Canvas y JavaScript, sin instalación)
 y también instalable como app. Un solo control: apretar acelera y soltar frena. Uno
 contra la CPU o dos jugadores en la misma pantalla (cada uno su mitad en el móvil),
-${VUELTAS_SLOT} vueltas por carrera. Está en siete idiomas, cada uno con su URL:
+${VUELTAS_SLOT} vueltas por carrera. Con el móvil en vertical, el modo lupa: la pista
+ampliada alrededor del coche y el mapa del circuito arriba, contra la CPU. Está en siete idiomas, cada uno con su URL:
 
 ${lineas}
 

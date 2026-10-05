@@ -25,6 +25,9 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] Estética de juguete: piezas con juntas, trencillas, la mesa.
 - [ ] Niveles de CPU (hoy una, `CPU_SLOT`, ~1,2 s por vuelta del mejor piloto).
 - [ ] Récords (y fantasma) por circuito y carril.
+- [ ] Playtest del modo lupa: ¿qué zoom (hoy 1,2, `?lupa=1.5` para probar otro)?, ¿se ven
+      a tiempo las curvas que vienen? Si tuviera que bajar de lo que llena la mesa (0,93),
+      algo barato más allá de ella: el suelo del escenario estirado o un patrón.
 
 # Fase 2b — El constructor de circuitos
 

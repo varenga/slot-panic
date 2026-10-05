@@ -36,7 +36,9 @@ carril, da vueltas sobre la mesa y una **mano** lo devuelve al sitio donde se sa
 Salirse cuesta tiempo, no la carrera.
 
 Es el control móvil perfecto: **un dedo** acelera, soltar frena. Y es el multijugador
-local más sencillo posible: uno aprieta a la izquierda y otro a la derecha.
+local más sencillo posible: uno aprieta a la izquierda y otro a la derecha. Con el móvil
+en vertical, el **modo lupa**: la pista ampliada alrededor del coche y el mapa del
+circuito arriba, uno contra la CPU.
 
 # Mecánica
 

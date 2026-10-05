@@ -44,6 +44,7 @@ export const estado = {
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario
   hora: 'dia',         // 'dia' | 'atardecer' | 'noche': cosmética, combinable con el escenario
   tactil: false,       // se activa con el primer toque
+  lupa: false,         // el móvil en vertical: la vista que sigue al J1 (lupa.js)
   carrera: null,       // la de los dos coches; en la portada, la exhibición
   pilotos: [],         // el piloto de cada carril, por si nadie lo conduce
   humanos: [false, false], // qué coches conduce alguien (se toman al pulsar)

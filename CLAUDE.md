@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.3.1): carreras de slot en tres circuitos (*La horquilla*, y *El
+Prototipo jugable (v0.4.0): carreras de slot en tres circuitos (*La horquilla*, y *El
 ocho* y *El nudo*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X y los cruces y una mano que devuelve el
 coche; uno
-contra una CPU que falla o dos en la misma pantalla. Cuatro escenarios de día, al
+contra una CPU que falla o dos en la misma pantalla. Con el móvil en vertical, el modo
+lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cuatro escenarios de día, al
 atardecer o de noche, siete idiomas (una página por idioma, con SEO), sonido, teclado y
 táctil; instalable como PWA y sin red. La app de Android (Capacitor, `es.pnyk.slot`) está
 en `/app`, con el bundle firmado listo para Play: el camino, en `APP.md`. Publicado en https://slot.pnyk.es. Lo
@@ -203,6 +204,9 @@ luz.js                 la hora: día, atardecer (un velo) o noche (la pista a me
 pantalla.js            lo que va encima: marcador, avisos, portada, cartel de fin.
                        opcionesPortada() y botonesFin() sirven al dibujo Y a la
                        pulsación
+lupa.js                el modo lupa (móvil en vertical): la cámara que sigue al J1,
+                       el mapa y su marcador, portada y fin. Presentación, como
+                       pantalla.js
 arnes.mjs              el arnés (no lo carga el juego)
 
 tools/gen-pages.mjs    genera las páginas por idioma, el manifest y el service worker;
@@ -262,6 +266,9 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   saber si se ha pulsado.
 - **Un dedo por jugador**: la mitad izquierda es J1 y la derecha J2. Ninguna mecánica
   nueva puede exigir un control que el móvil no tenga.
+- **En vertical, la lupa** (`estado.lupa`): toda la pantalla es el J1 y el otro carril, la
+  CPU. La vista nunca enseña fuera de la mesa (1280 × 720) y el lienzo tiene el alto de
+  la pantalla: lo que dibuje la lupa no puede suponer 960 px de alto.
 
 ## Convenciones de trabajo
 

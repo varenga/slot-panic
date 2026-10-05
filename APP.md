@@ -74,9 +74,13 @@ corra la página.
 * **Sin analítica**: `cargarAnalitica()` no hace nada dentro de la app.
 * **Sin depuración**: dentro de Capacitor el origen es `https://localhost`, que contaba como
   «sirviendo en local» y sacaba el panel de FPS. `DEPURACION` lo excluye.
-* **Horizontal y pantalla completa**: el lienzo es 16:9. El manifest de Android bloquea
-  `sensorLandscape`, y `MainActivity` esconde las barras del sistema (vuelven un momento
-  con un deslizamiento desde el borde). Las muescas, con `env(safe-area-inset-*)`.
+* **Cualquier orientación y pantalla completa**: en horizontal, la mesa entera (16:9); en
+  vertical, el modo lupa (`lupa.js`), uno contra la CPU. El manifest de Android pide
+  `fullUser` (gira con el sensor, pero respeta el bloqueo de rotación del teléfono; antes
+  era `sensorLandscape`), y `configChanges` incluye `orientation`: al girar no se recrea la
+  actividad ni se pierde la carrera, solo cambia la vista. `MainActivity` esconde las
+  barras del sistema (vuelven un momento con un deslizamiento desde el borde). Las
+  muescas, con `env(safe-area-inset-*)`.
 * **El botón atrás** cierra la app desde cualquier pantalla, como en Orbit Panic: no hay
   historial. Se decide probando si molesta.
 * **Audio**: Web Audio arranca en el primer gesto, igual que en la web.
