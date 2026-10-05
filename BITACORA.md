@@ -327,3 +327,26 @@ app en la consola de Play.
   Es la URL que enlaza la ficha de Play, así que crear la app en la consola ya no espera
   a nada.
 
+## Gradas y marcador arriba (05/10/2026, rama `08-gradas-y-barra`, v0.3.1)
+
+> Primer paso del constructor (`TODO.md`, Fase 2b): un circuito dibujado por el jugador no
+> tiene un hueco en el interior para el marcador, así que el marcador sube a una barra, en
+> todos los circuitos. De paso, la grada de El ocho.
+
+- **La grada de El ocho** estaba en `(1060, 470)`, en el hueco vacío de abajo a la
+  derecha, de cara a nada (se vio dibujando el eje). Pasa a estar por fuera de la recta de
+  meta, en `(560, 165)` y con 380 px: entre la curva de derrape y el cruce.
+- **El marcador va en la banda de arriba**: el J1 a la izquierda y el J2 a la derecha (cada
+  uno en el lado de su mitad de la pantalla), con quién lo lleva, la vuelta, la mejor y la
+  potencia. En el centro, la cuenta atrás o el tiempo; el semáforo y los avisos cuelgan
+  debajo, y la ayuda de la cuenta atrás baja a la banda de abajo, en dos líneas.
+- **La banda pasa de 46 a 56 px** (`BANDA_TEXTO`): en un móvil horizontal el lienzo se
+  queda a ~0,54, y con 46 px la letra del marcador se quedaba en ~10 px reales. Con 56, la
+  letra del marcador sube de 18 a 22 y la del tiempo, de 26 a 32. Es lo más que cabe: en
+  los tres circuitos lo pisable empieza en y = 58.
+- **`interior` es opcional**: la portada va allí si el circuito lo declara y, si no, al
+  centro; el cartel de fin ya iba al centro. `zonasVetadas` solo veta el hueco si existe.
+- **Arnés**: la prueba del hueco del marcador pasa a comprobar también la barra: lo que se
+  pisa no puede quedar debajo. Queda a 2 px en los tres circuitos; el hueco de la portada,
+  a 40, 3 y 31. El decorado sigue cabiendo (51 piezas como poco, 12 torres o más).
+  226/226 en verde.

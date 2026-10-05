@@ -325,7 +325,7 @@ const ESCENAS = {
     dibujar() {
       dibujarMundo();
       dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil);
-      dibujarAvisos(estado.avisos, estado.circuito);
+      dibujarAvisos(estado.avisos);
     },
     teclear(codigo) {
       if (codigo === 'KeyR') empezarCarrera();

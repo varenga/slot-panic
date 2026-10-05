@@ -35,10 +35,10 @@ los demás elijan entre los publicados. Decidido:
   3 letras (como los récords de Race Panic) y una **llave anónima** guardada en el
   dispositivo, que permite borrar lo propio. Sin correo ni contraseña: no hay cuenta que
   borrar en Play ni datos personales.
-- **Se dibuja con el dedo en una cuadrícula** (unas 11 × 6 casillas de 112 px, que tienen
-  que medir ≥ ancho + 40 = 104): el trazo pone solo la recta o la curva, y tocar una pieza
-  cambia su variante. En una cuadrícula, cerrar siempre cuadra; un circuito abierto no se
-  corre ni se publica.
+- **Se dibuja con el dedo en una cuadrícula** (unas 11 × 6 casillas de 110 px bajo la
+  barra de 56, que tienen que medir ≥ ancho + 40 = 104): el trazo pone solo la recta o la
+  curva, y tocar una pieza cambia su variante. En una cuadrícula, cerrar siempre cuadra;
+  un circuito abierto no se corre ni se publica.
 - **Las piezas son las de hoy**: recta (baches, X, meta), curva (peralte, derrape, amplia
   de 2 × 2), chicane (dos rectas seguidas) y cruce (el trazo vuelve a pasar por una recta,
   en perpendicular).
@@ -50,10 +50,6 @@ los demás elijan entre los publicados. Decidido:
 
 Por ramas, en este orden:
 
-- [ ] **08 — Gradas y barra** (v0.3.1). La grada de El ocho flota en el hueco de abajo a
-      la derecha, sin tramo delante: va junto a la recta de meta, por fuera. El marcador,
-      los avisos y la guía pasan a la barra superior (medir si 46 px se leen en el móvil);
-      `interior` pasa a ser opcional (portada y cartel de fin al centro si no lo hay).
 - [ ] **09 — La cuadrícula** (núcleo, sin interfaz). `nucleo/cuadricula.js`: el trazado
       (casilla y rumbo de la meta + un movimiento por casilla con su variante), su código
       para compartir (base64url), `aPiezas()` hacia `construirDePiezas`, sectores por

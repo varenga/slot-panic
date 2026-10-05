@@ -15,7 +15,7 @@
 import { ALTO, ANCHO } from '../config.js';
 import { ESCENARIOS } from '../escenarios.js';
 
-export const BANDA_TEXTO = 46;     // px de arriba y de abajo reservados a los textos
+export const BANDA_TEXTO = 56;     // px de arriba y de abajo: el marcador y los textos
 const HOLGURA_PISTA = 10;          // px entre el muro y cualquier pieza
 const PIEZAS = 90;                 // las que se intentan colocar
 const INTENTOS = 1500;
@@ -56,14 +56,20 @@ export function distanciaAPista(circuito, p) {
   return circuito.muroCercano(p).fuera;
 }
 
-/** Las zonas donde no puede haber nada: bandas de texto y hueco del marcador. */
+/**
+ * Las zonas donde no puede haber nada: las bandas de texto (la de arriba es el
+ * marcador) y, si el circuito lo declara, el hueco de la portada en el interior.
+ */
 export function zonasVetadas(circuito) {
-  const { x, y } = circuito.interior;
-  return [
+  const zonas = [
     { x0: 0, y0: 0, x1: ANCHO, y1: BANDA_TEXTO },
-    { x0: 0, y0: ALTO - BANDA_TEXTO, x1: ANCHO, y1: ALTO },
-    { x0: x - 235, y0: y - 165, x1: x + 235, y1: y + 135 }
+    { x0: 0, y0: ALTO - BANDA_TEXTO, x1: ANCHO, y1: ALTO }
   ];
+  if (circuito.interior) {
+    const { x, y } = circuito.interior;
+    zonas.push({ x0: x - 235, y0: y - 165, x1: x + 235, y1: y + 135 });
+  }
+  return zonas;
 }
 
 function enZona(x, y, r, z) {

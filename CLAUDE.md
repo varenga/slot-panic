@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.3.0): carreras de slot en tres circuitos (*La horquilla*, y *El
+Prototipo jugable (v0.3.1): carreras de slot en tres circuitos (*La horquilla*, y *El
 ocho* y *El nudo*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X y los cruces y una mano que devuelve el
@@ -119,7 +119,7 @@ demás, en `BITACORA.md`). Mide y comprueba:
 1. **El circuito**: cabe en el lienzo y dos tramos lejanos por la pista (> 300 px de `s`)
    nunca quedan a menos de un ancho + 40 px. Ningún punto del muro cae en la zona de otro
    tramo ni fuera del lienzo, y en todas partes hay al menos 14 px de grava más allá del
-   piano (hoy 15). El hueco del marcador no pisa el asfalto ni el piano. Los dos tramos
+   piano (hoy 15). Ni la barra del marcador (arriba) ni el hueco de la portada pisan el asfalto ni el piano. Los dos tramos
    de un cruce (`enCruce`, ±128 px de `s`) quedan exentos.
 2. **Decorado**, en los cuatro escenarios: es determinista, caben al menos 40 piezas y
    ninguna pieza, neumático, grada ni torre de iluminación pisa la pista, el marcador ni

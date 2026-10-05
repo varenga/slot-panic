@@ -110,20 +110,24 @@ for (const circuito of CIRCUITOS) {
     comprobar(fuera === 0, `${fuera} puntos del muro se salen del lienzo`);
 
     /*
-     * El hueco del marcador (el panel de la portada y los avisos, el mismo que
-     * el decorado tiene vetado) no pisa el asfalto ni el piano: lo que se
-     * conduce no queda nunca debajo de un cartel.
+     * La barra del marcador (la banda de arriba) y, si lo hay, el hueco de la
+     * portada en el interior (el mismo que el decorado tiene vetado) no pisan
+     * el asfalto ni el piano: lo que se conduce no queda nunca debajo de un
+     * cartel.
      */
-    const hueco = zonasVetadas(circuito)[2];
-    let holgura = Infinity;
-    for (let x = hueco.x0; x <= hueco.x1; x += 4) {
-      for (let y = hueco.y0; y <= hueco.y1; y += 4) {
-        const p = circuito.proyectar({ x, y });
-        holgura = Math.min(holgura, p.distancia - circuito.bordeEn(p));
+    const [barra, , hueco] = zonasVetadas(circuito);
+    for (const [zona, nombre] of [[barra, 'la barra del marcador'], [hueco, 'el hueco de la portada']]) {
+      if (!zona) continue;
+      let holgura = Infinity;
+      for (let x = zona.x0; x <= zona.x1; x += 4) {
+        for (let y = zona.y0; y <= zona.y1; y += 2) {
+          const p = circuito.proyectar({ x, y });
+          holgura = Math.min(holgura, p.distancia - circuito.bordeEn(p));
+        }
       }
+      console.log(`  ${nombre} queda a ${holgura.toFixed(0)} px de lo que se pisa`);
+      comprobar(holgura > 0, `${nombre} pisa la pista ${(-holgura).toFixed(0)} px`);
     }
-    console.log(`  el hueco del marcador queda a ${holgura.toFixed(0)} px de lo que se pisa`);
-    comprobar(holgura > 0, `el hueco del marcador pisa la pista ${(-holgura).toFixed(0)} px`);
   }
 
   // --- 2. El decorado ------------------------------------------------------------
