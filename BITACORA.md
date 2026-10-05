@@ -350,3 +350,47 @@ app en la consola de Play.
   pisa no puede quedar debajo. Queda a 2 px en los tres circuitos; el hueco de la portada,
   a 40, 3 y 31. El decorado sigue cabiendo (51 piezas como poco, 12 torres o más).
   226/226 en verde.
+
+## El modo lupa (05/10/2026, rama `09-modo-lupa`, v0.4.0)
+
+> Probando en el móvil: en horizontal la mesa entera se ve pequeña (el coche, ~14 px de
+> pantalla) y en vertical solo se pedía girar el teléfono. La idea: en vertical, ver
+> ampliado el trozo de pista donde va el coche, con un mapa del circuito arriba, y solo
+> contra la CPU.
+
+- **Se activa sola en vertical** (`(orientation: portrait) and (max-width: 900px)`, la
+  condición del antiguo aviso «Gira el dispositivo», que se quita) y se sale al girar, a
+  mitad de carrera: la carrera es la misma, solo cambia la vista. En el ordenador se
+  fuerza con `?lupa`, y `?lupa=1.5` prueba otro zoom.
+- **Es presentación** (`lupa.js`, al lado de `pantalla.js`): el mundo se dibuja con las
+  mismas funciones dentro de la transformación de una cámara. Ni la física ni el arnés
+  cambian.
+- **Un jugador**: toda la pantalla es el acelerador del J1 y el otro carril es siempre de
+  la CPU. Arriba, el marcador (J1 y CPU) y el mapa: el eje del circuito con la meta y los
+  dos coches a tamaño fijo, el J1 con un aro.
+- **La vista que giraba con la pista mareaba** (el coche siempre abajo y hacia arriba,
+  con el giro suavizado, siguiendo el rumbo de la pista 70 px por delante y no el del
+  coche, que coletea). «La FIJA es la más acertada»: la pista quieta y la vista
+  adelantada 160 px al coche en la dirección de la pista, con retraso (0,3 s). Se quitó la
+  que giraba.
+- **Nunca se ve fuera de la mesa**: la vista se acota a los 1280 × 720 y el zoom no baja
+  de lo que llena la zona de juego (0,93 en 9:16). El mundo se recorta a la zona bajo el
+  mapa y arriba el fondo es liso. Así no hay que pintar nada más allá, ni cuesta nada. Con
+  la vista que giraba, por los bordes media pantalla se quedaba en negro.
+- **El zoom, 1,2**: con 0,9 el coche se veía igual de pequeño que en horizontal.
+- **El lienzo sigue la proporción del móvil**: 540 de ancho y el alto del sitio que hay
+  (de 960, 9:16, a 1400). En un 19,5:9 sale 540 × 1169 y no quedan bandas. De lo que pasa
+  de 9:16, el 40 % agranda el mapa (230 px en 9:16) y el resto, la zona de juego; en un
+  móvil alargado el zoom sube un poco (~1,22) para no salirse de la mesa. Se recalcula al
+  girar y al cambiar la barra de direcciones. Tiene la densidad de la pantalla (hasta ×2):
+  ampliado, el mundo se veía borroso.
+- **La PWA y la app giran**: el manifest pasa de `landscape` a `any` y la actividad de
+  Android de `sensorLandscape` a `fullUser` (respeta el bloqueo de rotación). Al girar
+  no se recrea la actividad (`configChanges` ya incluía `orientation`).
+- En la lupa el pie de la web («Otros juegos», «Cookies») deja de estar fijo, porque caía
+  encima del coche: va debajo, al hacer scroll. La prosa de las páginas y `llms.txt`
+  cuentan el modo (`page.how5`, siete idiomas).
+- Verificado con capturas en un Chrome sin ventana a tamaño de móvil (390 × 844 y
+  360 × 640, en la web y con la app simulada) y un primer playtest en el móvil: «bastante
+  potencial como solución para el móvil». Arnés: 226/226.
+

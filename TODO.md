@@ -25,15 +25,9 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] Estética de juguete: piezas con juntas, trencillas, la mesa.
 - [ ] Niveles de CPU (hoy una, `CPU_SLOT`, ~1,2 s por vuelta del mejor piloto).
 - [ ] Récords (y fantasma) por circuito y carril.
-- [ ] **Modo lupa** (rama `09-modo-lupa`, `lupa.js`): el móvil en vertical, uno contra la
-      CPU, con el mundo ampliado alrededor del J1 y el mapa del circuito arriba. Hay
-      prototipo (se activa solo en vertical; en el ordenador, con `?lupa`, y `?lupa=1.5`
-      cambia el zoom). Primer playtest: «bastante potencial»; la vista que giraba con la
-      pista mareaba y se quitó, se queda la fija. Falta:
-  - [ ] Más playtest: ¿qué zoom (hoy 1,2)?, ¿se ven a tiempo las curvas que vienen?
-  - [ ] Si el zoom tuviera que bajar de lo que llena la mesa (hoy no pasa de 0,93), algo
-        barato más allá de ella: el suelo del escenario estirado o un patrón.
-  - [ ] La prosa de las páginas (`gen-pages.mjs`) y la entrada en `BITACORA.md`.
+- [ ] Playtest del modo lupa: ¿qué zoom (hoy 1,2, `?lupa=1.5` para probar otro)?, ¿se ven
+      a tiempo las curvas que vienen? Si tuviera que bajar de lo que llena la mesa (0,93),
+      algo barato más allá de ella: el suelo del escenario estirado o un patrón.
 
 # Fase 2b — El constructor de circuitos
 

@@ -36,7 +36,6 @@ import {
 } from './lupa.js';
 
 const lienzo = document.getElementById('lienzo');
-const aviso = document.getElementById('gira');
 const otros = document.getElementById('otros');
 const teclas = {};
 const punteros = new Map();   // pointerId → 'izq' | 'der'
@@ -215,7 +214,6 @@ function opcionPulsada(id) {
 
 /** Lo único de la interfaz que no se pinta en el lienzo. */
 function textosDelDocumento() {
-  if (aviso) aviso.textContent = t('aviso.gira');
   // Enlaces a la familia Panic: pieRed() de vendor/pnyk/pie.js (script clásico
   // cargado en index.html). Su HTML sale de red.js, generado en pnyk.
   // Si fallara, el juego sigue: sin enlaces, pero sin romper el arranque.

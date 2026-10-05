@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Slot Panic — corridas de slot grátis: solta antes da curva</title>
   <meta name="description" content="Corridas de slot vistas de cima: só carregar e soltar. Solta antes da curva ou o carro sai. Contra a CPU ou a dois no mesmo ecrã.">
-  <meta name="pnyk-version" content="0.3.1">
+  <meta name="pnyk-version" content="0.4.0">
   <meta name="keywords" content="slot, corridas de slot, carros de slot, jogo de corridas, dois jogadores, jogo HTML5, grátis">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#12141a">
@@ -44,7 +44,7 @@
   <link rel="icon" type="image/svg+xml" href="../favicon.svg?v=423ea574">
   <link rel="apple-touch-icon" href="../iconos/icon-192.png?v=cc0e9575">
   <link rel="manifest" href="../manifest.webmanifest">
-  <link rel="stylesheet" href="../style.css?v=6700a42f">
+  <link rel="stylesheet" href="../style.css?v=12f120b4">
 
   <script type="application/ld+json">
     {
@@ -141,7 +141,6 @@
 <body>
   <main id="escena">
     <canvas id="lienzo" width="1280" height="720"></canvas>
-    <p id="gira"></p>
   </main>
 
   <!-- Prosa bajo el lienzo: un canvas es opaco para los buscadores, así que lo
@@ -156,6 +155,7 @@
       <li>Passada a aderência, o carro derrapa e perde velocidade; só sai se continuar a passar.</li>
       <li>Sair custa tempo, não a corrida: a mão devolve o carro onde saiu.</li>
       <li>Cinco voltas. Em cada corrida os carros trocam de pista; num X e num cruzamento, se chegarem ao mesmo tempo, chocam.</li>
+      <li>No telemóvel na vertical, o modo lupa: a pista ampliada à volta do teu carro e o mapa do circuito em cima, contra o CPU.</li>
     </ul>
 
     <h2>Controlos</h2>
@@ -188,7 +188,7 @@
       </ul>
     </nav>
 
-    <p class="legal">Slot Panic 0.3.1 · <a href="https://pnyk.es/en/privacy/#games">Privacidade</a></p>
+    <p class="legal">Slot Panic 0.4.0 · <a href="https://pnyk.es/en/privacy/#games">Privacidade</a></p>
   </article>
 
   <!-- Pie discreto bajo el circuito: enlaces a la familia Panic (los pone juego.js con

@@ -6,7 +6,8 @@ Slot Panic es un juego de carreras de slot (coches enganchados a un carril) con 
 cenital, jugable gratis en el navegador (HTML5 Canvas y JavaScript, sin instalación)
 y también instalable como app. Un solo control: apretar acelera y soltar frena. Uno
 contra la CPU o dos jugadores en la misma pantalla (cada uno su mitad en el móvil),
-5 vueltas por carrera. Está en siete idiomas, cada uno con su URL:
+5 vueltas por carrera. Con el móvil en vertical, el modo lupa: la pista
+ampliada alrededor del coche y el mapa del circuito arriba, contra la CPU. Está en siete idiomas, cada uno con su URL:
 
 - [Español (es)](https://slot.pnyk.es/): Carreras de slot con vista cenital: solo apretar y soltar. Suelta antes de la curva o el coche se sale. Contra la CPU o a dos en la misma pantalla.
 - [English (en)](https://slot.pnyk.es/en/): Top-down slot car racing: just press and release. Lift before the bend or the car flies off. Against the CPU or two players on the same screen.
