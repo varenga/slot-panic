@@ -276,7 +276,8 @@ ${idiomas}
  * en la subcarpeta desde la que se instaló: ahí el idioma sale de la
  * preferencia guardada o del teléfono, como en la app de las tiendas. El `id`
  * fijo hace que instalar desde /en/ o desde / sea la misma aplicación. En
- * horizontal: el lienzo es 16:9.
+ * cualquier orientación: en horizontal, la mesa entera (16:9); en vertical, la
+ * lupa (lupa.js).
  */
 function manifest() {
   return JSON.stringify({
@@ -289,7 +290,7 @@ function manifest() {
     start_url: './',
     scope: './',
     display: 'fullscreen',
-    orientation: 'landscape',
+    orientation: 'any',
     background_color: FONDO,
     theme_color: FONDO,
     categories: ['games'],

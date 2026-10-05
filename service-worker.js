@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-6a4b9c4d';
+const CACHE = 'slotpanic-47f87400';
 
 const PRECACHE = [
   'index.html',
