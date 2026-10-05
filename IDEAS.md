@@ -37,7 +37,8 @@ Cada idea pasa por el mismo filtro:
 
 # 3. Coches y jugadores
 
-- **Sus coches**: formas y colores; quizá con más agarre o más punta.
+- **Sus coches**: ya tienen forma (`coches.js`, solo cosmética); quizá cada uno con más
+  agarre o más punta, medido en el arnés. Y más colores.
 - **Cambio de carril**, como los slot digitales: un toque doble cambia de carril en las
   zonas marcadas. Y cambio de carril de la CPU.
 - **Niveles de CPU** (hoy una, `CPU_SLOT`).

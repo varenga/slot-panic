@@ -11,10 +11,11 @@
 
 import { ALTO, ANCHO, ANCHO_COCHE, COLOR, LARGO_COCHE } from './config.js';
 import {
-  circulo, crearCapa, ctx, dibujarEn, poligono, polilinea, rectanguloRedondo
+  circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
 import { azar } from './nucleo/decorado.js';
 import { CARRILES, trazadoCarril } from './nucleo/slot.js';
+import { modelo, pintarModelo, sombraModelo } from './coches.js';
 
 const PASO_PIANO = 2;    // puntos del eje por franja de piano
 const CASILLA_META = 8;
@@ -430,7 +431,7 @@ function juntas(circuito) {
   });
 }
 
-/** Un coche: el de Race Panic, más grande y con más sombra mientras la mano lo levanta. */
+/** Un coche, más grande y con más sombra mientras la mano lo levanta. */
 export function dibujarCocheSlot(slot) {
   const { coche, altura } = slot;
   if (altura <= 0) {
@@ -454,47 +455,19 @@ export function dibujarCocheSlot(slot) {
 
 const SOMBRA_COCHE = { x: 2, y: 2.5 };
 
+/** El coche con la forma de su modelo (coches.js): ruedas, chapa, cristales y luces. */
 export function dibujarCoche(coche) {
   ctx.save();
-  const l = LARGO_COCHE / 2, a = ANCHO_COCHE / 2;
+  const m = modelo(coche.modelo);
 
   // La sombra cae siempre abajo a la derecha, como la del decorado: se
   // desplaza en el mundo antes de girar, no con el coche.
   ctx.translate(coche.x + SOMBRA_COCHE.x, coche.y + SOMBRA_COCHE.y);
   ctx.rotate(coche.angulo);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-  carroceria();
+  sombraModelo(m, 'rgba(0, 0, 0, 0.3)');
   ctx.rotate(-coche.angulo);
   ctx.translate(-SOMBRA_COCHE.x, -SOMBRA_COCHE.y);
   ctx.rotate(coche.angulo);
-
-  // Ruedas y carrocería.
-  ctx.fillStyle = '#0d0f14';
-  for (const u of [l - 7, -l + 2]) {
-    ctx.fillRect(u, -a - 1.5, 5, 3);
-    ctx.fillRect(u, a - 1.5, 5, 3);
-  }
-  ctx.fillStyle = coche.color;
-  carroceria();
-
-  // Parabrisas delante y luna trasera: se lee hacia dónde mira.
-  ctx.fillStyle = COLOR.cocheCabina;
-  ctx.fillRect(l - 10, -a + 2, 4, ANCHO_COCHE - 4);
-  ctx.fillRect(-l + 4, -a + 2.5, 2.5, ANCHO_COCHE - 5);
-
-  // Faros, siempre encendidos.
-  ctx.fillStyle = '#fff3c4';
-  ctx.fillRect(l - 1.5, -a + 1, 1.5, 2.2);
-  ctx.fillRect(l - 1.5, a - 3.2, 1.5, 2.2);
-
-  // Pilotos traseros, apagados: un coche de slot no frena con luces.
-  ctx.fillStyle = '#7a2a30';
-  ctx.fillRect(-l, -a + 2.3, 1.8, 2);
-  ctx.fillRect(-l, a - 4.3, 1.8, 2);
+  pintarModelo(m, coche.color);
   ctx.restore();
-}
-
-/** La carrocería, en coordenadas del coche. */
-function carroceria() {
-  rectanguloRedondo(-LARGO_COCHE / 2, -ANCHO_COCHE / 2, LARGO_COCHE, ANCHO_COCHE, 3);
 }

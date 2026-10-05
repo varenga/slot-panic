@@ -394,3 +394,33 @@ app en la consola de Play.
   360 × 640, en la web y con la app simulada) y un primer playtest en el móvil: «bastante
   potencial como solución para el móvil». Arnés: 226/226.
 
+---
+
+## Coches con forma (05/10/2026, rama `10-coches`)
+
+> De `IDEAS.md` › 3, «sus coches». Planos en `_desarrollo/` (Multipla, 2CV, DS,
+> Escarabajo, 500 y Espace): ¿se distinguen a 16 px? Si no, tipos genéricos.
+
+- **Se distinguen todos**, como caricaturas: a ~16×8 px de pantalla solo se lee lo
+  exagerado, así que cada modelo tiene un rasgo que lo delata. El techo claro del DS y la
+  lona del 2CV y del 500 se leen incluso de noche; el escarabajo, por las cuatro aletas;
+  el 500, por ser el más corto (17 px); el Espace, por la cuña del parabrisas. No ha
+  hecho falta ningún genérico.
+- **El Multipla** fue el que costó: con la banda oscura del escalón era una caja. Lo que
+  se lee es el **morro más estrecho que la cabina** (±3,4 frente a ±5,5) con los faros
+  altos **en los hombros** del escalón (2×2,4 px, casi el doble que los del morro): de
+  escritorio se intuye, en la lupa (×2,4) se ven las cuatro luces en trapecio. El plano
+  que había es el de 2006, que ya no tiene escalón: se dibujó el de 1998.
+- **Las aletas esconden las ruedas**: con las ruedas en el borde de la caja, el 2CV y
+  el escarabajo parecían buggies. Cada modelo puede declarar su `via`.
+- **Nombres sin marcas**, como «slot»: apodos traducidos (Escalón, Dos caballos/Deuche,
+  Tiburón/Déesse, Escarabajo/Coccinelle, Bambino/Cinquino, Monovolumen) y el Clásico de
+  Race Panic, que se queda como el último de la lista.
+- **Solo cosmético**: la física, los choques, la mano y los faros de `luz.js` siguen con
+  la caja de 22×11, y el arnés no cambia (226/226). Se elige en la portada (**COCHE**,
+  tecla K), se recuerda (`slotpanic.coche`) y la exhibición lo enseña al momento; el
+  J2 o la CPU llevan el siguiente de la lista, nunca el mismo. Por defecto, el Escalón.
+- El banco de pruebas, `_desarrollo/coches.html` (no se publica): pinta cada modelo a su
+  tamaño real (escritorio, lupa ×1,2 y ×2,4) y lo amplía sin suavizar; `?noche`
+  oscurece.
+

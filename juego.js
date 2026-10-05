@@ -9,7 +9,7 @@ import {
   ALTO, ANCHO, ANCHO_LUPA, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
   TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
-import { estado, guardarCircuito, guardarEscenario, leerCircuito, leerEscenario } from './estado.js';
+import { estado, guardarCircuito, guardarEscenario, guardarModelo, leerCircuito, leerEscenario, leerModelo } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { CIRCUITOS } from './circuitos/indice.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
@@ -17,6 +17,7 @@ import { avanzarSlot, crearCarreraSlot } from './nucleo/slot.js';
 import { generarDecorado } from './nucleo/decorado.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
 import { dibujarCarriles, dibujarCocheSlot, dibujarFondo } from './dibujo.js';
+import { MODELOS, siguienteModelo } from './coches.js';
 import {
   actualizarParticulas, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
 } from './particulas.js';
@@ -66,6 +67,22 @@ function cambiarHora() {
   guardarHora(estado.hora);
 }
 
+/*
+ * El J1 lleva el coche elegido y el otro, el siguiente de la lista: nunca
+ * son el mismo. Se cambia en la portada, y la exhibición lo enseña ya.
+ */
+function cambiarCoche() {
+  estado.modelo = siguienteModelo(estado.modelo);
+  guardarModelo(estado.modelo);
+  vestir(estado.carrera);
+}
+
+function vestir(carrera) {
+  const [j1, j2] = carrera.coches;
+  j1.coche.modelo = estado.modelo;
+  j2.coche.modelo = siguienteModelo(estado.modelo);
+}
+
 function cambiarEscenario() {
   const i = ORDEN_ESCENARIOS.indexOf(estado.escenario);
   estado.escenario = ORDEN_ESCENARIOS[(i + 1) % ORDEN_ESCENARIOS.length];
@@ -92,6 +109,7 @@ function limpiarPista() {
 function irAPortada() {
   estado.fase = 'portada';
   estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot);
+  vestir(estado.carrera);
   estado.pilotos = EXHIBICION.map((opciones) => crearPiloto({ ...opciones, semilla: semilla() }));
   estado.humanos = [false, false];
   estado.carrera.fase = 'carrera';   // sin cuenta atrás: la exhibición ya está en marcha
@@ -109,6 +127,7 @@ function empezarCarrera() {
   // Cada carrera, los coches se cambian de carril: no son iguales.
   estado.turno = 1 - estado.turno;
   estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno);
+  vestir(estado.carrera);
   estado.pilotos = [0, 1].map(() => crearPiloto({ ...CPU_SLOT, semilla: semilla() }));
   estado.humanos = [false, false];
   estado.ultimaAvisada = false;
@@ -130,6 +149,7 @@ function datosCarrera() {
     circuito: estado.circuito.clave,
     escenario: estado.escenario,
     hora: estado.hora,
+    coche: estado.modelo,
     tactil: estado.tactil
   };
 }
@@ -210,6 +230,7 @@ function opcionPulsada(id) {
   else if (id === 'idioma') { cambiarIdioma(1); textosDelDocumento(); }
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
+  else if (id === 'coche') cambiarCoche();
 }
 
 /** Lo único de la interfaz que no se pinta en el lienzo. */
@@ -307,7 +328,7 @@ const ESCENAS = {
         dibujarPortadaLupa({ ...estado, tiempo: reloj });
         return;
       }
-      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora);
+      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo);
     },
     teclear(codigo) {
       if (empezar(codigo)) empezarCarrera();
@@ -315,6 +336,7 @@ const ESCENAS = {
       else if (codigo === 'KeyE') cambiarEscenario();
       else if (codigo === 'KeyC') cambiarCircuito();
       else if (codigo === 'KeyH') cambiarHora();
+      else if (codigo === 'KeyK') cambiarCoche();
     },
     pulsar(p) {
       const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada()).find((caja) => dentro(p, caja));
@@ -493,6 +515,7 @@ function aplicarVista() {
 estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
+estado.modelo = leerModelo(MODELOS.map((m) => m.id));
 const elegido = leerCircuito(CIRCUITOS.map((c) => c.clave));
 estado.circuito = CIRCUITOS.find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);

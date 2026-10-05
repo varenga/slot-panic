@@ -9,7 +9,7 @@ ocho* y *El nudo*, de piezas), dos coches enganchados a carriles que se cambian 
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X y los cruces y una mano que devuelve el
 coche; uno
-contra una CPU que falla o dos en la misma pantalla. Con el móvil en vertical, el modo
+contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma). Con el móvil en vertical, el modo
 lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cuatro escenarios de día, al
 atardecer o de noche, siete idiomas (una página por idioma, con SEO), sonido, teclado y
 táctil; instalable como PWA y sin red. La app de Android (Capacitor, `es.pnyk.slot`) está
@@ -197,6 +197,8 @@ circuitos/ocho.js      «El ocho», de piezas: cruce, peralte, chicane, derrape
 circuitos/nudo.js      «El nudo», de piezas: X, baches, horquilla, derrape, chicane
 dibujo.js              el mundo: suelo, decorado y pista (en una capa que se pinta
                        una vez), carriles y coches
+coches.js              la forma de cada modelo, vista desde arriba: silueta, ruedas
+                       y detalles. Cosmética: los choques siguen con la caja de 22×11
 particulas.js          chispas, humo y confeti. Presentación: aquí sí vale Math.random()
 luz.js                 la hora: día, atardecer (un velo) o noche (la pista a media
                        luz, las torres del decorado, faros y halos). Cosmética, y se
