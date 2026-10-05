@@ -210,3 +210,22 @@ kbd {
     display: block;
   }
 }
+
+/* El modo lupa (lupa.js): en el móvil en vertical el lienzo pasa a 9:16 y
+   sigue al coche. Lo pone juego.js con la clase .lupa; manda sobre el aviso
+   de girar. */
+.lupa #lienzo {
+  width: min(100vw, calc(100dvh * 9 / 16));
+  aspect-ratio: 9 / 16;
+  opacity: 1;
+}
+
+.lupa #gira {
+  display: none;
+}
+
+/* El pie fijo caía encima del coche: en la lupa va debajo, en su sitio. */
+.lupa #pie {
+  position: static;
+  padding: 8px;
+}

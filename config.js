@@ -24,7 +24,22 @@ export const SITE_ORIGIN = 'https://slot.pnyk.es/';
 export const ANCHO = 1280;
 export const ALTO = 720;
 
-export const DT_MAX = 0.05;        // s. Acota el salto tras cambiar de pestaña
+/*
+ * El modo lupa (`lupa.js`): el móvil en vertical, un jugador contra la CPU.
+ * El lienzo es 9:16 y enseña el mundo ampliado alrededor del J1, con el mapa
+ * del circuito arriba. Sus píxeles lógicos son los de la pantalla, no los del
+ * mundo: el mundo entra con la cámara, a LUPA_ZOOM (se prueba otro con
+ * ?lupa=1.2).
+ */
+export const ANCHO_LUPA = 540;
+export const ALTO_LUPA = 960;
+export const LUPA_ZOOM = 1.2;           // px del lienzo por px del mundo
+export const LUPA_COCHE = 100;          // px del coche al borde de abajo, con la vista que gira
+export const LUPA_GIRO = 0.3;           // s: la vista recorre 2/3 de lo que le falta para girar
+export const LUPA_ADELANTO = 70;        // px de pista por delante del coche a los que mira la vista que gira
+export const LUPA_ADELANTO_FIJA = 160;  // px por delante del coche que centra la vista fija
+
+export const DT_MAX = 0.05;       // s. Acota el salto tras cambiar de pestaña
 export const PASO_FISICA = 1 / 120; // s. El fotograma se trocea en pasos de esto como mucho
 
 /*

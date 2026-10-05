@@ -25,6 +25,16 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] Estética de juguete: piezas con juntas, trencillas, la mesa.
 - [ ] Niveles de CPU (hoy una, `CPU_SLOT`, ~1,2 s por vuelta del mejor piloto).
 - [ ] Récords (y fantasma) por circuito y carril.
+- [ ] **Modo lupa** (rama `09-modo-lupa`, `lupa.js`): el móvil en vertical, uno contra la
+      CPU, con el mundo ampliado alrededor del J1 y el mapa del circuito arriba. Hay
+      prototipo (se activa solo en vertical; en el ordenador, con `?lupa`, y `?lupa=1.5`
+      cambia el zoom; la tecla V cambia la vista). Falta:
+  - [ ] Playtest en el móvil: ¿divierte?, ¿qué zoom (hoy 1,2)?, ¿la vista que gira marea
+        o la fija se queda corta?
+  - [ ] La orientación: el manifest de la PWA dice `landscape` y la app,
+        `sensorLandscape`.
+  - [ ] Fuera de la mesa, en la vista que gira, se ve el fondo liso: ¿la mesa, un borde?
+  - [ ] La prosa de las páginas (`gen-pages.mjs`) y la entrada en `BITACORA.md`.
 
 # Fase 2b — El constructor de circuitos
 

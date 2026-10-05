@@ -27,11 +27,11 @@ function centro(circuito) {
   return circuito.interior || { x: ANCHO / 2, y: ALTO / 2 };
 }
 
-function nombreCircuito(circuito) {
+export function nombreCircuito(circuito) {
   return t('circuito.' + circuito.clave);
 }
 
-function panel(x, y, ancho, alto) {
+export function panel(x, y, ancho, alto) {
   ctx.fillStyle = COLOR.panel;
   rectanguloRedondo(x - ancho / 2, y, ancho, alto, 10);
 }
@@ -52,7 +52,7 @@ const LUZ_RADIO = 11;
 const LUZ_PASO = 34;
 const DESVANECER = 0.3;   // s finales de DURACION_SALIDA en que se apaga
 
-function semaforo(carrera, x, y) {
+export function semaforo(carrera, x, y) {
   let encendidas, color, alfa = 1;
   if (carrera.fase === 'cuenta') {
     encendidas = Math.min(LUCES, CUENTA_ATRAS - Math.ceil(carrera.cuenta) + 1);
@@ -140,11 +140,11 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora) {
   texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
 }
 
-function boton(caja, etiqueta, destacado = false) {
+export function boton(caja, etiqueta, destacado = false, tamMaximo = 13) {
   ctx.fillStyle = destacado ? COLOR.ambar : 'rgba(43, 48, 64, 0.9)';
   rectanguloRedondo(caja.x, caja.y, caja.ancho, caja.alto, 6);
   // Si la etiqueta no cabe (seis botones, idiomas largos), la letra se encoge.
-  let tam = 13;
+  let tam = tamMaximo;
   ctx.font = `600 ${tam}px ${FUENTE}`;
   while (tam > 9 && ctx.measureText(etiqueta).width > caja.ancho - 14) {
     tam--;
@@ -164,7 +164,7 @@ export function botonesFin(ids = ['repetir', 'menu'], y = ALTO / 2 + 130) {
   return ids.map((id, i) => ({ id, x: x0 + i * (ancho + hueco), y, ancho, alto }));
 }
 
-const ETIQUETA_BOTON = { repetir: 'fin.botonRepetir', menu: 'fin.botonMenu' };
+export const ETIQUETA_BOTON = { repetir: 'fin.botonRepetir', menu: 'fin.botonMenu' };
 
 function botones(cajas) {
   for (const caja of cajas) boton(caja, t(ETIQUETA_BOTON[caja.id]), caja.id === 'repetir');
@@ -218,7 +218,7 @@ function marcadorCoche(slot, i, humanos, alto) {
  * La potencia que lleva el coche, como el gatillo del mando: con toques se
  * queda a medias. En rojo mientras derrapa.
  */
-function barraPotencia(slot, x, y, ancho) {
+export function barraPotencia(slot, x, y, ancho) {
   const alto = 5;
   ctx.fillStyle = 'rgba(230, 232, 238, 0.15)';
   ctx.fillRect(x, y, ancho, alto);
