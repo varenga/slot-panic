@@ -396,7 +396,7 @@ app en la consola de Play.
 
 ---
 
-## Coches con forma (05/10/2026, rama `10-coches`)
+## Coches con forma (05/10/2026, rama `10-coches`, v0.5.0)
 
 > De `IDEAS.md` › 3, «sus coches». Planos en `_desarrollo/` (Multipla, 2CV, DS,
 > Escarabajo, 500 y Espace): ¿se distinguen a 16 px? Si no, tipos genéricos.

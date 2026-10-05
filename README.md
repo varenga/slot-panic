@@ -38,7 +38,8 @@ Salirse cuesta tiempo, no la carrera.
 Es el control móvil perfecto: **un dedo** acelera, soltar frena. Y es el multijugador
 local más sencillo posible: uno aprieta a la izquierda y otro a la derecha. Con el móvil
 en vertical, el **modo lupa**: la pista ampliada alrededor del coche y el mapa del
-circuito arriba, uno contra la CPU.
+circuito arriba, uno contra la CPU. Y siete **coches** a elegir, caricaturas de clásicos
+vistos desde arriba (con apodos, nunca marcas): cambian la forma, no la carrera.
 
 # Mecánica
 
@@ -58,7 +59,7 @@ circuito arriba, uno contra la CPU.
   cuadrícula, se corre y se publica sin registrarse (un alias y una llave en el
   dispositivo), y los demás eligen entre los publicados. Lo publicado se puede denunciar.
 - **Todo el campo para la pista**: el marcador va en una barra arriba.
-- **Sus coches** y una **estética de juguete**: piezas negras con juntas, trencillas
+- **Más coches** (y quizá con más agarre o más punta) y una **estética de juguete**: piezas negras con juntas, trencillas
   plateadas, una mesa o el suelo de un salón.
 - Cambio de carril y cruces como en los slot digitales.
 
