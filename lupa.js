@@ -1,7 +1,8 @@
 /*
  * Slot Panic — el modo lupa: el móvil en vertical, uno contra la CPU.
  *
- * El lienzo pasa a ser 9:16 (ANCHO_LUPA × ALTO_LUPA) y el mundo entra en él
+ * El lienzo pasa a ser vertical (ANCHO_LUPA de ancho y el alto de la
+ * proporción de la pantalla, de 9:16 en adelante) y el mundo entra en él
  * por una cámara que sigue al J1: ampliado y adelantado hacia donde va el
  * coche, con la pista quieta. Arriba, el marcador y el mapa del circuito
  * entero con los dos coches.
@@ -16,7 +17,8 @@
  */
 
 import {
-  ALTO, ALTO_LUPA, ANCHO, ANCHO_LUPA, COLOR, LUPA_ADELANTO, LUPA_GIRO, LUPA_MIRA, LUPA_ZOOM, VUELTAS_SLOT
+  ALTO, ALTO_LUPA, ALTO_LUPA_MAXIMO, ANCHO, ANCHO_LUPA, COLOR, LUPA_ADELANTO, LUPA_GIRO, LUPA_MIRA, LUPA_ZOOM,
+  MAPA_CRECE, VUELTAS_SLOT
 } from './config.js';
 import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
@@ -28,18 +30,36 @@ import { idiomaActual, t } from './i18n.js';
 import { silenciado } from './audio.js';
 
 const BARRA = 56;                  // px del marcador, arriba
-const MAPA = { x: 10, y: BARRA + 6, ancho: ANCHO_LUPA - 20, alto: 230 };
-const BAJO_MAPA = MAPA.y + MAPA.alto;
+const ALTO_MAPA = 230;              // px del mapa con el lienzo en 9:16
 const MARGEN_MAPA = 14;            // px del panel al circuito
 
 /*
- * Lo que el lienzo tiene de más por la densidad de la pantalla: con 540 px
- * lógicos en un móvil de 1080, el mundo ampliado se veía borroso.
+ * El alto del lienzo, el de la pantalla (`altoLupa`), y lo que depende de él:
+ * el mapa crece con una parte de lo que pasa de 9:16 y la zona de juego, con
+ * el resto. `densidad` es lo que el lienzo tiene de más por la densidad de la
+ * pantalla: con 540 px lógicos en un móvil de 1080, el mundo ampliado se veía
+ * borroso.
  */
+let altoLienzo = ALTO_LUPA;
 let densidad = 1;
+let claveMapa = '';
+let MAPA = null;
+let BAJO_MAPA = 0;
 
-export function prepararLupa(nuevaDensidad) {
+export function prepararLupa(nuevaDensidad, nuevoAlto) {
   densidad = nuevaDensidad;
+  altoLienzo = nuevoAlto;
+  MAPA = { x: 10, y: BARRA + 6, ancho: ANCHO_LUPA - 20, alto: Math.round(ALTO_MAPA + (altoLienzo - ALTO_LUPA) * MAPA_CRECE) };
+  BAJO_MAPA = MAPA.y + MAPA.alto;
+  claveMapa = '';
+}
+
+prepararLupa(1, ALTO_LUPA);
+
+/** El alto del lienzo para una pantalla de `ancho` × `altoPantalla`. */
+export function altoLupa(ancho, altoPantalla) {
+  const proporcional = Math.round(ANCHO_LUPA * altoPantalla / Math.max(1, ancho));
+  return Math.min(ALTO_LUPA_MAXIMO, Math.max(ALTO_LUPA, proporcional));
 }
 
 /** Cada fotograma empieza en píxeles lógicos del lienzo 9:16. */
@@ -85,17 +105,18 @@ export function seguirCamara(camara, slot, circuito, dt) {
  * 720): se acota, y el zoom no baja de lo que la llena (`zoomLupa`). Así no
  * hay que pintar nada más allá de la mesa, ni cuesta nada.
  */
-export function conCamara(camara, zoom, dibujar) {
+export function conCamara(camara, zoomPedido, dibujar) {
+  const zoom = zoomEfectivo(zoomPedido);
   ctx.fillStyle = COLOR.fondo;
   ctx.fillRect(0, 0, ANCHO_LUPA, BAJO_MAPA);
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, BAJO_MAPA, ANCHO_LUPA, ALTO_LUPA - BAJO_MAPA);
+  ctx.rect(0, BAJO_MAPA, ANCHO_LUPA, altoLienzo - BAJO_MAPA);
   ctx.clip();
-  const medioAncho = ANCHO_LUPA / 2 / zoom, medioAlto = (ALTO_LUPA - BAJO_MAPA) / 2 / zoom;
+  const medioAncho = ANCHO_LUPA / 2 / zoom, medioAlto = (altoLienzo - BAJO_MAPA) / 2 / zoom;
   const x = acotar(camara.x + Math.cos(camara.angulo) * LUPA_MIRA, medioAncho, ANCHO - medioAncho);
   const y = acotar(camara.y + Math.sin(camara.angulo) * LUPA_MIRA, medioAlto, ALTO - medioAlto);
-  ctx.translate(ANCHO_LUPA / 2, (BAJO_MAPA + ALTO_LUPA) / 2);
+  ctx.translate(ANCHO_LUPA / 2, (BAJO_MAPA + altoLienzo) / 2);
   ctx.scale(zoom, zoom);
   ctx.translate(-x, -y);
   dibujar();
@@ -107,19 +128,22 @@ function acotar(v, menor, mayor) {
   return menor > mayor ? (menor + mayor) / 2 : Math.min(mayor, Math.max(menor, v));
 }
 
-/*
- * El zoom que se pide con ?lupa=1.5, o el de siempre. Nunca menos del que
- * llena la zona de juego con la mesa: por debajo, se vería más allá de ella.
- */
+/** El zoom que se pide con ?lupa=1.5, o el de siempre. */
 export function zoomLupa(parametro) {
-  const minimo = Math.max(ANCHO_LUPA / ANCHO, (ALTO_LUPA - BAJO_MAPA) / ALTO);
   const z = parseFloat(parametro);
-  return Number.isFinite(z) && z <= 4 ? Math.max(minimo, z) : LUPA_ZOOM;
+  return Number.isFinite(z) && z > 0 && z <= 4 ? z : LUPA_ZOOM;
+}
+
+/*
+ * Nunca menos del que llena la zona de juego con la mesa: por debajo, se
+ * vería más allá de ella. Depende del alto de la pantalla.
+ */
+export function zoomEfectivo(zoom) {
+  return Math.max(zoom, ANCHO_LUPA / ANCHO, (altoLienzo - BAJO_MAPA) / ALTO);
 }
 
 // --- El mapa -------------------------------------------------------------------
 
-let claveMapa = '';
 let encaje = null;
 
 /** Escala y desplazamiento que meten el circuito entero en el panel del mapa. */
@@ -212,7 +236,7 @@ export function dibujarMarcadorLupa(carrera, humanos) {
   }
   semaforo(carrera, ANCHO_LUPA / 2, BAJO_MAPA + 40);
   if (carrera.fase === 'cuenta') {
-    const y = (BAJO_MAPA + ALTO_LUPA) / 2 - 60;
+    const y = (BAJO_MAPA + altoLienzo) / 2 - 60;
     panel(ANCHO_LUPA / 2, y - 26, 360, 52);
     texto(t('slot.mantener'), ANCHO_LUPA / 2, y, { tam: 20, color: COLOR.hud, peso: 700 });
   }
@@ -238,7 +262,7 @@ export function opcionesPortadaLupa() {
   const columnas = 2, alto = 44, hueco = 12;
   const ancho = (ANCHO_LUPA - 2 * 16 - hueco) / columnas;
   const filas = Math.ceil(OPCIONES.length / columnas);
-  const y0 = ALTO_LUPA - 52 - filas * alto - (filas - 1) * hueco;
+  const y0 = altoLienzo - 52 - filas * alto - (filas - 1) * hueco;
   // Si la última fila se queda con una sola, va a todo lo ancho.
   const sola = (i) => i === OPCIONES.length - 1 && i % columnas === 0;
   return OPCIONES.map((id, i) => ({
@@ -276,13 +300,13 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora 
 export function botonesFinLupa() {
   const ancho = 220, alto = 56, hueco = 20;
   const x0 = ANCHO_LUPA / 2 - ancho - hueco / 2;
-  return ['repetir', 'menu'].map((id, i) => ({ id, x: x0 + i * (ancho + hueco), y: ALTO_LUPA / 2 + 150, ancho, alto }));
+  return ['repetir', 'menu'].map((id, i) => ({ id, x: x0 + i * (ancho + hueco), y: altoLienzo / 2 + 150, ancho, alto }));
 }
 
 export function dibujarFinLupa(carrera, humanos, particulas) {
   ctx.fillStyle = COLOR.velo;
-  ctx.fillRect(0, 0, ANCHO_LUPA, ALTO_LUPA);
-  const x = ANCHO_LUPA / 2, y = ALTO_LUPA / 2;
+  ctx.fillRect(0, 0, ANCHO_LUPA, altoLienzo);
+  const x = ANCHO_LUPA / 2, y = altoLienzo / 2;
   const ganador = carrera.coches[carrera.ganador];
   texto(t('slot.gana', { quien: nombreSlot(carrera.ganador, humanos) }), x, y - 130, { tam: 44, color: ganador.coche.color, peso: 800 });
   texto(t('fin.tiempo', { tiempo: formatearTiempo(ganador.terminado) }), x, y - 70, { tam: 28, color: COLOR.hud, peso: 700 });
@@ -296,7 +320,7 @@ export function dibujarFinLupa(carrera, humanos, particulas) {
   for (const caja of botonesFinLupa()) boton(caja, t(ETIQUETA_BOTON[caja.id]), caja.id === 'repetir', 20);
   // El confeti cae en coordenadas de la mesa (1280 × 720): se estira al lienzo.
   ctx.save();
-  ctx.scale(ANCHO_LUPA / ANCHO, ALTO_LUPA / ALTO);
+  ctx.scale(ANCHO_LUPA / ANCHO, altoLienzo / ALTO);
   dibujarConfeti(particulas);
   ctx.restore();
 }
@@ -304,6 +328,6 @@ export function dibujarFinLupa(carrera, humanos, particulas) {
 /** Solo sirviendo en local: lo mismo que `dibujarDepuracion`, abajo. */
 export function dibujarDepuracionLupa(fps, slot, zoom) {
   const { coche } = slot;
-  const datos = `${fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)} · zoom ${zoom.toFixed(2)}`;
-  texto(datos, ANCHO_LUPA - 10, ALTO_LUPA - 12, { tam: 12, color: COLOR.texto, alinear: 'right', peso: 500 });
+  const datos = `${fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)} · zoom ${zoomEfectivo(zoom).toFixed(2)} · ${ANCHO_LUPA}×${altoLienzo}`;
+  texto(datos, ANCHO_LUPA - 10, altoLienzo - 12, { tam: 12, color: COLOR.texto, alinear: 'right', peso: 500 });
 }

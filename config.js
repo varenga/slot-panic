@@ -26,13 +26,17 @@ export const ALTO = 720;
 
 /*
  * El modo lupa (`lupa.js`): el móvil en vertical, un jugador contra la CPU.
- * El lienzo es 9:16 y enseña el mundo ampliado alrededor del J1, con el mapa
- * del circuito arriba. Sus píxeles lógicos son los de la pantalla, no los del
- * mundo: el mundo entra con la cámara, a LUPA_ZOOM (se prueba otro con
- * ?lupa=1.2).
+ * El lienzo tiene ANCHO_LUPA de ancho y el alto de la proporción de la
+ * pantalla (de 9:16 a ALTO_LUPA_MAXIMO): los móviles son más alargados que
+ * 9:16 y con un lienzo fijo quedaban bandas. Enseña el mundo ampliado
+ * alrededor del J1, con el mapa del circuito arriba. Sus píxeles lógicos son
+ * los de la pantalla, no los del mundo: el mundo entra con la cámara, a
+ * LUPA_ZOOM (se prueba otro con ?lupa=1.5).
  */
 export const ANCHO_LUPA = 540;
-export const ALTO_LUPA = 960;
+export const ALTO_LUPA = 960;           // el alto mínimo: 9:16
+export const ALTO_LUPA_MAXIMO = 1400;   // 9:23; más alargado, con bandas
+export const MAPA_CRECE = 0.4;          // del alto que pasa de ALTO_LUPA, lo que se lleva el mapa
 export const LUPA_ZOOM = 1.2;           // px del lienzo por px del mundo
 export const LUPA_GIRO = 0.3;           // s: la dirección en que mira la vista recorre 2/3 de lo que le falta
 export const LUPA_ADELANTO = 70;        // px de pista por delante del coche de los que se toma esa dirección

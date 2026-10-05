@@ -215,8 +215,8 @@ kbd {
    sigue al coche. Lo pone juego.js con la clase .lupa; manda sobre el aviso
    de girar. */
 .lupa #lienzo {
-  width: min(100vw, calc(100dvh * 9 / 16));
-  aspect-ratio: 9 / 16;
+  width: min(100vw, calc(100dvh * 540 / var(--alto-lupa, 960)));
+  aspect-ratio: 540 / var(--alto-lupa, 960);
   opacity: 1;
 }
 

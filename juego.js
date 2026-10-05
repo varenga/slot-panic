@@ -6,7 +6,7 @@
  */
 
 import {
-  ALTO, ALTO_LUPA, ANCHO, ANCHO_LUPA, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
+  ALTO, ANCHO, ANCHO_LUPA, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
   TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { estado, guardarCircuito, guardarEscenario, leerCircuito, leerEscenario } from './estado.js';
@@ -31,7 +31,7 @@ import { cambiarIdioma, t } from './i18n.js';
 import { cargarAnalitica, evento } from './analitica.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
-  botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
+  altoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
 } from './lupa.js';
 
@@ -179,7 +179,7 @@ function aLienzo(evento) {
   const caja = lienzo.getBoundingClientRect();
   return {
     x: (evento.clientX - caja.left) * (estado.lupa ? ANCHO_LUPA : ANCHO) / caja.width,
-    y: (evento.clientY - caja.top) * (estado.lupa ? ALTO_LUPA : ALTO) / caja.height
+    y: (evento.clientY - caja.top) * (estado.lupa ? lienzo.height / densidadLupa : ALTO) / caja.height
   };
 }
 
@@ -465,16 +465,29 @@ function quitarLoDeLaWeb() {
  * cambia cómo se ve. El lienzo de la lupa tiene la densidad de la pantalla
  * (hasta 2): ampliado, el mundo se veía borroso.
  */
+let densidadLupa = 1;
+
 function aplicarVista() {
   const lupa = LUPA_FORZADA || Boolean(VERTICAL?.matches);
-  if (lupa === estado.lupa && lienzo.dataset.vista) return;
+  // En la lupa, el alto del lienzo sigue la proporción del sitio que hay (sin
+  // las muescas): así no quedan bandas en un móvil alargado.
+  let alto = 0;
+  if (lupa) {
+    const escena = lienzo.parentElement;
+    const estilo = getComputedStyle(escena);
+    const ancho = escena.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+    alto = altoLupa(ancho, escena.clientHeight - parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom));
+  }
+  const vista = lupa ? 'lupa-' + alto : 'mesa';
+  if (vista === lienzo.dataset.vista) return;
   estado.lupa = lupa;
-  lienzo.dataset.vista = lupa ? 'lupa' : 'mesa';
+  lienzo.dataset.vista = vista;
   document.documentElement.classList.toggle('lupa', lupa);
-  const densidad = lupa ? Math.min(2, Math.max(1, Math.round(window.devicePixelRatio || 1))) : 1;
-  prepararLupa(densidad);
-  lienzo.width = (lupa ? ANCHO_LUPA : ANCHO) * densidad;
-  lienzo.height = (lupa ? ALTO_LUPA : ALTO) * densidad;
+  lienzo.style.setProperty('--alto-lupa', alto || '');
+  densidadLupa = lupa ? Math.min(2, Math.max(1, Math.round(window.devicePixelRatio || 1))) : 1;
+  if (lupa) prepararLupa(densidadLupa, alto);
+  lienzo.width = (lupa ? ANCHO_LUPA : ANCHO) * densidadLupa;
+  lienzo.height = (lupa ? alto : ALTO) * densidadLupa;
   camara.lista = false;
   punteros.clear();
 }
@@ -488,6 +501,8 @@ estado.decorado = generarDecorado(estado.circuito, estado.escenario);
 iniciarLienzo(lienzo);
 aplicarVista();
 VERTICAL?.addEventListener?.('change', aplicarVista);
+// La barra de direcciones del móvil cambia el alto sin girar.
+window.addEventListener('resize', aplicarVista);
 quitarLoDeLaWeb();
 textosDelDocumento();
 registrarServiceWorker();
