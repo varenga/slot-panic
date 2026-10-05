@@ -31,8 +31,6 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 El camino entero, con lo hecho marcado, en `APP.md` §8. Lo que queda:
 
 - [ ] Instalar la de Android por USB y probarla en un móvil (APP.md, Fase B).
-- [ ] Publicar pnyk.es con Slot Panic en la política común (rama
-      `08-privacidad-slot-panic` de pnyk): la ficha de Play la enlaza.
 - [ ] Crear la app en la consola de Play (`es.pnyk.slot`), rellenar la ficha con
       `app/store/` y subir el bundle a pruebas internas; luego, pública.
 - [ ] Más adelante, la de iOS (necesita un Mac).

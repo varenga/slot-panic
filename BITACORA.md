@@ -318,3 +318,12 @@ enlaza a Slot Panic. `pnyk.json` pasa a `"web": true`. Falta GA4 (TODO › Fase 
 Probarla en un móvil por USB, poner Slot Panic en la política común de pnyk.es y crear la
 app en la consola de Play.
 
+## Slot Panic en la política común de pnyk.es (04/10/2026, rama `08-privacidad-slot-panic` de pnyk)
+
+- La ficha de `pnyk/proyectos.js` declara `privacy`: GA4 propio (`G-LWMERSV8WH`), solo
+  tras consentimiento, y sin récords online. La política común
+  (https://pnyk.es/privacidad/#juegos, y su versión en inglés) lo enumera.
+- Fusionada en `master` de pnyk y publicada: la página en línea ya nombra Slot Panic.
+  Es la URL que enlaza la ficha de Play, así que crear la app en la consola ya no espera
+  a nada.
+
