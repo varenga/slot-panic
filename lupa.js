@@ -256,7 +256,7 @@ export function dibujarAvisosLupa(avisos) {
 // --- Portada ---------------------------------------------------------------------
 
 /* Las opciones, en dos columnas abajo. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'hora', 'escenario', 'sonido', 'idioma'];
+const OPCIONES = ['circuito', 'coche', 'hora', 'escenario', 'sonido', 'idioma'];
 
 export function opcionesPortadaLupa() {
   const columnas = 2, alto = 44, hueco = 12;
@@ -274,7 +274,7 @@ export function opcionesPortadaLupa() {
   }));
 }
 
-export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora }) {
+export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo }) {
   dibujarMapa(circuito, carrera.coches);
   const x = ANCHO_LUPA / 2, y = BAJO_MAPA + 30;
   panel(x, y, 440, 200);
@@ -287,6 +287,7 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora 
 
   const valores = {
     circuito: nombreCircuito(circuito),
+    coche: t('coche.' + modelo),
     sonido: t(silenciado() ? 'sonido.no' : 'sonido.si'),
     idioma: idiomaActual().nombre.toUpperCase(),
     escenario: t('escenario.' + escenario),

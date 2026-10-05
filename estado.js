@@ -37,12 +37,27 @@ export function guardarCircuito(clave) {
   try { localStorage.setItem(`${GAME_SLUG}.circuito`, clave); } catch (error) { /* modo privado */ }
 }
 
+/** El coche del J1, por su modelo (coches.js): también se recuerda. */
+export function leerModelo(ids) {
+  try {
+    const guardado = localStorage.getItem(`${GAME_SLUG}.coche`);
+    return ids.includes(guardado) ? guardado : ids[0];
+  } catch (error) {
+    return ids[0];
+  }
+}
+
+export function guardarModelo(id) {
+  try { localStorage.setItem(`${GAME_SLUG}.coche`, id); } catch (error) { /* modo privado */ }
+}
+
 export const estado = {
   fase: 'portada',     // 'portada' | 'carrera' | 'fin'
   circuito: null,      // el que se corre, de CIRCUITOS (circuitos/indice.js)
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario
   hora: 'dia',         // 'dia' | 'atardecer' | 'noche': cosmética, combinable con el escenario
+  modelo: null,        // el coche del J1 (coches.js); el otro lleva el siguiente. Cosmético
   tactil: false,       // se activa con el primer toque
   lupa: false,         // el móvil en vertical: la vista que sigue al J1 (lupa.js)
   carrera: null,       // la de los dos coches; en la portada, la exhibición

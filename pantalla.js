@@ -100,7 +100,7 @@ export function dibujarAvisos(avisos) {
 // --- Portada -------------------------------------------------------------------
 
 /* Las opciones de la portada, en la banda de arriba. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'sonido', 'idioma', 'escenario', 'hora'];
+const OPCIONES = ['circuito', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
 
 export function opcionesPortada() {
   const alto = 30, hueco = 10;
@@ -111,9 +111,9 @@ export function opcionesPortada() {
   }));
 }
 
-const TECLA_OPCION = { circuito: 'C', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
+const TECLA_OPCION = { circuito: 'C', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
 
-export function dibujarPortada(circuito, tiempo, escenario, tactil, hora) {
+export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo) {
   const { x, y } = centro(circuito);
   panel(x, y - 120, 470, 252);
   texto('SLOT PANIC', x, y - 70, { tam: 64, color: COLOR.hud, peso: 800 });
@@ -129,6 +129,7 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora) {
   bandas();
   const valores = {
     circuito: nombreCircuito(circuito),
+    coche: t('coche.' + modelo),
     sonido: t(silenciado() ? 'sonido.no' : 'sonido.si'),
     idioma: idiomaActual().nombre.toUpperCase(),
     escenario: t('escenario.' + escenario),

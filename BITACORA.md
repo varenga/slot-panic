@@ -394,3 +394,60 @@ app en la consola de Play.
   360 × 640, en la web y con la app simulada) y un primer playtest en el móvil: «bastante
   potencial como solución para el móvil». Arnés: 226/226.
 
+---
+
+## Coches con forma (05/10/2026, rama `10-coches`, v0.5.0)
+
+> De `IDEAS.md` › 3, «sus coches». Planos en `_desarrollo/` (Multipla, 2CV, DS,
+> Escarabajo, 500 y Espace): ¿se distinguen a 16 px? Si no, tipos genéricos.
+
+- **Se distinguen todos**, como caricaturas: a ~16×8 px de pantalla solo se lee lo
+  exagerado, así que cada modelo tiene un rasgo que lo delata. El techo claro del DS y la
+  lona del 2CV y del 500 se leen incluso de noche; el escarabajo, por las cuatro aletas;
+  el 500, por ser el más corto (17 px); el Espace, por la cuña del parabrisas. No ha
+  hecho falta ningún genérico.
+- **El Multipla** fue el que costó: con la banda oscura del escalón era una caja. Lo que
+  se lee es el **morro más estrecho que la cabina** (±3,4 frente a ±5,5) con los faros
+  altos **en los hombros** del escalón (2×2,4 px, casi el doble que los del morro): de
+  escritorio se intuye, en la lupa (×2,4) se ven las cuatro luces en trapecio. El plano
+  que había es el de 2006, que ya no tiene escalón: se dibujó el de 1998.
+- **Las aletas esconden las ruedas**: con las ruedas en el borde de la caja, el 2CV y
+  el escarabajo parecían buggies. Cada modelo puede declarar su `via`.
+- **Nombres sin marcas**, como «slot»: apodos traducidos (Escalón, Dos caballos/Deuche,
+  Tiburón/Déesse, Escarabajo/Coccinelle, Bambino/Cinquino, Monovolumen) y el Clásico de
+  Race Panic, que se queda como el último de la lista.
+- **Solo cosmético**: la física, los choques, la mano y los faros de `luz.js` siguen con
+  la caja de 22×11, y el arnés no cambia (226/226). Se elige en la portada (**COCHE**,
+  tecla K), se recuerda (`slotpanic.coche`) y la exhibición lo enseña al momento; el
+  J2 o la CPU llevan el siguiente de la lista, nunca el mismo. Por defecto, el Escalón.
+- El banco de pruebas, `_desarrollo/coches.html` (no se publica): pinta cada modelo a su
+  tamaño real (escritorio, lupa ×1,2 y ×2,4) y lo amplía sin suavizar; `?noche`
+  oscurece.
+- **Coches más grandes**: con todos los modelos ya dibujados, el coche se perdía en la
+  pista, también el de siempre. La caja pasa de 22×11 a **31×15,5** (×1,4): quedan 14 px
+  entre los dos coches en paralelo y 9 hasta el borde del asfalto (el arnés exige 4). Los
+  modelos se siguen dibujando en 22×11 y `coches.js` los escala. Se probó también ×1,6
+  (35×17,5): pasaba el arnés, pero en las curvas cerradas los dos coches iban demasiado
+  juntos. El **CHOQUE crece con el coche** (de 14 a 20 px entre centros), para que se
+  choquen cuando se ve que se tocan: en cada X o cruce pasan de chocar en 8 y 6 de 21
+  desfases a 12 y 9. Cruzarse es más arriesgado, y nunca chocan dos veces seguidas.
+- **Los diseños, repasados a la medida nueva**: a 75 px (la lupa, ×2,4) las caricaturas
+  pensadas para 16 px eran toscas: ruedas como bloques de buggy, faros cuadrados enormes
+  y chapa plana. Ahora el techo va en el color del coche aclarado un 22 % (da volumen),
+  hay un contorno fino (pintado *debajo* de la chapa, para que no marque las juntas de
+  las aletas), las ruedas apenas asoman (0,6 de la caja) y las luces son óvalos
+  pequeños. Y detalles de los planos que antes no cabían: las ventanillas abombadas del
+  Escalón, la costura y el rollo de la lona del 2CV, los intermitentes del techo del
+  Tiburón, el parabrisas curvo y la rejilla del motor del Escarabajo (el óvalo de antes
+  parecían unas gafas), los bigotes del Bambino. En escritorio se siguen leyendo igual.
+- **Tres rehechos tras verlos** (el 2CV, el escarabajo y el bambino «tienen un aire» y se
+  quedan). El **Escalón**, con el plano del de 1998 (`coche-fiat-multipla-1.jpg`): no
+  tiene el morro más estrecho, sino redondo y ancho de punta a punta; los faros altos
+  van encima del capó, en sus esquinas, saltones (en una cuenca oscura), y los bajos en
+  el parachoques. El **Tiburón** no se parecía: el real mide casi tres veces su anchura,
+  así que en la caja de 2:1 solo parece largo si es **estrecho** (±4,2 de ±5,5), con el
+  morro ancho y los faros separados en las esquinas, la cola afilada y las ruedas de
+  atrás tapadas. El **Monovolumen** no parecía ni un Espace ni un monovolumen: ahora es
+  de un solo volumen, sin capó (el parabrisas arranca casi en el morro), con los faros
+  rasgados en las esquinas, retrovisores y la cola recta.
+
