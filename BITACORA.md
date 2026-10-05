@@ -431,4 +431,13 @@ app en la consola de Play.
   juntos. El **CHOQUE crece con el coche** (de 14 a 20 px entre centros), para que se
   choquen cuando se ve que se tocan: en cada X o cruce pasan de chocar en 8 y 6 de 21
   desfases a 12 y 9. Cruzarse es más arriesgado, y nunca chocan dos veces seguidas.
+- **Los diseños, repasados a la medida nueva**: a 75 px (la lupa, ×2,4) las caricaturas
+  pensadas para 16 px eran toscas: ruedas como bloques de buggy, faros cuadrados enormes
+  y chapa plana. Ahora el techo va en el color del coche aclarado un 22 % (da volumen),
+  hay un contorno fino (pintado *debajo* de la chapa, para que no marque las juntas de
+  las aletas), las ruedas apenas asoman (0,6 de la caja) y las luces son óvalos
+  pequeños. Y detalles de los planos que antes no cabían: las ventanillas abombadas del
+  Escalón, la costura y el rollo de la lona del 2CV, los intermitentes del techo del
+  Tiburón, el parabrisas curvo y la rejilla del motor del Escarabajo (el óvalo de antes
+  parecían unas gafas), los bigotes del Bambino. En escritorio se siguen leyendo igual.
 
