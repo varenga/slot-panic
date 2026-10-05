@@ -2,10 +2,12 @@
  * Slot Panic — el modo lupa: el móvil en vertical, uno contra la CPU.
  *
  * El lienzo pasa a ser 9:16 (ANCHO_LUPA × ALTO_LUPA) y el mundo entra en él
- * por una cámara que sigue al J1: ampliado alrededor del coche, que queda
- * abajo y centrado mirando hacia arriba (la vista gira con la pista) o en el
- * centro con la pista quieta (la vista fija). Arriba, el marcador y el mapa
- * del circuito entero con los dos coches.
+ * por una cámara que sigue al J1: ampliado y adelantado hacia donde va el
+ * coche, con la pista quieta. Arriba, el marcador y el mapa del circuito
+ * entero con los dos coches.
+ *
+ * Una vista que giraba con la pista, con el coche siempre abajo y hacia
+ * arriba, mareaba en el primer playtest: se quitó.
  *
  * Es presentación, como `pantalla.js`: la carrera es la misma, y el mundo se
  * dibuja con las mismas funciones, solo que dentro de la transformación de la
@@ -14,8 +16,7 @@
  */
 
 import {
-  ALTO, ALTO_LUPA, ANCHO, ANCHO_LUPA, COLOR, LUPA_ADELANTO, LUPA_ADELANTO_FIJA, LUPA_COCHE, LUPA_GIRO, LUPA_ZOOM,
-  VUELTAS_SLOT
+  ALTO, ALTO_LUPA, ANCHO, ANCHO_LUPA, COLOR, LUPA_ADELANTO, LUPA_GIRO, LUPA_MIRA, LUPA_ZOOM, VUELTAS_SLOT
 } from './config.js';
 import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
@@ -58,9 +59,10 @@ function acercarAngulo(a, b, f) {
 }
 
 /*
- * La cámara sigue al coche: su punto es el del coche y su ángulo, el de la
- * pista un poco por delante, con retraso. El de la pista y no el del coche:
- * con el coleteo, o dando vueltas por la mesa, la vista daba bandazos.
+ * La cámara sigue al coche: su punto es el del coche y su ángulo (hacia dónde
+ * se adelanta la vista), el de la pista un poco por delante, con retraso. El
+ * de la pista y no el del coche: con el coleteo, o dando vueltas por la mesa,
+ * la vista daba bandazos.
  */
 export function seguirCamara(camara, slot, circuito, dt) {
   const objetivo = circuito.puntoEn(slot.s + LUPA_ADELANTO).angulo;
@@ -76,35 +78,26 @@ export function seguirCamara(camara, slot, circuito, dt) {
 }
 
 /*
- * Dibuja el mundo a través de la cámara. Fuera de la mesa (1280 × 720) no hay
- * nada: el color de fondo.
+ * Dibuja el mundo a través de la cámara, en la zona de juego: lo que queda
+ * bajo el mapa. Arriba, el fondo liso, para el marcador y el mapa.
+ *
+ * La vista mira por delante del coche, pero nunca fuera de la mesa (1280 ×
+ * 720): se acota, y el zoom no baja de lo que la llena (`zoomLupa`). Así no
+ * hay que pintar nada más allá de la mesa, ni cuesta nada.
  */
-export function conCamara(camara, vista, zoom, dibujar) {
+export function conCamara(camara, zoom, dibujar) {
   ctx.fillStyle = COLOR.fondo;
-  ctx.fillRect(0, 0, ANCHO_LUPA, ALTO_LUPA);
+  ctx.fillRect(0, 0, ANCHO_LUPA, BAJO_MAPA);
   ctx.save();
-  if (vista === 'gira') {
-    ctx.translate(ANCHO_LUPA / 2, ALTO_LUPA - LUPA_COCHE);
-    ctx.scale(zoom, zoom);
-    // El sentido de la marcha, hacia arriba.
-    ctx.rotate(-Math.PI / 2 - camara.angulo);
-    ctx.translate(-camara.x, -camara.y);
-  } else {
-    // Mira por delante del coche, pero sin enseñar fuera de la mesa si cabe:
-    // por los bordes, media pantalla se quedaba en negro.
-    const medioAncho = ANCHO_LUPA / 2 / zoom, medioAlto = (ALTO_LUPA - BAJO_MAPA) / 2 / zoom;
-    const x = acotar(camara.x + Math.cos(camara.angulo) * LUPA_ADELANTO_FIJA, medioAncho, ANCHO - medioAncho);
-    const y = acotar(camara.y + Math.sin(camara.angulo) * LUPA_ADELANTO_FIJA, medioAlto, ALTO - medioAlto);
-    ctx.translate(ANCHO_LUPA / 2, (BAJO_MAPA + ALTO_LUPA) / 2);
-    ctx.scale(zoom, zoom);
-    ctx.translate(-x, -y);
-  }
-  // El borde de la mesa: que se sepa dónde se acaba el mundo.
-  ctx.fillStyle = COLOR.hierba;
-  ctx.fillRect(-12, -12, ANCHO + 24, ALTO + 24);
   ctx.beginPath();
-  ctx.rect(0, 0, ANCHO, ALTO);
+  ctx.rect(0, BAJO_MAPA, ANCHO_LUPA, ALTO_LUPA - BAJO_MAPA);
   ctx.clip();
+  const medioAncho = ANCHO_LUPA / 2 / zoom, medioAlto = (ALTO_LUPA - BAJO_MAPA) / 2 / zoom;
+  const x = acotar(camara.x + Math.cos(camara.angulo) * LUPA_MIRA, medioAncho, ANCHO - medioAncho);
+  const y = acotar(camara.y + Math.sin(camara.angulo) * LUPA_MIRA, medioAlto, ALTO - medioAlto);
+  ctx.translate(ANCHO_LUPA / 2, (BAJO_MAPA + ALTO_LUPA) / 2);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-x, -y);
   dibujar();
   ctx.restore();
 }
@@ -114,10 +107,14 @@ function acotar(v, menor, mayor) {
   return menor > mayor ? (menor + mayor) / 2 : Math.min(mayor, Math.max(menor, v));
 }
 
-/** El zoom que se pide con ?lupa=1.2, o el de siempre. */
+/*
+ * El zoom que se pide con ?lupa=1.5, o el de siempre. Nunca menos del que
+ * llena la zona de juego con la mesa: por debajo, se vería más allá de ella.
+ */
 export function zoomLupa(parametro) {
+  const minimo = Math.max(ANCHO_LUPA / ANCHO, (ALTO_LUPA - BAJO_MAPA) / ALTO);
   const z = parseFloat(parametro);
-  return Number.isFinite(z) && z >= 0.3 && z <= 4 ? z : LUPA_ZOOM;
+  return Number.isFinite(z) && z <= 4 ? Math.max(minimo, z) : LUPA_ZOOM;
 }
 
 // --- El mapa -------------------------------------------------------------------
@@ -235,23 +232,25 @@ export function dibujarAvisosLupa(avisos) {
 // --- Portada ---------------------------------------------------------------------
 
 /* Las opciones, en dos columnas abajo. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'hora', 'escenario', 'vista', 'sonido', 'idioma'];
+const OPCIONES = ['circuito', 'hora', 'escenario', 'sonido', 'idioma'];
 
 export function opcionesPortadaLupa() {
   const columnas = 2, alto = 44, hueco = 12;
   const ancho = (ANCHO_LUPA - 2 * 16 - hueco) / columnas;
   const filas = Math.ceil(OPCIONES.length / columnas);
   const y0 = ALTO_LUPA - 52 - filas * alto - (filas - 1) * hueco;
+  // Si la última fila se queda con una sola, va a todo lo ancho.
+  const sola = (i) => i === OPCIONES.length - 1 && i % columnas === 0;
   return OPCIONES.map((id, i) => ({
     id,
     x: 16 + (i % columnas) * (ancho + hueco),
     y: y0 + Math.floor(i / columnas) * (alto + hueco),
-    ancho,
+    ancho: sola(i) ? ANCHO_LUPA - 2 * 16 : ancho,
     alto
   }));
 }
 
-export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, vista }) {
+export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora }) {
   dibujarMapa(circuito, carrera.coches);
   const x = ANCHO_LUPA / 2, y = BAJO_MAPA + 30;
   panel(x, y, 440, 200);
@@ -267,8 +266,7 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
     sonido: t(silenciado() ? 'sonido.no' : 'sonido.si'),
     idioma: idiomaActual().nombre.toUpperCase(),
     escenario: t('escenario.' + escenario),
-    hora: t('hora.' + hora),
-    vista: t('vista.' + vista)
+    hora: t('hora.' + hora)
   };
   for (const opcion of opcionesPortadaLupa()) boton(opcion, t('opcion.' + opcion.id, { v: valores[opcion.id] }), false, 17);
 }
@@ -306,6 +304,6 @@ export function dibujarFinLupa(carrera, humanos, particulas) {
 /** Solo sirviendo en local: lo mismo que `dibujarDepuracion`, abajo. */
 export function dibujarDepuracionLupa(fps, slot, zoom) {
   const { coche } = slot;
-  const datos = `${fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)} · zoom ${zoom}`;
+  const datos = `${fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)} · zoom ${zoom.toFixed(2)}`;
   texto(datos, ANCHO_LUPA - 10, ALTO_LUPA - 12, { tam: 12, color: COLOR.texto, alinear: 'right', peso: 500 });
 }

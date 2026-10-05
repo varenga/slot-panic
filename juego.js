@@ -45,7 +45,7 @@ let reloj = 0;                // s desde que se cargó la página (parpadeos)
 /*
  * El modo lupa (`lupa.js`): en el móvil en vertical, en vez de pedir que se
  * gire, el lienzo pasa a 9:16 y sigue al J1. Con ?lupa se fuerza (para
- * probarlo en el ordenador), y ?lupa=1.2 cambia el zoom.
+ * probarlo en el ordenador), y ?lupa=1.5 cambia el zoom.
  */
 const parametros = new URLSearchParams(location.search);
 const LUPA_FORZADA = parametros.has('lupa');
@@ -165,7 +165,6 @@ window.addEventListener('keydown', (evento) => {
   if (evento.repeat) return;
 
   if (evento.code === 'KeyM') alternarSilencio();
-  if (evento.code === 'KeyV' && estado.lupa) cambiarVista();
   ESCENAS[estado.fase].teclear(evento.code);
 });
 window.addEventListener('keyup', (evento) => { teclas[evento.code] = false; });
@@ -212,11 +211,6 @@ function opcionPulsada(id) {
   else if (id === 'idioma') { cambiarIdioma(1); textosDelDocumento(); }
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
-  else if (id === 'vista') cambiarVista();
-}
-
-function cambiarVista() {
-  estado.vista = estado.vista === 'gira' ? 'fija' : 'gira';
 }
 
 /** Lo único de la interfaz que no se pinta en el lienzo. */
@@ -269,7 +263,7 @@ function avanzarMundo(mandosCoches, dt) {
 
 function dibujarMundo() {
   if (estado.lupa) {
-    conCamara(camara, estado.vista, ZOOM, pintarMundo);
+    conCamara(camara, ZOOM, pintarMundo);
     return;
   }
   pintarMundo();

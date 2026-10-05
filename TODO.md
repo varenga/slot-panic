@@ -28,12 +28,13 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] **Modo lupa** (rama `09-modo-lupa`, `lupa.js`): el móvil en vertical, uno contra la
       CPU, con el mundo ampliado alrededor del J1 y el mapa del circuito arriba. Hay
       prototipo (se activa solo en vertical; en el ordenador, con `?lupa`, y `?lupa=1.5`
-      cambia el zoom; la tecla V cambia la vista). Falta:
-  - [ ] Playtest en el móvil: ¿divierte?, ¿qué zoom (hoy 1,2)?, ¿la vista que gira marea
-        o la fija se queda corta?
+      cambia el zoom). Primer playtest: «bastante potencial»; la vista que giraba con la
+      pista mareaba y se quitó, se queda la fija. Falta:
+  - [ ] Más playtest: ¿qué zoom (hoy 1,2)?, ¿se ven a tiempo las curvas que vienen?
   - [ ] La orientación: el manifest de la PWA dice `landscape` y la app,
         `sensorLandscape`.
-  - [ ] Fuera de la mesa, en la vista que gira, se ve el fondo liso: ¿la mesa, un borde?
+  - [ ] Si el zoom tuviera que bajar de lo que llena la mesa (hoy no pasa de 0,93), algo
+        barato más allá de ella: el suelo del escenario estirado o un patrón.
   - [ ] La prosa de las páginas (`gen-pages.mjs`) y la entrada en `BITACORA.md`.
 
 # Fase 2b — El constructor de circuitos

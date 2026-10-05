@@ -34,10 +34,9 @@ export const ALTO = 720;
 export const ANCHO_LUPA = 540;
 export const ALTO_LUPA = 960;
 export const LUPA_ZOOM = 1.2;           // px del lienzo por px del mundo
-export const LUPA_COCHE = 100;          // px del coche al borde de abajo, con la vista que gira
-export const LUPA_GIRO = 0.3;           // s: la vista recorre 2/3 de lo que le falta para girar
-export const LUPA_ADELANTO = 70;        // px de pista por delante del coche a los que mira la vista que gira
-export const LUPA_ADELANTO_FIJA = 160;  // px por delante del coche que centra la vista fija
+export const LUPA_GIRO = 0.3;           // s: la dirección en que mira la vista recorre 2/3 de lo que le falta
+export const LUPA_ADELANTO = 70;        // px de pista por delante del coche de los que se toma esa dirección
+export const LUPA_MIRA = 160;           // px que la vista se adelanta al coche en esa dirección
 
 export const DT_MAX = 0.05;       // s. Acota el salto tras cambiar de pestaña
 export const PASO_FISICA = 1 / 120; // s. El fotograma se trocea en pasos de esto como mucho
