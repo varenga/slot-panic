@@ -34,5 +34,6 @@ export const OCHO = construirDePiezas({
   // Fin de los sectores 1 y 2: el lazo pequeño y la bajada.
   sectores: [{ x: 860, y: 170 }, { x: 600, y: 625 }],
   interior: { x: 550, y: 445 },
-  gradas: [{ x: 1060, y: 470, largo: 260, fondo: 24, angulo: 0 }]
+  // La grada, por fuera de la recta de meta, de cara a la salida.
+  gradas: [{ x: 560, y: 165, largo: 380, fondo: 24, angulo: 0 }]
 });

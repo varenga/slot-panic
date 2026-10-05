@@ -2,10 +2,13 @@
  * Slot Panic — lo que va encima del mundo: marcador, cuenta atrás y semáforo,
  * avisos, portada y cartel de fin. Todo texto pasa por t().
  *
- * El marcador y los carteles van en el interior del circuito
- * (`circuito.interior`), sobre un panel oscuro: con suelos claros (desierto,
- * nieve) el texto blanco sin panel no se leía. Las opciones y la ayuda, en las
- * bandas de arriba y abajo, que el decorado deja libres.
+ * En carrera, el marcador va en la barra de arriba (la banda que el decorado
+ * deja libre y que la pista no pisa): todo el campo queda para la pista, y un
+ * circuito sin hueco en el interior (los del constructor) se corre igual. La
+ * portada va en el interior del circuito si lo declara (`circuito.interior`),
+ * si no, en el centro, y el cartel de fin, en el centro; siempre sobre un
+ * panel oscuro: con suelos claros (desierto, nieve) el texto blanco sin panel
+ * no se leía. Las opciones y la ayuda, en las bandas de arriba y abajo.
  *
  * Lo pulsable (opciones de la portada, botones del fin) se define en UNA
  * función de distribución que usan a la vez el dibujo y `juego.js` para saber
@@ -19,6 +22,11 @@ import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { idiomaActual, t } from './i18n.js';
 import { silenciado } from './audio.js';
 
+/** Dónde van la portada y los carteles: el interior del circuito, o el centro. */
+function centro(circuito) {
+  return circuito.interior || { x: ANCHO / 2, y: ALTO / 2 };
+}
+
 function nombreCircuito(circuito) {
   return t('circuito.' + circuito.clave);
 }
@@ -28,14 +36,14 @@ function panel(x, y, ancho, alto) {
   rectanguloRedondo(x - ancho / 2, y, ancho, alto, 10);
 }
 
-function bandas() {
+function bandas(arriba = true) {
   ctx.fillStyle = COLOR.banda;
-  ctx.fillRect(0, 0, ANCHO, BANDA_TEXTO);
+  if (arriba) ctx.fillRect(0, 0, ANCHO, BANDA_TEXTO);
   ctx.fillRect(0, ALTO - BANDA_TEXTO, ANCHO, BANDA_TEXTO);
 }
 
 /*
- * El semáforo de salida, flotando sobre el marcador: una luz roja más por
+ * El semáforo de salida, colgado bajo la barra: una luz roja más por
  * cada segundo de la cuenta atrás y, al dar la salida, las tres en verde (es
  * el «¡ya!»). Se desvanece en cuanto pasa la salida: no tapa la carrera.
  */
@@ -78,12 +86,13 @@ function semaforo(carrera, x, y) {
   ctx.restore();
 }
 
-/** Carteles que suben y se desvanecen (la última vuelta). */
-export function dibujarAvisos(avisos, circuito) {
-  const { x, y } = circuito.interior;
+/** Carteles bajo la barra, que suben y se desvanecen (la última vuelta). */
+export function dibujarAvisos(avisos) {
   avisos.forEach((aviso, i) => {
     ctx.globalAlpha = Math.min(1, aviso.vida);
-    texto(aviso.texto, x, y - 150 - i * 30 - (1.6 - aviso.vida) * 12, { tam: 22, color: aviso.color || COLOR.ambar, peso: 700 });
+    const y = BANDA_TEXTO + 34 + i * 34 - (1.6 - aviso.vida) * 12;
+    panel(ANCHO / 2, y - 15, 260, 30);
+    texto(aviso.texto, ANCHO / 2, y, { tam: 20, color: aviso.color || COLOR.ambar, peso: 700 });
   });
   ctx.globalAlpha = 1;
 }
@@ -105,7 +114,7 @@ export function opcionesPortada() {
 const TECLA_OPCION = { circuito: 'C', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
 
 export function dibujarPortada(circuito, tiempo, escenario, tactil, hora) {
-  const { x, y } = circuito.interior;
+  const { x, y } = centro(circuito);
   panel(x, y - 120, 470, 252);
   texto('SLOT PANIC', x, y - 70, { tam: 64, color: COLOR.hud, peso: 800 });
   texto(t('slot.lema'), x, y - 22, { tam: 18, color: COLOR.texto, peso: 500 });
@@ -128,7 +137,7 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora) {
   for (const opcion of opcionesPortada()) {
     boton(opcion, (tactil ? '' : TECLA_OPCION[opcion.id] + '  ·  ') + t('opcion.' + opcion.id, { v: valores[opcion.id] }));
   }
-  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - 23, { tam: 13, color: COLOR.hud, peso: 500 });
+  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
 }
 
 function boton(caja, etiqueta, destacado = false) {
@@ -168,38 +177,49 @@ export function nombreSlot(i, humanos) {
   return humanos[i] ? t('slot.jugador', { n: i + 1 }) : t('slot.cpu');
 }
 
+/*
+ * El marcador, en la barra de arriba: el J1 a la izquierda y el J2 a la
+ * derecha, cada uno del lado de su mitad de la pantalla (la que acelera en el
+ * móvil), y en el centro la cuenta atrás o el tiempo.
+ */
 export function dibujarMarcadorSlot(carrera, humanos, tactil) {
-  const { x, y } = carrera.circuito.interior;
-  panel(x, y - 112, 300, 232);
-  texto(t('carrera.titulo', { circuito: nombreCircuito(carrera.circuito), vueltas: VUELTAS_SLOT }), x, y - 92, { tam: 14, color: COLOR.texto });
-
+  const alto = BANDA_TEXTO;
+  if (carrera.fase === 'cuenta') guiaSlot(carrera, humanos, tactil);
+  ctx.fillStyle = COLOR.banda;
+  ctx.fillRect(0, 0, ANCHO, alto);
+  carrera.coches.forEach((slot, i) => marcadorCoche(slot, i, humanos, alto));
   if (carrera.fase === 'cuenta') {
-    semaforo(carrera, x, y - 140);
-    texto(String(Math.ceil(carrera.cuenta)), x, y, { tam: 96, color: COLOR.ambar, peso: 800 });
-    guiaSlot(carrera, humanos, tactil);
-    return;
+    texto(String(Math.ceil(carrera.cuenta)), ANCHO / 2, alto / 2 + 1, { tam: 38, color: COLOR.ambar, peso: 800 });
+  } else {
+    texto(formatearTiempo(carrera.tiempo), ANCHO / 2, alto / 2 + 1, { tam: 32, color: COLOR.hud, peso: 700 });
   }
-  semaforo(carrera, x, y - 140);
-  texto(formatearTiempo(carrera.tiempo), x, y - 46, { tam: 40, color: COLOR.hud, peso: 700 });
-  // Una fila por coche, con su color: quién lo lleva, la vuelta y la mejor.
-  carrera.coches.forEach((slot, i) => {
-    const fila = y + 6 + i * 52;
-    ctx.fillStyle = slot.coche.color;
-    rectanguloRedondo(x - 128, fila - 9, 18, 18, 4);
-    texto(nombreSlot(i, humanos), x - 100, fila, { tam: 18, color: COLOR.hud, peso: 800, alinear: 'left' });
-    texto(t('hud.vuelta', { n: vueltaSlot(slot), total: VUELTAS_SLOT }), x + 128, fila, { tam: 18, color: COLOR.hud, alinear: 'right' });
-    const mejor = mejorVueltaSlot(slot);
-    if (mejor !== null) texto(t('hud.mejor', { tiempo: formatearTiempo(mejor) }), x + 128, fila + 22, { tam: 12, color: COLOR.texto, alinear: 'right' });
-    barraPotencia(slot, x - 128, fila + 16);
-  });
+  semaforo(carrera, ANCHO / 2, alto + 30);
+}
+
+/*
+ * Lo de un coche en la barra, de fuera hacia dentro: su color, quién lo lleva,
+ * la vuelta y la mejor; debajo, la potencia. El J2 es el espejo del J1.
+ */
+function marcadorCoche(slot, i, humanos, alto) {
+  const lado = i === 0 ? 1 : -1;
+  const borde = i === 0 ? 16 : ANCHO - 16;
+  const alinear = i === 0 ? 'left' : 'right';
+  const y = alto / 2 - 5;
+  ctx.fillStyle = slot.coche.color;
+  rectanguloRedondo(i === 0 ? borde : borde - 22, y - 11, 22, 22, 5);
+  texto(nombreSlot(i, humanos), borde + lado * 32, y, { tam: 22, color: COLOR.hud, peso: 800, alinear });
+  texto(t('hud.vuelta', { n: vueltaSlot(slot), total: VUELTAS_SLOT }), borde + lado * 112, y, { tam: 22, color: COLOR.hud, peso: 700, alinear });
+  const mejor = mejorVueltaSlot(slot);
+  if (mejor !== null) texto(t('hud.mejor', { tiempo: formatearTiempo(mejor) }), borde + lado * 280, y, { tam: 16, color: COLOR.texto, alinear });
+  barraPotencia(slot, i === 0 ? borde : borde - 240, alto - 11, 240);
 }
 
 /*
  * La potencia que lleva el coche, como el gatillo del mando: con toques se
  * queda a medias. En rojo mientras derrapa.
  */
-function barraPotencia(slot, x, y) {
-  const ancho = 110, alto = 6;
+function barraPotencia(slot, x, y, ancho) {
+  const alto = 5;
   ctx.fillStyle = 'rgba(230, 232, 238, 0.15)';
   ctx.fillRect(x, y, ancho, alto);
   ctx.fillStyle = slot.derrape > 0 ? COLOR.rojo : slot.coche.color;
@@ -224,9 +244,10 @@ function guiaSlot(carrera, humanos, tactil) {
     texto(nombreSlot(i, humanos), cx, y - 14, { tam: 22, color: slot.coche.color, peso: 800 });
     texto(t('slot.mantener'), cx, y + 14, { tam: 15, color: COLOR.hud, peso: 700 });
   });
-  bandas();
-  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - 23, { tam: 13, color: COLOR.hud, peso: 500 });
-  texto(t('slot.cpuLibre'), ANCHO / 2, 23, { tam: 13, color: COLOR.hud, peso: 500 });
+  // La barra de arriba es el marcador: la ayuda va abajo, en dos líneas.
+  bandas(false);
+  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - 38, { tam: 13, color: COLOR.hud, peso: 500 });
+  texto(t('slot.cpuLibre'), ANCHO / 2, ALTO - 17, { tam: 12, color: COLOR.texto, peso: 500 });
 }
 
 export function dibujarFinSlot(carrera, humanos, tactil) {
@@ -251,5 +272,5 @@ export function dibujarFinSlot(carrera, humanos, tactil) {
 export function dibujarDepuracion(fps, slot) {
   const { coche } = slot;
   const datos = `${fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)}`;
-  texto(datos, ANCHO - 12, ALTO - 23, { tam: 12, color: COLOR.texto, alinear: 'right', peso: 500 });
+  texto(datos, ANCHO - 12, ALTO - BANDA_TEXTO / 2, { tam: 12, color: COLOR.texto, alinear: 'right', peso: 500 });
 }
