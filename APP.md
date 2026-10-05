@@ -133,7 +133,7 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
 * [x] Ficha: textos en castellano e inglés, capturas de los dos, imagen destacada y
   respuestas de la consola, en `app/store/`.
 * [x] Slot Panic en la política común de pnyk.es (`privacy` en `pnyk/proyectos.js`, con
-  su GA4 `G-LWMERSV8WH` y sin récords). Falta publicar pnyk.es.
+  su GA4 `G-LWMERSV8WH` y sin récords), publicada en pnyk.es.
 * [ ] Crear la app en la consola de Play con el paquete `es.pnyk.slot`, rellenar la ficha
   y subir el bundle a pruebas internas, aceptando *Play App Signing*.
 * [ ] Pruebas internas, luego pública.
