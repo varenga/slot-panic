@@ -440,4 +440,14 @@ app en la consola de Play.
   Escalón, la costura y el rollo de la lona del 2CV, los intermitentes del techo del
   Tiburón, el parabrisas curvo y la rejilla del motor del Escarabajo (el óvalo de antes
   parecían unas gafas), los bigotes del Bambino. En escritorio se siguen leyendo igual.
+- **Tres rehechos tras verlos** (el 2CV, el escarabajo y el bambino «tienen un aire» y se
+  quedan). El **Escalón**, con el plano del de 1998 (`coche-fiat-multipla-1.jpg`): no
+  tiene el morro más estrecho, sino redondo y ancho de punta a punta; los faros altos
+  van encima del capó, en sus esquinas, saltones (en una cuenca oscura), y los bajos en
+  el parachoques. El **Tiburón** no se parecía: el real mide casi tres veces su anchura,
+  así que en la caja de 2:1 solo parece largo si es **estrecho** (±4,2 de ±5,5), con el
+  morro ancho y los faros separados en las esquinas, la cola afilada y las ruedas de
+  atrás tapadas. El **Monovolumen** no parecía ni un Espace ni un monovolumen: ahora es
+  de un solo volumen, sin capó (el parabrisas arranca casi en el morro), con los faros
+  rasgados en las esquinas, retrovisores y la cola recta.
 
