@@ -35,6 +35,7 @@ const QUIETO = 12;                  // px/s por debajo de los que el coche se da
 const AMORTIGUA_TROMPO = 2.5;       // 1/s con que se apaga el trompo
 const REBOTE_MESA = 0.5;            // fracción de la velocidad que vuelve del borde de la mesa
 const ATRAS_SALIDA = 30;            // px detrás de la meta en que se sale, como en carretera
+const HOLGURA_CHOQUE = 8;           // px más allá de CHOQUE en que dos coches siguen tocándose
 
 // --- El carril ---------------------------------------------------------------
 
@@ -239,9 +240,16 @@ function pasoCarreraSlot(carrera, mandos, dt) {
 function comprobarChoque(carrera) {
   const [a, b] = carrera.coches;
   const dx = b.coche.x - a.coche.x, dy = b.coche.y - a.coche.y;
-  const solapados = Math.hypot(dx, dy) < CHOQUE;
+  const distancia = Math.hypot(dx, dy);
+  const solapados = distancia < CHOQUE;
   const empiezan = solapados && !carrera.solapados;
-  carrera.solapados = solapados;
+  /*
+   * Dejan de tocarse al separarse algo más de lo que hace falta para chocar:
+   * la mano puede dejarlos a poco más de CHOQUE en una X, y al arrancar los
+   * carriles los juntaban y volvían a chocar (lo vio el arnés en una X corta
+   * del constructor). Menos que los 2 · CARRIL de dos coches en paralelo.
+   */
+  carrera.solapados = solapados || (carrera.solapados && distancia < CHOQUE + HOLGURA_CHOQUE);
   if (!empiezan || a.estado !== 'carril' || b.estado !== 'carril') return;
   const acercandose = (b.coche.vx - a.coche.vx) * dx + (b.coche.vy - a.coche.vy) * dy < 0;
   if (!acercandose) return;

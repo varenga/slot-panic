@@ -15,6 +15,9 @@ import { CIRCUITOS } from './circuitos/indice.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
 import { avanzarSlot, crearCarreraSlot } from './nucleo/slot.js';
 import { generarDecorado } from './nucleo/decorado.js';
+import { aPiezas, deCodigo, validarTrazado } from './nucleo/cuadricula.js';
+import { construirDePiezas } from './nucleo/piezas.js';
+import { validarCircuito } from './nucleo/validar.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
 import { dibujarCarriles, dibujarCocheSlot, dibujarFondo } from './dibujo.js';
 import { MODELOS, siguienteModelo } from './coches.js';
@@ -52,6 +55,37 @@ const LUPA_FORZADA = parametros.has('lupa');
 const ZOOM = zoomLupa(parametros.get('lupa'));
 const VERTICAL = typeof matchMedia !== 'undefined' ? matchMedia('(orientation: portrait) and (max-width: 900px)') : null;
 const camara = crearCamara();
+
+/*
+ * Un circuito de la cuadrícula, compartido por su código: ?c=<código>. Se
+ * corre si la cuadrícula lo deja y cabe en la mesa; va el primero de la
+ * lista y no se recuerda. Mientras no haya constructor, es lo que deja
+ * probar los trazados en pantalla (el arnés imprime los suyos).
+ */
+const DIBUJADO = circuitoCompartido(parametros.get('c'));
+const LISTA = DIBUJADO ? [DIBUJADO, ...CIRCUITOS] : CIRCUITOS;
+
+function circuitoCompartido(codigo) {
+  if (!codigo) return null;
+  const trazado = deCodigo(codigo);
+  if (!trazado) {
+    console.warn(`?c=${codigo}: no es un código de circuito`);
+    return null;
+  }
+  const error = validarTrazado(trazado);
+  if (error) {
+    console.warn(`?c=${codigo}: no se puede correr (${error.motivo}, en el paso ${error.paso})`);
+    return null;
+  }
+  const circuito = construirDePiezas(aPiezas(trazado, 'c-' + codigo));
+  const { fallos } = validarCircuito(circuito);
+  if (fallos.length) {
+    console.warn(`?c=${codigo}: no cabe en la mesa: ${fallos.join(', ')}`);
+    return null;
+  }
+  circuito.dibujado = true;
+  return circuito;
+}
 
 /*
  * Los dos pilotos de la exhibición de la portada (la CPU de la carrera es
@@ -92,9 +126,9 @@ function cambiarEscenario() {
 
 /** El circuito siguiente: su decorado y, en la portada, la exhibición en él. */
 function cambiarCircuito() {
-  const i = CIRCUITOS.indexOf(estado.circuito);
-  estado.circuito = CIRCUITOS[(i + 1) % CIRCUITOS.length];
-  guardarCircuito(estado.circuito.clave);
+  const i = LISTA.indexOf(estado.circuito);
+  estado.circuito = LISTA[(i + 1) % LISTA.length];
+  if (!estado.circuito.dibujado) guardarCircuito(estado.circuito.clave);
   estado.decorado = generarDecorado(estado.circuito, estado.escenario);
   irAPortada();
 }
@@ -146,7 +180,7 @@ function terminarCarrera() {
 /** Lo que acompaña a cada evento de carrera en la analítica. */
 function datosCarrera() {
   return {
-    circuito: estado.circuito.clave,
+    circuito: estado.circuito.dibujado ? 'dibujado' : estado.circuito.clave,
     escenario: estado.escenario,
     hora: estado.hora,
     coche: estado.modelo,
@@ -517,7 +551,7 @@ estado.escenario = leerEscenario();
 estado.hora = leerHora();
 estado.modelo = leerModelo(MODELOS.map((m) => m.id));
 const elegido = leerCircuito(CIRCUITOS.map((c) => c.clave));
-estado.circuito = CIRCUITOS.find((c) => c.clave === elegido);
+estado.circuito = DIBUJADO || CIRCUITOS.find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);
 iniciarLienzo(lienzo);
 aplicarVista();

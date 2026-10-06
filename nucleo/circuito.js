@@ -21,6 +21,7 @@ const LEJOS = 300;              // px de pista a partir de los que otro punto de
 const HOLGURA_LIENZO = 2;       // px entre el muro y el borde del lienzo
 const HOLGURA_GRADA = 8;        // px entre el muro y una grada
 const RADIO_PIANO_INTERIOR = 3; // px que el piano interior deja hasta el centro de la curva
+const GRAVA_MINIMA = 16;        // px de grava que el piano deja siempre, si hace falta estrechándose
 /*
  * px de pista, a cada lado de un cruce, en que los dos tramos se pisan sin
  * que eso sea invadir: más allá, el otro tramo queda a más de un ancho + 40.
@@ -50,6 +51,9 @@ export function completarCircuito(eje, datos) {
     p.s = s;
     p.largo = distancia(p, siguiente);
     p.angulo = Math.atan2(siguiente.y - p.y, siguiente.x - p.x);
+    // El rumbo como vector: `muroCercano` lo pregunta miles de veces por punto.
+    p.sen = Math.sin(p.angulo);
+    p.cos = Math.cos(p.angulo);
     // Lo que añaden las piezas; un circuito de vértices no tiene nada de eso.
     p.carril ??= 1;
     p.efecto ??= null;
@@ -73,7 +77,9 @@ export function completarCircuito(eje, datos) {
   circuito.cruces = buscarCruces(circuito);
   calcularMuros(circuito);
   // Dónde acaba cada sector, en s; el último, en la meta (una vuelta entera).
-  circuito.sectores = (datos.sectores || []).map((p) => circuito.proyectar(p).s).concat(circuito.largo);
+  // Se declaran como un punto junto a la pista o como la fracción de la vuelta.
+  circuito.sectores = (datos.sectores || [])
+    .map((p) => typeof p === 'number' ? p * circuito.largo : circuito.proyectar(p).s).concat(circuito.largo);
   return circuito;
 }
 
@@ -179,7 +185,7 @@ export function muroCercano(circuito, p, indicePrevio = null) {
   for (let k = desde; k <= hasta; k++) {
     const q = eje[((k % n) + n) % n];
     const dx = p.x - q.x, dy = p.y - q.y;
-    const lado = -dx * Math.sin(q.angulo) + dy * Math.cos(q.angulo) < 0 ? 0 : 1;
+    const lado = -dx * q.sen + dy * q.cos < 0 ? 0 : 1;
     const d = Math.hypot(dx, dy);
     const fuera = d - q.muro[lado];
     if (!mejor || fuera < mejor.fuera) mejor = { fuera, dx, dy, d };
@@ -268,7 +274,9 @@ function calcularMuros(circuito) {
   }));
 
   // Suavizado: el muro no cambia más deprisa que la pendiente, y nunca deja
-  // fuera lo que se pisa gratis.
+  // fuera lo que se pisa gratis. Si no queda grava, el piano cede antes que
+  // ella: con dos tramos en casillas vecinas del constructor (a 110 px), el
+  // muro queda a 53 y el piano entero solo dejaba 11 px de grava.
   eje.forEach((p, i) => {
     p.muro = [0, 1].map((k) => {
       let menor = tope[i][k];
@@ -276,6 +284,7 @@ function calcularMuros(circuito) {
         const valor = tope[j][k] + PENDIENTE_MURO * porPista(i, j);
         if (valor < menor) menor = valor;
       }
+      p.borde[k] = Math.max(ancho / 2, Math.min(p.borde[k], menor - GRAVA_MINIMA));
       return Math.max(menor, p.borde[k]);
     });
   });
