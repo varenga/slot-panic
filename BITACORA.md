@@ -451,3 +451,50 @@ app en la consola de Play.
   de un solo volumen, sin capó (el parabrisas arranca casi en el morro), con los faros
   rasgados en las esquinas, retrovisores y la cola recta.
 
+## La cuadrícula del constructor (06/10/2026, rama `11-cuadricula`)
+
+> Primera rama de la Fase 2b: el núcleo del constructor, sin interfaz. Un circuito
+> dibujado en una cuadrícula ¿se puede correr siempre? Lo que no, que lo prohíba la
+> validación antes de llegar a la pista.
+
+- **`nucleo/cuadricula.js`**: 11 × 6 casillas de 110 px bajo la barra. El trazado es la
+  casilla y el rumbo de la meta y un paso por casilla (recto, derecha o izquierda) con
+  su variante: recta con baches, X o chicane (ocupa dos rectas y se abomba a su lado);
+  curva con peralte, derrape o amplia (2 × 2, radio de casilla y media, se lleva la
+  recta de antes y la de después). El cruce no se declara: una casilla por la que se
+  pasa dos veces, en recta y en perpendicular. `aPiezas()` lo pasa a
+  `construirDePiezas` desde el centro de la meta; sectores por tercios (ahora se pueden
+  declarar como fracción) y una grada junto a la recta más larga de 3 casillas o más
+  con un lado libre.
+- **`validarTrazado()` solo usa enteros** (lo repetirá el PHP) y da el motivo y el
+  paso: vacio, variante, meta, fuera, abierto, pisa, cruce, amplia, chicane. Lo que el
+  arnés vio que no cabía es lo que prohíbe: la chicane necesita libre su lado (en las
+  dos casillas) y la amplia, su casilla de dentro; ninguna recta puede ser de dos piezas.
+- **El código para compartir**: un byte de versión, la meta y un byte por paso, en
+  base64url sin relleno. El mismo trazado da el mismo código (un circuito de 30 casillas,
+  46 letras).
+- **`nucleo/validar.js`**: la geometría de las secciones 1 y 3 del arnés, sacada para que
+  la use el juego. El arnés corre ahora sus secciones 1 a 3 sobre cualquier circuito; a
+  los dibujados no les exige las cifras de calibrado (vuelta, ventaja del derrape, CPU,
+  cantidad de decorado), solo lo que no puede romperse.
+- **Dos ajustes del núcleo que pidió la cuadrícula.** Con dos tramos en casillas vecinas
+  (a 110 px) el muro queda a 53 px y el piano entero dejaba 11 px de grava: ahora **el
+  piano cede antes que la grava** (`GRAVA_MINIMA`, 16 px). Y en una X corta, la mano
+  dejaba los dos coches a poco más de `CHOQUE` y al arrancar volvían a chocar: **dejan
+  de tocarse a `CHOQUE` + 8 px** (`HOLGURA_CHOQUE`). Además, `muroCercano` guarda el
+  seno y el coseno de cada punto: el arnés lo pregunta miles de veces por punto.
+- **Arnés, sección 5**: 10 trazados prohibidos, cada uno por su motivo; 28 van y vuelven
+  por su código; 4 a mano (el marco con todas las piezas, un ocho, la serpiente que llena
+  la cuadrícula y el mínimo de 6 casillas) pasan las secciones 1 a 3 enteras, y 24 al
+  azar con semilla (de 6 a 42 casillas, 135 variantes, 21 cruces) cumplen la geometría
+  (tres de ellos también la carrera). 464/464 en verde. Imprime los códigos para
+  abrirlos en el juego.
+- **`?c=<código>`** abre un circuito de la cuadrícula como «Tu circuito» (siete idiomas),
+  el primero de la lista (tecla C) y sin recordarlo. Si no vale, se ignora con un aviso
+  en la consola. Sin hueco en el interior, **el panel de la portada tapa parte de la
+  pista**; desaparece al correr y se queda así (decidido tras jugarlo).
+- **Lo que se ve en los dibujados y no se exige**: en los muy pequeños los carriles
+  difieren mucho (el mínimo, 660 y 471 px: un 25 % entre carriles) y a fondo no se sale
+  nadie; en el marco y la serpiente la barra queda a 13 px de lo que se pisa. Es el
+  precio de dejar dibujar: se cambian de carril en cada carrera.
+

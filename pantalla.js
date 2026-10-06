@@ -28,7 +28,7 @@ function centro(circuito) {
 }
 
 export function nombreCircuito(circuito) {
-  return t('circuito.' + circuito.clave);
+  return t('circuito.' + (circuito.dibujado ? 'dibujado' : circuito.clave));
 }
 
 export function panel(x, y, ancho, alto) {

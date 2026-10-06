@@ -23,7 +23,10 @@ import {
 } from './nucleo/slot.js';
 import { CATALOGOS } from './i18n.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
-import { cabe, distanciaAPista, generarDecorado, torreCabe, zonasVetadas } from './nucleo/decorado.js';
+import { azar, cabe, distanciaAPista, generarDecorado, torreCabe } from './nucleo/decorado.js';
+import { validarCircuito } from './nucleo/validar.js';
+import { aCodigo, aPiezas, COLUMNAS, deCodigo, FILAS, validarTrazado, VARIANTES } from './nucleo/cuadricula.js';
+import { construirDePiezas } from './nucleo/piezas.js';
 
 const DT = 1 / 60;
 let aserciones = 0;
@@ -37,107 +40,48 @@ function comprobar(condicion, mensaje) {
   }
 }
 
-for (const circuito of CIRCUITOS) {
+/*
+ * Las secciones 1 a 3, por circuito. `oficial` decide si se exigen también
+ * las cifras de calibrado (la vuelta, cuánto gana derrapar, la CPU, las
+ * curvas a tope, la cantidad de decorado): a un circuito dibujado solo se le
+ * exige lo que no puede romperse sin que se note.
+ */
+function seccionCircuito(circuito, oficial, { decorado: conDecorado = true } = {}) {
+  const calibrar = oficial ? comprobar : () => {};
   // --- 1. El circuito ----------------------------------------------------------
 
   console.log(`\nCircuito «${circuito.clave}»: ${circuito.largo.toFixed(0)} px de eje, ${circuito.eje.length} puntos, ` +
     `${circuito.cruces.length} cruces y ${circuito.cambiosCarril} X`);
   {
     /*
-     * Ningún tramo del eje se acerca a otro que esté lejos por la pista: si dos
-     * brazos quedaran a menos de un ancho (más la hierba), la pared de uno sería
-     * la del otro. «Lejos» se mide en `s` y no en número de puntos, porque en
-     * los arcos los puntos van más juntos: contando puntos, dos extremos de la
-     * misma curva de 90° parecían tramos distintos.
+     * La geometría la mide `validarCircuito` (`nucleo/validar.js`), que es lo
+     * que el juego pregunta también a un circuito dibujado: tramos lejanos a
+     * más de un ancho + 40 px, el muro sin invadir otro tramo ni salirse del
+     * lienzo, al menos 14 px de grava más allá del piano (por dentro de las
+     * curvas el piano se come 10 de los 26 px: quedan 16, que medidos a pasos
+     * de 1 px pueden dar 15), y la barra del marcador y el hueco de la portada
+     * sin pisar lo que se conduce.
      */
-    const { eje, largo } = circuito;
-    const LEJOS = 300; // px de pista
-    let minimo = Infinity;
-    for (let i = 0; i < eje.length; i++) {
-      for (let j = i + 1; j < eje.length; j++) {
-        const porPista = Math.min(eje[j].s - eje[i].s, largo - (eje[j].s - eje[i].s));
-        // En un cruce los dos tramos se pisan: es lo que es.
-        if (porPista < LEJOS || enCruce(circuito, eje[i].s, eje[j].s)) continue;
-        minimo = Math.min(minimo, Math.hypot(eje[i].x - eje[j].x, eje[i].y - eje[j].y));
-      }
-    }
-    console.log(`  separación mínima entre tramos a más de ${LEJOS} px por la pista: ${minimo.toFixed(0)} px`);
-    comprobar(minimo > ANCHO_PISTA + 40, 'dos tramos de pista quedan a menos de un ancho + 40 px');
-    const fueraDeLienzo = eje.some((p) => p.x - ANCHO_PISTA / 2 < 0 || p.y - ANCHO_PISTA / 2 < 0 ||
-      p.x + ANCHO_PISTA / 2 > 1280 || p.y + ANCHO_PISTA / 2 > 720);
-    comprobar(!fueraDeLienzo, 'la pista se sale del lienzo');
-
-    /*
-     * El muro de cada lado no puede caer en la zona de otro tramo: ningún
-     * punto del muro está a menos del muro de un punto del eje lejano por la
-     * pista. Y dentro del lienzo. (Por dentro de una curva el muro pasa del
-     * centro y cae en la zona de la misma curva: eso no es invadir.)
-     */
-    let invade = 0, fuera = 0, escapatoria = Infinity;
-    for (const p of eje) {
-      [-1, 1].forEach((lado, k) => {
-        const w = { x: p.x - Math.sin(p.angulo) * lado * p.muro[k], y: p.y + Math.cos(p.angulo) * lado * p.muro[k] };
-        // Dentro de la zona de un tramo lejano: a menos de su muro, por su lado.
-        const dentro = eje.some((q) => {
-          const porPista = Math.min(Math.abs(q.s - p.s), largo - Math.abs(q.s - p.s));
-          if (porPista < LEJOS || enCruce(circuito, p.s, q.s)) return false;
-          const dx = w.x - q.x, dy = w.y - q.y;
-          const ladoQ = -dx * Math.sin(q.angulo) + dy * Math.cos(q.angulo) < 0 ? 0 : 1;
-          return Math.hypot(dx, dy) < q.muro[ladoQ] - 1;
-        });
-        if (dentro) invade++;
-        if (w.x < 0 || w.y < 0 || w.x > 1280 || w.y > 720) fuera++;
-        /*
-         * La grava que hay de verdad más allá de lo que se pisa gratis: se
-         * avanza por la normal desde el borde hasta salir de la zona, con la
-         * misma regla que la física (`muroCercano`). Por dentro de una curva la
-         * normal cruza el centro, y lo que cuenta es eso, no el número `muro`.
-         */
-        let hondo = 0;
-        for (let d = p.borde[k] + 1; d <= p.borde[k] + 30; d += 1) {
-          const x = { x: p.x - Math.sin(p.angulo) * lado * d, y: p.y + Math.cos(p.angulo) * lado * d };
-          if (circuito.muroCercano(x, eje.indexOf(p)).fuera >= 0) break;
-          hondo = d - p.borde[k];
-        }
-        escapatoria = Math.min(escapatoria, hondo);
-      });
-    }
-    console.log(`  grava mínima más allá del borde, también por dentro de las curvas: ${escapatoria.toFixed(0)} px`);
-    // Por dentro de las curvas el piano se come 10 de los 26 px: quedan 16, que
-    // medidos a pasos de 1 px pueden dar 15.
-    comprobar(escapatoria >= 14, `hay una escapatoria de solo ${escapatoria.toFixed(0)} px`);
-    comprobar(invade === 0, `${invade} puntos del muro caen en la zona de otro tramo`);
-    comprobar(fuera === 0, `${fuera} puntos del muro se salen del lienzo`);
-
-    /*
-     * La barra del marcador (la banda de arriba) y, si lo hay, el hueco de la
-     * portada en el interior (el mismo que el decorado tiene vetado) no pisan
-     * el asfalto ni el piano: lo que se conduce no queda nunca debajo de un
-     * cartel.
-     */
-    const [barra, , hueco] = zonasVetadas(circuito);
-    for (const [zona, nombre] of [[barra, 'la barra del marcador'], [hueco, 'el hueco de la portada']]) {
-      if (!zona) continue;
-      let holgura = Infinity;
-      for (let x = zona.x0; x <= zona.x1; x += 4) {
-        for (let y = zona.y0; y <= zona.y1; y += 2) {
-          const p = circuito.proyectar({ x, y });
-          holgura = Math.min(holgura, p.distancia - circuito.bordeEn(p));
-        }
-      }
-      console.log(`  ${nombre} queda a ${holgura.toFixed(0)} px de lo que se pisa`);
-      comprobar(holgura > 0, `${nombre} pisa la pista ${(-holgura).toFixed(0)} px`);
-    }
+    const { medidas, fallos: geometria } = validarCircuito(circuito);
+    const px = (v) => v === Infinity ? 'más de 100 px' : `${v.toFixed(0)} px`;
+    console.log(`  separación mínima entre tramos a más de 300 px por la pista: ${px(medidas.separacion)}`);
+    console.log(`  grava mínima más allá del borde, también por dentro de las curvas: ${px(medidas.grava)}`);
+    console.log(`  la barra del marcador queda a ${px(medidas.barra)} de lo que se pisa`);
+    if (medidas.hueco !== undefined) console.log(`  el hueco de la portada queda a ${px(medidas.hueco)} de lo que se pisa`);
+    console.log(`  tramos lejanos de carril a ${px(medidas.carriles)} como poco`);
+    for (const fallo of geometria) comprobar(false, fallo);
+    comprobar(true, 'la geometría');
   }
 
   // --- 2. El decorado ------------------------------------------------------------
 
+  if (!conDecorado) return;
   console.log('\nDecorado');
   for (const nombre of ORDEN_ESCENARIOS) {
     const decorado = generarDecorado(circuito, nombre);
     const otra = generarDecorado(circuito, nombre);
     comprobar(JSON.stringify(decorado.piezas) === JSON.stringify(otra.piezas), `${nombre}: el decorado cambia entre dos generaciones`);
-    comprobar(decorado.piezas.length >= 40, `${nombre}: solo caben ${decorado.piezas.length} piezas`);
+    calibrar(decorado.piezas.length >= 40, `${nombre}: solo caben ${decorado.piezas.length} piezas`);
     const malas = decorado.piezas.filter((p, i) => !cabe(circuito, p, decorado.piezas.filter((_, j) => j !== i)));
     comprobar(malas.length === 0, `${nombre}: ${malas.length} piezas pisan la pista, el marcador o a otra`);
     const neumaticosEnPista = decorado.neumaticos.filter((n) => distanciaAPista(circuito, n) < n.r);
@@ -148,7 +92,7 @@ for (const circuito of CIRCUITOS) {
       !torreCabe(circuito, t, decorado.torres.filter((_, j) => j !== i)) ||
       decorado.piezas.some((p) => Math.hypot(p.x - t.x, p.y - t.y) < p.r + t.r));
     comprobar(torresMalas.length === 0, `${nombre}: ${torresMalas.length} torres pisan la pista, el marcador o algo del decorado`);
-    comprobar(decorado.torres.length >= 8, `${nombre}: solo caben ${decorado.torres.length} torres de iluminación`);
+    calibrar(decorado.torres.length >= 8, `${nombre}: solo caben ${decorado.torres.length} torres de iluminación`);
     // Las gradas: ninguna esquina ni punto de su contorno sobre la pista.
     for (const g of decorado.gradas) {
       const cos = Math.cos(g.angulo), sin = Math.sin(g.angulo);
@@ -248,30 +192,12 @@ function cocheSolo(circuito, turno) {
 /** Lo que limita la velocidad: una curva o una recta de baches. */
 const limita = (p) => p.radio !== Infinity || p.efecto === 'baches';
 
-for (const circuito of CIRCUITOS) {
+function seccionSlot(circuito, oficial) {
+  const calibrar = oficial ? comprobar : () => {};
   console.log(`\nSlot en «${circuito.clave}»`);
-  // Los carriles van por el asfalto, caben en el lienzo y no se acercan a otro tramo.
-  const margen = ANCHO_PISTA / 2 - Math.max(...CARRILES.map(Math.abs)) - ANCHO_COCHE / 2;
-  comprobar(margen >= 4, `un coche en el carril se queda a ${margen} px del borde del asfalto`);
-  const n = circuito.eje.length;
-  let cercania = Infinity, fuera = 0;
-  const trazados = CARRILES.map((l) => trazadoCarril(circuito, l));
-  for (const trazado of trazados) {
-    for (const p of trazado) if (p.x < LARGO_COCHE || p.x > ANCHO - LARGO_COCHE || p.y < LARGO_COCHE || p.y > ALTO - LARGO_COCHE) fuera++;
-  }
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
-      const d = Math.abs(circuito.eje[i].s - circuito.eje[j].s);
-      if (Math.min(d, circuito.largo - d) < 300 || enCruce(circuito, circuito.eje[i].s, circuito.eje[j].s)) continue;
-      for (const a of trazados) for (const b of trazados) {
-        cercania = Math.min(cercania, Math.hypot(a[i].x - b[j].x, a[i].y - b[j].y));
-      }
-    }
-  }
+  // Los carriles (por el asfalto, dentro del lienzo y separados) los mide la sección 1.
   const largos = CARRILES.map((l) => largoCarril(circuito, l));
-  console.log(`  carriles de ${largos.map((l) => l.toFixed(0)).join(' y ')} px; tramos lejanos a ${cercania.toFixed(0)} px como poco`);
-  comprobar(fuera === 0, `${fuera} puntos de los carriles caen al borde del lienzo`);
-  comprobar(cercania > 60, `dos tramos lejanos de carril quedan a ${cercania.toFixed(0)} px`);
+  console.log(`  carriles de ${largos.map((l) => l.toFixed(0)).join(' y ')} px`);
 
   /*
    * Soltar en las curvas tiene que ganar a ir a fondo, y por mucho. Desde el
@@ -280,7 +206,8 @@ for (const circuito of CIRCUITOS) {
    */
   const prudente = correrSlot(circuito, [{ prudencia: 1 }, { prudencia: 1 }]);
   let fino = null;
-  for (const prudencia of [1.2, 1.4, 1.6, 1.8]) {
+  // En un circuito dibujado no se calibra: basta un piloto fino.
+  for (const prudencia of oficial ? [1.2, 1.4, 1.6, 1.8] : [1.4]) {
     const r = correrSlot(circuito, [{ prudencia }, { prudencia }]);
     const mejor = Math.min(...r.carrera.coches.map((c) => c.terminado ?? Infinity));
     if (!fino || mejor < fino.mejor) fino = { ...r, mejor, prudencia };
@@ -301,18 +228,19 @@ for (const circuito of CIRCUITOS) {
   }
   comprobar(prudente.carrera.coches.every((c) => c.salidas === 0), 'el piloto prudente se sale del carril');
   const vueltaPrudente = Math.max(...prudente.carrera.coches.map(mejorVueltaSlot));
-  comprobar(vueltaPrudente > 9 && vueltaPrudente < 16, `la vuelta del prudente (${vueltaPrudente.toFixed(2)} s) se sale de 9-16 s`);
+  calibrar(vueltaPrudente > 9 && vueltaPrudente < 16, `la vuelta del prudente (${vueltaPrudente.toFixed(2)} s) se sale de 9-16 s`);
   const premio = Math.min(...prudente.carrera.coches.map((c) => c.terminado)) / fino.mejor - 1;
   console.log(`  entrar derrapando ahorra un ${(premio * 100).toFixed(0)} % sobre no pasar del agarre`);
-  comprobar(premio > 0, 'entrar derrapando no gana a no pasar del agarre');
+  calibrar(premio > 0, 'entrar derrapando no gana a no pasar del agarre');
   const ventaja = Math.min(...aFondo.carrera.coches.map((c) => c.terminado)) / fino.mejor - 1;
   console.log(`  soltar en las curvas ahorra un ${(ventaja * 100).toFixed(0)} % sobre ir a fondo`);
-  comprobar(ventaja > 0.3, 'ir a fondo no pierde al menos un 30 % contra quien suelta');
-  comprobar(aFondo.carrera.coches.every((c) => c.salidas >= 2 * VUELTAS_SLOT), 'ir a fondo no se sale al menos dos veces por vuelta');
+  calibrar(ventaja > 0.3, 'ir a fondo no pierde al menos un 30 % contra quien suelta');
+  calibrar(aFondo.carrera.coches.every((c) => c.salidas >= 2 * VUELTAS_SLOT), 'ir a fondo no se sale al menos dos veces por vuelta');
 
   // La mano: devuelve siempre el coche, y pronto.
   const media = aFondo.manos.reduce((a, b) => a + b, 0) / aFondo.manos.length;
-  console.log(`  la mano tarda ${media.toFixed(2)} s de media desde que se sale (como mucho ${aFondo.manoMax.toFixed(2)})`);
+  if (aFondo.manos.length) console.log(`  la mano tarda ${media.toFixed(2)} s de media desde que se sale (como mucho ${aFondo.manoMax.toFixed(2)})`);
+  else console.log('  a fondo no se sale nunca: la mano no ha tenido que salir');
   comprobar(aFondo.manoMax <= FUERA_MAXIMO + DURACION_MANO + 0.05, `la mano tarda ${aFondo.manoMax.toFixed(2)} s en devolver un coche`);
 
   /*
@@ -372,7 +300,9 @@ for (const circuito of CIRCUITOS) {
       return c.coches[0].salidas;
     });
     console.log(`  un humano que reacciona 0,25 s tarde se sale ${salidasHumano.join(' y ')} veces (carril 0 y 1)`);
-    comprobar(salidasHumano.every((n) => n === 0), `un humano que reacciona tarde se sale ${salidasHumano.join(' y ')} veces`);
+    // En un circuito dibujado, que sea duro lo decide quien lo dibuja: una
+    // curva de una casilla tras cuatro de recta saca a este humano.
+    calibrar(salidasHumano.every((n) => n === 0), `un humano que reacciona tarde se sale ${salidasHumano.join(' y ')} veces`);
   }
 
   /*
@@ -383,7 +313,8 @@ for (const circuito of CIRCUITOS) {
   {
     const vueltas = [], salidas = [];
     let repetida = null;
-    for (let semilla = 1; semilla <= 6; semilla++) {
+    const semillas = oficial ? 6 : 1;
+    for (let semilla = 1; semilla <= semillas; semilla++) {
       const r = correrSlot(circuito, [{ ...CPU_SLOT, semilla }, { ...CPU_SLOT, semilla }]);
       const [c] = r.carrera.coches;
       vueltas.push(c.terminado / VUELTAS_SLOT);
@@ -393,16 +324,18 @@ for (const circuito of CIRCUITOS) {
     const otra = correrSlot(circuito, [{ ...CPU_SLOT, semilla: 1 }, { ...CPU_SLOT, semilla: 1 }]).carrera.coches[0].terminado;
     const media = vueltas.reduce((a, b) => a + b, 0) / vueltas.length;
     const margen = media - fino.mejor / VUELTAS_SLOT;
-    console.log(`  la CPU da vueltas de ${media.toFixed(2)} s de media, ${margen.toFixed(2)} s más que el mejor piloto, y se sale ${salidas.join(', ')} veces en seis carreras`);
-    comprobar(margen > 0.6, `la CPU deja solo ${margen.toFixed(2)} s por vuelta al mejor piloto: no hay quien le gane`);
-    comprobar(margen < 1.4, `la CPU deja ${margen.toFixed(2)} s por vuelta al mejor piloto: es fácil`);
-    comprobar(salidas.some((n) => n > 0), 'la CPU no se equivoca nunca');
+    console.log(`  la CPU da vueltas de ${media.toFixed(2)} s de media, ${margen.toFixed(2)} s más que el mejor piloto, y se sale ${salidas.join(', ')} veces en ${semillas === 6 ? 'seis carreras' : 'una carrera'}`);
+    calibrar(margen > 0.6, `la CPU deja solo ${margen.toFixed(2)} s por vuelta al mejor piloto: no hay quien le gane`);
+    calibrar(margen < 1.4, `la CPU deja ${margen.toFixed(2)} s por vuelta al mejor piloto: es fácil`);
+    calibrar(salidas.some((n) => n > 0), 'la CPU no se equivoca nunca');
     comprobar(otra === repetida, 'la CPU con la misma semilla no repite la carrera');
 
     // Y juntos en la pista, la CPU contra el mejor piloto: cuántas veces chocan.
-    const choques = [1, 2, 3, 4, 5, 6].map((semilla) =>
-      correrSlot(circuito, [{ ...CPU_SLOT, semilla }, { prudencia: fino.prudencia }], { juntos: true }).choques);
-    console.log(`  la CPU contra el mejor piloto, en la misma pista: ${choques.join(', ')} choques en seis carreras`);
+    if (oficial) {
+      const choques = [1, 2, 3, 4, 5, 6].map((semilla) =>
+        correrSlot(circuito, [{ ...CPU_SLOT, semilla }, { prudencia: fino.prudencia }], { juntos: true }).choques);
+      console.log(`  la CPU contra el mejor piloto, en la misma pista: ${choques.join(', ')} choques en seis carreras`);
+    }
   }
 
   /*
@@ -429,7 +362,7 @@ for (const circuito of CIRCUITOS) {
       }
     }
     console.log(`  a tope contra las ${inicios.length} curvas, por los dos carriles: se pasan ${pasan.length}`);
-    comprobar(pasan.length === 0, `se pasan a tope ${pasan.join(', ')}`);
+    calibrar(pasan.length === 0, `se pasan a tope ${pasan.join(', ')}`);
   }
 
   /*
@@ -439,8 +372,8 @@ for (const circuito of CIRCUITOS) {
   const [t1, t2] = prudente.carrera.coches.map((c) => c.terminado);
   const desigualdad = Math.abs(t1 - t2) / Math.min(t1, t2);
   console.log(`  entre carriles, con el mismo piloto: ${(desigualdad * 100).toFixed(1)} % (se cambian en cada carrera)`);
-  comprobar(desigualdad < 0.08, `un carril saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
-  if (circuito.cambiosCarril % 2) comprobar(desigualdad < 0.02, `con una X, un carril aún saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
+  calibrar(desigualdad < 0.08, `un carril saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
+  if (circuito.cambiosCarril % 2) calibrar(desigualdad < 0.02, `con una X, un carril aún saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
   const cambiada = crearCarreraSlot(circuito, ['#f00', '#00f'], 1);
   comprobar(cambiada.coches[0].lateral === CARRILES[1] && cambiada.coches[1].lateral === CARRILES[0],
     'con el turno cambiado los coches no se cambian de carril');
@@ -486,6 +419,171 @@ for (const circuito of CIRCUITOS) {
       comprobar(chocan > 0, `dos coches que llegan a la vez al encuentro de s ${sa.toFixed(0)} no chocan`);
       comprobar(repetidos === 0, `en el encuentro de s ${sa.toFixed(0)} chocan dos veces seguidas ${repetidos} veces`);
     }
+  }
+}
+
+for (const circuito of CIRCUITOS) seccionCircuito(circuito, true);
+for (const circuito of CIRCUITOS) seccionSlot(circuito, true);
+
+// --- 5. La cuadrícula del constructor -------------------------------------------
+
+/*
+ * Un circuito dibujado tiene que poder correrse siempre: lo que deja pasar la
+ * validación de la cuadrícula (`validarTrazado`, con enteros: la que repetirá
+ * el servidor) cumple la geometría (`validarCircuito`) y las reglas de la
+ * carrera que no son de calibrado. Se comprueba con trazados a mano, que ponen
+ * cada pieza junto a sus vecinas más apretadas, y con trazados al azar (con
+ * semilla). Lo que no cabía, lo prohíbe la validación: la chicane necesita
+ * libre su lado, y la amplia, su casilla de dentro.
+ */
+
+/*
+ * Un trazado a mano, desde la meta: R recta, D derecha, I izquierda, y la
+ * variante detrás: b baches, x X, c chicane a la izquierda, C a la derecha;
+ * p peralte, d derrape, a amplia.
+ */
+const LETRA_VARIANTE = { b: 'baches', x: 'x', c: 'chicaneIzquierda', C: 'chicaneDerecha', p: 'peralte', d: 'derrape', a: 'amplia' };
+function aMano(col, fila, rumbo, texto) {
+  const pasos = [...texto.matchAll(/([RDI])([bxcCpda]?)/g)].map(([, giro, letra]) =>
+    ({ giro: { R: 0, D: 1, I: -1 }[giro], variante: LETRA_VARIANTE[letra] || '' }));
+  return { col, fila, rumbo, pasos };
+}
+
+const A_MANO = {
+  // El borde de la cuadrícula, con todas las piezas: amplia, chicanes, X, baches, peralte y derrape.
+  marco: aMano(3, 5, 0, 'R' + 'RRbRRxRR' + 'Ia' + 'RRcRRIp' + 'RRcRRRRbRRR' + 'Id' + 'RRRxRI' + 'RR'),
+  // Un ocho: el lazo de la derecha cruza la recta de meta en la casilla (5, 3).
+  ocho: aMano(3, 3, 0, 'RRRRIRIRIRRRDRRDRD'),
+  // Toda la cuadrícula: horquillas de dos curvas junto a rectas paralelas, a una casilla.
+  serpiente: aMano(1, 0, 0, 'R' + 'R'.repeat(8) + 'DdDd' + 'R'.repeat(8) + 'IpIp' + 'R'.repeat(8) + 'DD' +
+    'R'.repeat(8) + 'II' + 'R'.repeat(8) + 'DD' + 'R'.repeat(9) + 'D' + 'R'.repeat(4) + 'D'),
+  // El más pequeño que se puede cerrar: seis casillas.
+  minimo: aMano(3, 3, 0, 'RDDRDD')
+};
+
+/** Un trazado al azar: un paseo por la cuadrícula que vuelve a la meta, con variantes donde la validación las deja. */
+function trazadoAlAzar(tirar) {
+  const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
+  for (;;) {
+    const col = Math.floor(tirar() * COLUMNAS), fila = Math.floor(tirar() * FILAS), rumbo = Math.floor(tirar() * 4);
+    const pasos = [{ giro: 0, variante: '' }];
+    const visitas = new Map([[fila * COLUMNAS + col, { giro: 0, rumbo }]]);
+    const casa = { c: col - DX[rumbo], f: fila - DY[rumbo] };
+    const largo = 8 + Math.floor(tirar() * 50);
+    let c = col + DX[rumbo], f = fila + DY[rumbo], r = rumbo;
+    for (let k = 0; k < 90; k++) {
+      if (c === col && f === fila) break;
+      if (c < 0 || f < 0 || c >= COLUMNAS || f >= FILAS) break;
+      const previa = visitas.get(f * COLUMNAS + c);
+      // Por una casilla ya pisada solo se pasa recto (un cruce).
+      const giros = previa ? [0] : [0, 1, -1];
+      const pesos = giros.map((g) => {
+        const nr = (r + g + 4) % 4, nc = c + DX[nr], nf = f + DY[nr];
+        if (nc < 0 || nf < 0 || nc >= COLUMNAS || nf >= FILAS) return 0;
+        if (nc === col && nf === fila) return nr === rumbo ? 50 : 0;
+        const otra = visitas.get(nf * COLUMNAS + nc);
+        if (otra && (otra.cruce || otra.giro || (otra.rumbo - nr) % 2 === 0)) return 0;
+        let peso = (g === 0 ? 2 : 1) * (otra ? 0.5 : 1);
+        // Pasado su largo, vuelve a casa.
+        const antes = Math.abs(c - casa.c) + Math.abs(f - casa.f), despues = Math.abs(nc - casa.c) + Math.abs(nf - casa.f);
+        if (k > largo) peso *= Math.pow(0.3, despues - antes);
+        return peso;
+      });
+      const total = pesos.reduce((a, b) => a + b, 0);
+      if (!total) break;
+      let dado = tirar() * total, g = giros[0];
+      for (let i = 0; i < giros.length; i++) {
+        if (dado < pesos[i]) { g = giros[i]; break; }
+        dado -= pesos[i];
+      }
+      if (previa) previa.cruce = true; else visitas.set(f * COLUMNAS + c, { giro: g, rumbo: r });
+      pasos.push({ giro: g, variante: '' });
+      r = (r + g + 4) % 4;
+      c += DX[r];
+      f += DY[r];
+    }
+    const trazado = { col, fila, rumbo, pasos };
+    if (validarTrazado(trazado)) continue;
+    for (let i = 1; i < pasos.length; i++) {
+      if (tirar() > 0.4) continue;
+      const lista = VARIANTES[pasos[i].giro ? 'curva' : 'recta'];
+      pasos[i].variante = lista[1 + Math.floor(tirar() * (lista.length - 1))];
+      if (validarTrazado(trazado)) pasos[i].variante = '';
+    }
+    return trazado;
+  }
+}
+
+console.log('\nLa cuadrícula');
+{
+  // Lo que la validación prohíbe, y por qué.
+  const { marco, ocho, serpiente, minimo } = A_MANO;
+  const cambiado = (trazado, i, variante) =>
+    ({ ...trazado, pasos: trazado.pasos.map((p, k) => k === i ? { ...p, variante } : p) });
+  const prohibidos = [
+    ['abierto', aMano(3, 3, 0, 'RRRR')],
+    ['fuera', aMano(9, 0, 0, 'RRDD')],
+    ['meta', cambiado(marco, 0, 'baches')],
+    ['variante', cambiado(marco, 1, 'peralte')],
+    // Dos vueltas al mismo lazo.
+    ['pisa', aMano(3, 3, 0, 'RDDRDD'.repeat(2))],
+    ['cruce', cambiado(ocho, 2, 'baches')],
+    // La chicane de la recta de arriba, hacia fuera de la cuadrícula.
+    ['chicane', cambiado(marco, 14, 'chicaneDerecha')],
+    // Una chicane que acaba en una curva.
+    ['chicane', cambiado(marco, 11, 'chicaneIzquierda')],
+    // La amplia de una horquilla: no hay recta después.
+    ['amplia', cambiado(serpiente, 9, 'amplia')],
+    // La amplia que se llevaría la recta de la meta.
+    ['amplia', cambiado(minimo, 5, 'amplia')]
+  ];
+  for (const [motivo, trazado] of prohibidos) {
+    const error = validarTrazado(trazado);
+    comprobar(error?.motivo === motivo, `la validación da «${error?.motivo}» donde tenía que dar «${motivo}»`);
+  }
+  console.log(`  ${prohibidos.length} trazados prohibidos, cada uno por su motivo`);
+
+  // El código: ida y vuelta, y lo que no es un código no se lee.
+  const tirar = azar(5);
+  const azarosos = Array.from({ length: 24 }, () => trazadoAlAzar(tirar));
+  const todos = [...Object.values(A_MANO), ...azarosos];
+  comprobar(todos.every((t) => !validarTrazado(t)), 'un trazado a mano no es válido');
+  const mal = todos.filter((t) => JSON.stringify(deCodigo(aCodigo(t))) !== JSON.stringify(t));
+  comprobar(mal.length === 0, `${mal.length} trazados no vuelven iguales de su código`);
+  comprobar(['', 'A', 'AQ', 'AgMAAAA', '!!!!', 'AQMFAA=='].every((c) => deCodigo(c) === null), 'se lee como circuito algo que no es un código');
+  console.log(`  ${todos.length} trazados van y vuelven por su código (el marco: ${aCodigo(marco)})`);
+
+  // Los trazados al azar: la geometría, todos; la carrera, unos pocos.
+  const pistas = azarosos.map((t, i) => ({ trazado: t, circuito: construirDePiezas(aPiezas(t, `azar-${i + 1}`)) }));
+  let malos = 0;
+  for (const { trazado, circuito } of pistas) {
+    const { fallos: geometria } = validarCircuito(circuito);
+    if (geometria.length) {
+      malos++;
+      console.log(`  ✗ ${aCodigo(trazado)}: ${geometria.join(', ')}`);
+    }
+  }
+  comprobar(malos === 0, `${malos} trazados válidos al azar no cumplen la geometría`);
+  const casillas = azarosos.map((t) => t.pasos.length);
+  const variantes = azarosos.reduce((n, t) => n + t.pasos.filter((p) => p.variante).length, 0);
+  const cruces = pistas.reduce((n, p) => n + p.circuito.cruces.length, 0);
+  console.log(`  ${azarosos.length} trazados al azar (de ${Math.min(...casillas)} a ${Math.max(...casillas)} casillas, ` +
+    `${variantes} variantes, ${cruces} cruces) cumplen la geometría`);
+
+  // Para verlos en pantalla: http://127.0.0.1:8124/?c=<código>
+  console.log('  para probarlos en el juego, ?c=<código>:');
+  for (const [nombre, trazado] of Object.entries(A_MANO)) console.log(`    ${nombre.padEnd(10)} ${aCodigo(trazado)}`);
+  azarosos.slice(0, 8).forEach((t, i) => console.log(`    ${('azar-' + (i + 1)).padEnd(10)} ${aCodigo(t)}`));
+
+  // Los de a mano, enteros (con su decorado y su grada); de los de al azar, unos pocos, las secciones 1 y 3.
+  for (const [nombre, trazado] of Object.entries(A_MANO)) {
+    const circuito = construirDePiezas(aPiezas(trazado, nombre));
+    seccionCircuito(circuito, false);
+    seccionSlot(circuito, false);
+  }
+  for (const { circuito } of pistas.slice(0, 3)) {
+    seccionCircuito(circuito, false, { decorado: false });
+    seccionSlot(circuito, false);
   }
 }
 
