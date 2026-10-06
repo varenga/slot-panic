@@ -187,6 +187,10 @@ nucleo/slot.js         el núcleo: carriles (lateralEn), el coche enganchado (s 
                        velocidad), efectos de pieza, derrape, salirse, el choque, la
                        mano, la carrera y formatearTiempo. Sin DOM
 nucleo/piloto.js       la CPU, la exhibición y el instrumento del arnés: decidirSlot()
+nucleo/cuadricula.js   el constructor, en enteros: el trazado (meta + un paso por
+                       casilla), validarTrazado(), el código (?c=) y aPiezas()
+nucleo/trazo.js        lo que el dedo dibuja: pisar(), cerrar, cambiarVariante()
+nucleo/validar.js      validarCircuito(): la geometría del arnés, para el juego
 nucleo/decorado.js     DÓNDE va cada pieza del decorado: PRNG propio, cabe(),
                        barreras de neumáticos. No dibuja
 nucleo/lienzo.js       `ctx` (enlace vivo), primitivas y capas fuera de pantalla
@@ -209,6 +213,8 @@ pantalla.js            lo que va encima: marcador, avisos, portada, cartel de fi
 lupa.js                el modo lupa (móvil en vertical): la cámara que sigue al J1,
                        el mapa y su marcador, portada y fin. Presentación, como
                        pantalla.js
+constructor.js         la escena del constructor: gestos, trazo, barra. Cerrado y
+                       válido, construye el circuito y lo pinta con dibujo.js
 arnes.mjs              el arnés (no lo carga el juego)
 
 tools/gen-pages.mjs    genera las páginas por idioma, el manifest y el service worker;

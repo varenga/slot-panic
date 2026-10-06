@@ -51,8 +51,31 @@ export function guardarModelo(id) {
   try { localStorage.setItem(`${GAME_SLUG}.coche`, id); } catch (error) { /* modo privado */ }
 }
 
+/*
+ * «Mis circuitos», los del constructor: una lista de { n, codigo }, donde n es
+ * el número de su nombre («Mi circuito 3») y el código, el de la cuadrícula.
+ * Solo en este dispositivo; un código que ya no se lea se descarta al cargar.
+ */
+export function leerMisCircuitos() {
+  try {
+    const lista = JSON.parse(localStorage.getItem(`${GAME_SLUG}.misCircuitos`) || '[]');
+    return Array.isArray(lista) ? lista.filter((c) => Number.isInteger(c?.n) && typeof c.codigo === 'string') : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export function guardarMisCircuitos(lista) {
+  try {
+    localStorage.setItem(`${GAME_SLUG}.misCircuitos`, JSON.stringify(lista));
+    return true;
+  } catch (error) {
+    return false;   // modo privado o sin sitio: quien guarda avisa
+  }
+}
+
 export const estado = {
-  fase: 'portada',     // 'portada' | 'carrera' | 'fin'
+  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'constructor'
   circuito: null,      // el que se corre, de CIRCUITOS (circuitos/indice.js)
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario
@@ -68,5 +91,7 @@ export const estado = {
   avisos: [],          // carteles flotantes: { texto, vida }
   particulas: [],      // chispas y humo (particulas.js)
   esperaReinicio: 0,
+  edicion: null,       // el constructor abierto (constructor.js); sigue vivo mientras se prueba
+  probando: false,     // la carrera es la prueba del constructor: al acabar se vuelve a él
   fps: 0
 };
