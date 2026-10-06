@@ -239,7 +239,8 @@ function seccionSlot(circuito, oficial) {
 
   // La mano: devuelve siempre el coche, y pronto.
   const media = aFondo.manos.reduce((a, b) => a + b, 0) / aFondo.manos.length;
-  console.log(`  la mano tarda ${media.toFixed(2)} s de media desde que se sale (como mucho ${aFondo.manoMax.toFixed(2)})`);
+  if (aFondo.manos.length) console.log(`  la mano tarda ${media.toFixed(2)} s de media desde que se sale (como mucho ${aFondo.manoMax.toFixed(2)})`);
+  else console.log('  a fondo no se sale nunca: la mano no ha tenido que salir');
   comprobar(aFondo.manoMax <= FUERA_MAXIMO + DURACION_MANO + 0.05, `la mano tarda ${aFondo.manoMax.toFixed(2)} s en devolver un coche`);
 
   /*

@@ -53,21 +53,15 @@ los demás elijan entre los publicados. Decidido:
 
 Por ramas, en este orden:
 
-- [ ] **09 — La cuadrícula** (núcleo, sin interfaz). `nucleo/cuadricula.js`: el trazado
-      (casilla y rumbo de la meta + un movimiento por casilla con su variante), su código
-      para compartir (base64url), `aPiezas()` hacia `construirDePiezas`, sectores por
-      tercios y gradas solas junto a la recta más larga. `nucleo/validar.js`: lo barato de
-      las secciones 1 y 3 del arnés, para que lo use también el juego. Arnés, sección 5:
-      el catálogo y sus vecinas cumplen la geometría y N trazados al azar (con semilla)
-      pasan las secciones 1 y 3; lo que no valga, lo prohíbe la validación.
-- [ ] **10 — El constructor** (local, sin red; v0.4.0). Escena propia: cuadrícula, trazo
+- [ ] **12 — El constructor** (local, sin red; v0.6.0). El núcleo ya está (`nucleo/cuadricula.js`,
+      `nucleo/validar.js`, `?c=<código>`: ver `BITACORA.md`). Escena propia: cuadrícula, trazo
       con el aspecto de la pista y extremo abierto resaltado. Barra: volver, nombre,
       estado (abierto / cerrado), deshacer, borrar, Probar, Guardar. Un dedo: arrastrar
       traza, volver por el trazo borra, tocar cambia la variante, llegar al inicio
       cierra. Probar corre contra la CPU. «Mis circuitos» en `localStorage`; la portada
       ofrece oficiales / míos / públicos y Construir; `?c=<código>` abre un circuito
       compartido, también sin red.
-- [ ] **11 — Circuitos públicos** (v0.5.0). `api.php` + `schema.sql` copiados de Race
+- [ ] **13 — Circuitos públicos** (v0.7.0). `api.php` + `schema.sql` copiados de Race
       Panic (MySQL en Plesk): publicar (el mismo código da el mismo circuito), lista
       por nuevos o más jugados, borrar con la llave, denunciar (una por huella de IP) y
       jugado. El PHP valida la cuadrícula (aritmética entera); la geometría la garantiza
