@@ -15,6 +15,7 @@
 import {
   AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRIL, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
+import { spawnSync } from 'node:child_process';
 import { CIRCUITOS } from './circuitos/indice.js';
 import { enCruce } from './nucleo/circuito.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
@@ -585,6 +586,43 @@ console.log('\nLa cuadrícula');
   comprobar(mal.length === 0, `${mal.length} trazados no vuelven iguales de su código`);
   comprobar(['', 'A', 'AQ', 'AgMAAAA', '!!!!', 'AQMFAA=='].every((c) => deCodigo(c) === null), 'se lee como circuito algo que no es un código');
   console.log(`  ${todos.length} trazados van y vuelven por su código (el marco: ${aCodigo(marco)})`);
+
+  /*
+   * El servidor valida lo mismo (servidor/cuadricula.php): los códigos de
+   * todos estos trazados, cada uno con letras cambiadas (casi todos dejan de
+   * valer, cada uno por su motivo) y cosas que no son códigos. PHP y JS tienen
+   * que decir lo mismo: si se lee, el error y el código canónico.
+   */
+  {
+    const tirarCodigo = azar(11);
+    const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const validos = [...todos, ...prohibidos.map(([, t]) => t)]
+      .filter((t) => t.pasos.every((p) => VARIANTES[p.giro ? 'curva' : 'recta'].includes(p.variante)))
+      .map(aCodigo);
+    const codigos = [...validos, '', 'A', 'AQ', '!!!!', 'AQMFAA==', 'AgMAAAAA', 'AQMF', 'AQMFAA'];
+    for (const codigo of validos) {
+      for (let k = 0; k < 12; k++) {
+        const i = Math.floor(tirarCodigo() * codigo.length);
+        const letra = ALFABETO[Math.floor(tirarCodigo() * 64)];
+        codigos.push(codigo.slice(0, i) + letra + codigo.slice(i + 1));
+      }
+      codigos.push(codigo + 'A', codigo.slice(0, -1), codigo + 'AAAA');
+    }
+    const php = spawnSync('php', ['tools/validar-cuadricula.php'], { input: codigos.join('\n') + '\n', encoding: 'utf8' });
+    if (php.error || php.status !== 0) {
+      console.log(`  sin PHP no se compara la validación del servidor (${php.error?.code || php.stderr})`);
+    } else {
+      const respuestas = php.stdout.trim().split('\n').map((l) => JSON.parse(l));
+      const distintos = codigos.filter((codigo, i) => {
+        const trazado = deCodigo(codigo);
+        const js = { lee: trazado !== null, error: trazado && validarTrazado(trazado), canonico: trazado && aCodigo(trazado) };
+        return JSON.stringify(js) !== JSON.stringify(respuestas[i]);
+      });
+      const motivos = new Set(respuestas.map((r) => r.error?.motivo).filter(Boolean));
+      console.log(`  el servidor (PHP) y el juego validan igual ${codigos.length - distintos.length} de ${codigos.length} códigos (${motivos.size} motivos distintos)`);
+      comprobar(respuestas.length === codigos.length && distintos.length === 0, `PHP y JS no validan igual: ${distintos.slice(0, 3).join(', ')}`);
+    }
+  }
 
   /*
    * El trazo del constructor: dibujar con el dedo, casilla a casilla, cada

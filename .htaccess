@@ -14,6 +14,12 @@
 		Require all denied
 	</FilesMatch>
 
+	# Las credenciales de api.php. Siendo PHP se ejecutarían sin imprimir nada,
+	# pero si el intérprete se cae se servirían como texto, contraseña incluida.
+	<FilesMatch "(?i)^config(\.example)?\.php$">
+		Require all denied
+	</FilesMatch>
+
 </IfModule>
 
 <IfModule !mod_authz_core.c>
@@ -23,6 +29,11 @@
 	</FilesMatch>
 
 	<FilesMatch "(?i)^(\.htaccess|\.gitignore|pnyk\.json)$">
+		Order allow,deny
+		Deny from all
+	</FilesMatch>
+
+	<FilesMatch "(?i)^config(\.example)?\.php$">
 		Order allow,deny
 		Deny from all
 	</FilesMatch>
@@ -41,6 +52,8 @@
 	RewriteRule "(^|/)\." - [F,L]
 	# Herramientas de mantenimiento (generador de páginas e iconos): no se sirven.
 	RewriteRule ^tools/ - [F,L]
+	# Lo que incluye api.php (la cuadrícula en PHP): no se llama desde fuera.
+	RewriteRule ^servidor/ - [F,L]
 	# La envoltura de la app de las tiendas (APP.md §4). El push de master
 	# publica todo el repositorio, /app incluido, y no debe servirse: se
 	# contesta como si no estuviera.
