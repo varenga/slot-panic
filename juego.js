@@ -44,7 +44,7 @@ import { cambiarIdioma, idiomaActual, t } from './i18n.js';
 import { cargarAnalitica, evento } from './analitica.js';
 import { apuntarJugado, borrarPublicado, cargarGaleria, denunciar, galeria, publicar } from './publicos.js';
 import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra, LETRAS_ALIAS, otroNombre } from './publicar.js';
-import { cajasGaleria, dibujarGaleria } from './galeria.js';
+import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from './galeria.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
   altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
@@ -420,6 +420,22 @@ function botonConstructor(id) {
  */
 const galeriaUI = { pendiente: null, aviso: null };
 
+/** CIRCUITOS, en la portada: elegir entre la galería y el constructor. */
+function abrirCircuitos() {
+  estado.fase = 'circuitos';
+  punteros.clear();
+  aplicarVista();
+}
+
+function pulsarCircuitos(id) {
+  if (id === 'galeria') abrirGaleria();
+  else if (id === 'construir') abrirConstructor();
+  else if (id === 'volver') {
+    irAPortada();
+    aplicarVista();
+  }
+}
+
 function abrirGaleria() {
   estado.fase = 'galeria';
   galeriaUI.pendiente = null;
@@ -664,7 +680,7 @@ function opcionPulsada(id) {
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
   else if (id === 'coche') cambiarCoche();
-  else if (id === 'galeria') abrirGaleria();
+  else if (id === 'circuitos') abrirCircuitos();
   else if (id === 'campeonato') empezarCampeonato();
 }
 
@@ -813,6 +829,25 @@ const ESCENAS = {
     }
   },
 
+  circuitos: {
+    actualizar() {
+      sonido(false);
+    },
+    dibujar() {
+      dibujarCircuitos(vistaGaleria(), estado.tactil);
+    },
+    teclear(codigo) {
+      if (codigo === 'Escape') pulsarCircuitos('volver');
+      else if (codigo === 'KeyG') pulsarCircuitos('galeria');
+      else if (codigo === 'KeyB') pulsarCircuitos('construir');
+    },
+    pulsar(p) {
+      punteros.clear();
+      const caja = cajasCircuitos(vistaGaleria()).find((c) => dentro(p, c));
+      if (caja) pulsarCircuitos(caja.id);
+    }
+  },
+
   galeria: {
     actualizar(dt) {
       if (galeriaUI.aviso && (galeriaUI.aviso.vida -= dt) <= 0) galeriaUI.aviso = null;
@@ -860,7 +895,7 @@ const ESCENAS = {
       else if (codigo === 'KeyH') cambiarHora();
       else if (codigo === 'KeyK') cambiarCoche();
       else if (codigo === 'KeyB') abrirConstructor();
-      else if (codigo === 'KeyG') abrirGaleria();
+      else if (codigo === 'KeyG') abrirCircuitos();
       else if (codigo === 'KeyT') empezarCampeonato();
     },
     pulsar(p) {

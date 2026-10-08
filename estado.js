@@ -132,7 +132,7 @@ export function aceptarNormas() {
 }
 
 export const estado = {
-  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'constructor' | 'galeria'
+  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'constructor' | 'circuitos' | 'galeria'
   circuito: null,      // el que se corre, de CIRCUITOS (circuitos/indice.js)
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario

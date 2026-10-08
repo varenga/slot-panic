@@ -135,3 +135,43 @@ function esquina(caja, propio, pendiente) {
   rectanguloRedondo(caja.x, caja.y, caja.ancho, caja.alto, 6);
   texto(propio ? '✕' : '⚑', caja.x + caja.ancho / 2, caja.y + caja.alto / 2 + 1, { tam: 16, color: COLOR.hud, peso: 700 });
 }
+
+// --- CIRCUITOS: la galería o el constructor ------------------------------------
+
+/*
+ * Lo que abre la opción CIRCUITOS de la portada: dos botones grandes, uno al
+ * lado del otro en la mesa y uno encima del otro en la lupa. Dibujo y pulsación.
+ */
+export function cajasCircuitos({ ancho, alto }) {
+  const volver = { id: 'volver', x: MARGEN, y: (BARRA - 36) / 2, ancho: Math.min(220, ancho / 3), alto: 36 };
+  const enFila = ancho > 800;
+  const b = enFila ? { ancho: 380, alto: 220 } : { ancho: ancho - 2 * 40, alto: 200 };
+  const centroY = (BARRA + alto) / 2;
+  const cajas = ['galeria', 'construir'].map((id, i) => enFila
+    ? { id, x: ancho / 2 + (i ? 20 : -20 - b.ancho), y: centroY - b.alto / 2, ...b }
+    : { id, x: (ancho - b.ancho) / 2, y: centroY + (i ? 20 : -20 - b.alto), ...b });
+  return [volver, ...cajas];
+}
+
+export function dibujarCircuitos(vista, tactil) {
+  const { ancho, alto } = vista;
+  ctx.fillStyle = '#1b1e27';
+  ctx.fillRect(0, 0, ancho, alto);
+  ctx.fillStyle = COLOR.banda;
+  ctx.fillRect(0, 0, ancho, BARRA);
+  texto(t('circuitos.titulo'), ancho / 2, BARRA / 2 + 1, { tam: 22, color: COLOR.hud, peso: 800 });
+  for (const caja of cajasCircuitos(vista)) {
+    if (caja.id === 'volver') {
+      boton(caja, t('galeria.volver'), false, 15);
+      continue;
+    }
+    const destacado = caja.id === 'construir';
+    ctx.fillStyle = destacado ? COLOR.ambar : 'rgba(43, 48, 64, 0.95)';
+    rectanguloRedondo(caja.x, caja.y, caja.ancho, caja.alto, 12);
+    const color = destacado ? COLOR.fondo : COLOR.hud;
+    const tecla = tactil ? '' : (caja.id === 'galeria' ? 'G · ' : 'B · ');
+    texto(tecla + t('circuitos.' + caja.id), caja.x + caja.ancho / 2, caja.y + caja.alto / 2 - 18, { tam: 34, color, peso: 800 });
+    texto(t('circuitos.' + caja.id + 'Ayuda'), caja.x + caja.ancho / 2, caja.y + caja.alto / 2 + 30,
+      { tam: 15, color: destacado ? COLOR.fondo : COLOR.texto, peso: 600 });
+  }
+}

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.8.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
+Prototipo jugable (v0.8.1): carreras de slot en cuatro circuitos (*La horquilla*, y *El
 ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
@@ -235,7 +235,8 @@ lupa.js                el modo lupa (móvil en vertical): la cámara que sigue a
 constructor.js         la escena del constructor: gestos, trazo, barra. Cerrado y
                        válido, construye el circuito y lo pinta con dibujo.js
 publicar.js            el diálogo de compartir y publicar (normas, nombre, alias)
-galeria.js             la galería de circuitos públicos: tarjetas y miniaturas
+galeria.js             CIRCUITOS (galería o constructor) y la galería de circuitos
+                       públicos: tarjetas y miniaturas
 publicos.js            la red de la galería (api.php): nunca bloquea el juego
 api.php                los circuitos públicos (PHP + MySQL); config.php, fuera de git
 servidor/cuadricula.php  la cuadrícula en PHP: la validación del servidor (no se sirve)
