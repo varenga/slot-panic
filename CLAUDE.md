@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.9.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
+Publicado (v1.0.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
 ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el

@@ -754,3 +754,23 @@ app en la consola de Play.
   respuestas de Play cuentan también los récords.
 - Arnés: 659/659 en verde, en ~20 s (la máquina va más lenta que cuando se midieron los
   7 s; no hay una sección culpable).
+
+## Slot Panic 1.0.0 (08/10/2026)
+
+> «Primera versión publicada y enlazada desde pnyk.es» (`pnyk/comun/CONVENCIONES.md`):
+> el juego ya está en slot.pnyk.es y tiene su ficha en pnyk.es. Con los récords, lo que
+> se quería de un juego completo está dentro: carrera, campeonato, récords, constructor
+> y galería, en siete idiomas, en la web y como PWA.
+
+- **La lista de un proyecto publicado** (`CONVENCIONES.md`), repasada: páginas por idioma
+  con hreflang y canónica, `sitemap.xml`, `robots.txt` y `llms.txt`, JSON-LD, GA4 solo
+  tras consentimiento con su botón «Cookies» y la política común de pnyk.es, pie con
+  `pieRed()`, `pnyk.json` al día y assets con `?v=`. Faltaba la **imagen para compartir**:
+  era el icono de 512 px y ahora es una captura de 1200×630 de una carrera en El
+  resbalón (`og.jpg`, con `tools/gen-og.mjs`, como las de la tienda), con
+  `twitter:card` `summary_large_image`.
+- **`pnyk.json`**: 1.0.0 y etapa «publicado».
+- **pnyk.es**: la ficha cuenta ya el campeonato, los récords con fantasma, el constructor
+  y la galería, con la imagen nueva (rama `11-slot-panic-records` de pnyk).
+- **Lo que queda** sigue en `TODO.md`: los playtests (a dos, la lupa, la galería y los
+  récords) y la app de Google Play.
