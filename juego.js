@@ -7,7 +7,7 @@
 
 import {
   ALTO, ANCHO, ANCHO_LUPA, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
-  TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
+  SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import {
   estado, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, leerCircuito, leerEscenario, leerMisCircuitos,
@@ -38,7 +38,7 @@ import {
   actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
   sfxSalida, sfxVuelta, vibrar
 } from './audio.js';
-import { cambiarIdioma, t } from './i18n.js';
+import { cambiarIdioma, idiomaActual, t } from './i18n.js';
 import { cargarAnalitica, evento } from './analitica.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
@@ -156,6 +156,8 @@ function cambiarCircuito() {
 
 let circuitoAntes = null;     // el de la portada, para volver a él sin guardar
 let salirSinGuardar = false;  // el primer «volver» con cambios sin guardar avisa
+let eliminarPendiente = false; // y el primer «eliminar», también
+let compartirPendiente = null; // el dedo que pulsó «compartir»: se comparte al soltarlo
 
 /*
  * Se abre con el circuito de la portada si es de la cuadrícula (uno mío se
@@ -167,6 +169,7 @@ function abrirConstructor() {
   estado.edicion = crearEdicion(circuito.trazado || null, circuito.mio || null);
   actualizarEdicion(estado.edicion, estado.escenario);
   salirSinGuardar = false;
+  eliminarPendiente = false;
   estado.fase = 'constructor';
   estado.probando = false;
   punteros.clear();
@@ -237,10 +240,75 @@ function salirDelConstructor() {
   aplicarVista();
 }
 
+/*
+ * Quita el circuito de «Mis circuitos» y vuelve a la portada. El primer toque
+ * solo avisa: no se puede deshacer.
+ */
+function eliminarConstructor() {
+  const edicion = estado.edicion;
+  if (!edicion.mio) return;
+  if (!eliminarPendiente) {
+    eliminarPendiente = true;
+    avisar(edicion, t('constructor.eliminarOtraVez'), COLOR.rojo);
+    return;
+  }
+  const lista = leerMisCircuitos().filter((c) => c.n !== edicion.mio);
+  if (!guardarMisCircuitos(lista)) {
+    avisar(edicion, t('constructor.sinSitio'), COLOR.rojo);
+    return;
+  }
+  const quitado = edicion.mio;
+  MIOS = cargarMios();
+  evento('eliminar_circuito');
+  estado.circuito = circuitoAntes.mio === quitado ? CIRCUITOS[0] : circuitoAntes;
+  guardarCircuito(estado.circuito.clave);
+  estado.decorado = generarDecorado(estado.circuito, estado.escenario);
+  estado.edicion = null;
+  estado.probando = false;
+  irAPortada();
+  aplicarVista();
+}
+
+/*
+ * El enlace que abre este circuito en la web (también desde la app, cuyo
+ * origen es https://localhost), en el idioma de ahora.
+ */
+function enlaceCircuito(codigo) {
+  return `${SITE_ORIGIN}${idiomaActual().dir}?c=${codigo}`;
+}
+
+/*
+ * Con el menú de compartir del sistema si lo hay; si no, al portapapeles. Los
+ * dos piden un gesto del usuario: con el dedo, se llama al soltarlo.
+ */
+async function compartirConstructor() {
+  const edicion = estado.edicion;
+  if (!listo(edicion)) return;
+  const url = enlaceCircuito(edicion.codigo);
+  evento('compartir_circuito', { casillas: edicion.trazo.casillas.length });
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Slot Panic', url });
+      return;
+    } catch (error) {
+      if (error?.name === 'AbortError') return;   // lo ha cerrado quien comparte
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    avisar(edicion, t('constructor.enlaceCopiado'), COLOR.verde);
+  } catch (error) {
+    avisar(edicion, t('constructor.sinCompartir'), COLOR.rojo);
+  }
+}
+
 function botonConstructor(id) {
   const edicion = estado.edicion;
   if (id !== 'volver') salirSinGuardar = false;
+  if (id !== 'eliminar') eliminarPendiente = false;
   if (id === 'volver') salirDelConstructor();
+  else if (id === 'eliminar') eliminarConstructor();
+  else if (id === 'compartir') compartirConstructor();
   else if (id === 'deshacer') deshacer(edicion, estado.escenario);
   else if (id === 'borrar') borrar(edicion, estado.escenario);
   else if (id === 'probar') probarConstructor();
@@ -490,23 +558,32 @@ const ESCENAS = {
       else if (codigo === 'Delete') botonConstructor('borrar');
       else if (empezar(codigo)) botonConstructor('probar');
       else if (codigo === 'KeyG') botonConstructor('guardar');
+      else if (codigo === 'KeyX') botonConstructor('eliminar');
+      else if (codigo === 'KeyS') botonConstructor('compartir');
     },
     pulsar(p, id) {
       punteros.clear();
       if (punteroConstructor !== null) return;   // dibuja un dedo; los demás no cuentan
       const caja = botonesConstructor().find((b) => dentro(p, b));
-      if (caja) {
-        botonConstructor(caja.id);
-        return;
-      }
+      // Compartir necesita un gesto completo (el navegador no lo da al bajar el dedo).
+      if (caja?.id === 'compartir') compartirPendiente = { id, caja, p };
+      else if (caja) botonConstructor(caja.id);
+      if (caja) return;
       salirSinGuardar = false;
+      eliminarPendiente = false;
       punteroConstructor = id;
       empezarGesto(estado.edicion, p);
     },
     mover(p, id) {
       if (id === punteroConstructor) moverGesto(estado.edicion, p);
+      if (id === compartirPendiente?.id) compartirPendiente.p = p;
     },
     soltar(id) {
+      if (id === compartirPendiente?.id) {
+        const { caja, p } = compartirPendiente;
+        compartirPendiente = null;
+        if (dentro(p, caja)) botonConstructor('compartir');
+      }
       if (id !== punteroConstructor) return;
       punteroConstructor = null;
       acabarGesto(estado.edicion, estado.escenario);
@@ -535,7 +612,7 @@ const ESCENAS = {
       else if (codigo === 'KeyC') cambiarCircuito();
       else if (codigo === 'KeyH') cambiarHora();
       else if (codigo === 'KeyK') cambiarCoche();
-      else if (codigo === 'KeyB' && !estado.lupa) abrirConstructor();
+      else if (codigo === 'KeyB') abrirConstructor();
     },
     pulsar(p) {
       const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada()).find((caja) => dentro(p, caja));

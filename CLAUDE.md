@@ -4,12 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.5.0): carreras de slot en tres circuitos (*La horquilla*, y *El
+Prototipo jugable (v0.6.0): carreras de slot en tres circuitos (*La horquilla*, y *El
 ocho* y *El nudo*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X y los cruces y una mano que devuelve el
 coche; uno
-contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma). Con el móvil en vertical, el modo
+contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma). Un constructor: el circuito
+se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo y se
+comparte con un enlace (`?c=`). Con el móvil en vertical, el modo
 lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cuatro escenarios de día, al
 atardecer o de noche, siete idiomas (una página por idioma, con SEO), sonido, teclado y
 táctil; instalable como PWA y sin red. La app de Android (Capacitor, `es.pnyk.slot`) está

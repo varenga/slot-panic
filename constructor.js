@@ -208,11 +208,11 @@ export function actualizarAviso(edicion, dt) {
 
 // --- La barra -------------------------------------------------------------------
 
-const BOTONES = ['volver', 'deshacer', 'borrar', 'probar', 'guardar'];
+const BOTONES = ['volver', 'deshacer', 'borrar', 'eliminar', 'compartir', 'probar', 'guardar'];
 
 /* Los botones de la barra: volver a la izquierda, el resto a la derecha. Dibujo y pulsación. */
 export function botonesConstructor() {
-  const alto = 34, y = (BANDA_TEXTO - alto) / 2, hueco = 10, ancho = 132;
+  const alto = 34, y = (BANDA_TEXTO - alto) / 2, hueco = 8, ancho = 116;
   const cajas = [{ id: 'volver', x: 12, y, ancho, alto }];
   const derecha = BOTONES.slice(1);
   derecha.forEach((id, i) => {
@@ -413,7 +413,7 @@ function estadoEnPalabras(edicion) {
   return { texto: t(edicion.guardado && edicion.mio ? 'constructor.guardado' : 'constructor.cerrado'), color: COLOR.verde };
 }
 
-const TECLA_BOTON = { volver: 'ESC', deshacer: '⌫', borrar: 'SUPR', probar: 'ENTER', guardar: 'G' };
+const TECLA_BOTON = { volver: 'ESC', deshacer: '⌫', borrar: 'SUPR', eliminar: 'X', compartir: 'S', probar: 'ENTER', guardar: 'G' };
 
 function pintarBarra(edicion, nombre, tactil) {
   ctx.fillStyle = COLOR.banda;
@@ -423,7 +423,9 @@ function pintarBarra(edicion, nombre, tactil) {
     deshacer: edicion.historial.length > 0 || edicion.trazo.cerrado,
     borrar: edicion.trazo.casillas.length > 0,
     probar: listo(edicion),
-    guardar: listo(edicion) && !(edicion.guardado && edicion.mio)
+    guardar: listo(edicion) && !(edicion.guardado && edicion.mio),
+    compartir: listo(edicion),
+    eliminar: Boolean(edicion.mio)
   };
   for (const caja of botonesConstructor()) {
     ctx.globalAlpha = activos[caja.id] ? 1 : 0.35;

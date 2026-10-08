@@ -53,15 +53,6 @@ los demás elijan entre los publicados. Decidido:
 
 Por ramas, en este orden:
 
-- [ ] **12 — El constructor** (local, sin red; v0.6.0). Hecho en la rama: la escena
-      (`constructor.js`, `nucleo/trazo.js`), la barra (volver, nombre, estado, deshacer,
-      borrar, Probar, Guardar), «Mis circuitos» en `localStorage` (tecla C, detrás de los
-      oficiales) y CONSTRUIR (tecla B) en la portada. Falta:
-  - [ ] Playtest en el móvil: ¿se dibuja bien con el dedo?, ¿se entiende tocar para
-        cambiar la pieza?, ¿la ayuda de abajo estorba?
-  - [ ] Borrar un circuito guardado.
-  - [ ] CONSTRUIR en la portada de la lupa (hoy hay que girar el móvil).
-  - [ ] Compartir: copiar el enlace `?c=<código>` de un circuito.
 - [ ] **13 — Circuitos públicos** (v0.7.0). `api.php` + `schema.sql` copiados de Race
       Panic (MySQL en Plesk): publicar (el mismo código da el mismo circuito), lista
       por nuevos o más jugados, borrar con la llave, denunciar (una por huella de IP) y
