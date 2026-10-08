@@ -758,6 +758,8 @@ console.log('\nEl campeonato');
  */
 console.log('\nEl fantasma');
 {
+  const SERVIDOR_RECORDS = readFileSync('servidor/records.php', 'utf8');
+  const pruebasRecord = [];
   const sinGrabar = crearCarreraSlot(CIRCUITOS[0], ['#f00']);
   for (const circuito of CIRCUITOS) {
     const c = crearCarreraSlot(circuito, ['#f00'], 0, { grabar: true });
@@ -798,6 +800,41 @@ console.log('\nEl fantasma');
     comprobar(despues, `«${circuito.clave}»: el fantasma sigue después de acabar su vuelta`);
     comprobar(deriva < 0.2 && texto.length < 12000, `«${circuito.clave}»: guardado se separa ${deriva.toFixed(2)} px y ocupa ${texto.length}`);
     comprobar(grabadas.every((g) => g.carril === 0 || g.carril === 1), `«${circuito.clave}»: una vuelta sin carril`);
+
+    /*
+     * El servidor (servidor/records.php): el circuito está, su mínimo queda por
+     * debajo de esta vuelta (la de un piloto fino: un humano tiene que poder
+     * bajarla) sin quedar regalado, y su meta es la del circuito. La vuelta de
+     * verdad pasa; trucada (otro tiempo, un salto, desplazada, sin muestras,
+     * por debajo del mínimo), no.
+     */
+    const registro = new RegExp(`'${circuito.clave}'\\s*=>\\s*\\['minimo'\\s*=>\\s*(\\d+),\\s*'meta'\\s*=>\\s*\\[(\\d+),\\s*(\\d+)\\]`).exec(SERVIDOR_RECORDS);
+    comprobar(registro, `«${circuito.clave}» no está en RECORDS_CIRCUITOS (servidor/records.php)`);
+    if (!registro) continue;
+    const [minimo, mx, my] = registro.slice(1).map(Number);
+    const ms = Math.round(mejor.tiempo * 1000);
+    comprobar(minimo <= 0.85 * ms && minimo >= 0.6 * ms, `«${circuito.clave}»: el mínimo del servidor (${minimo} ms) frente a una vuelta de ${ms} ms`);
+    comprobar(Math.hypot(mx - circuito.eje[0].x, my - circuito.eje[0].y) < 1, `«${circuito.clave}»: la meta del servidor no es la del circuito`);
+    const datos = JSON.parse(texto);
+    const trucar = (cambio) => { const d = structuredClone(datos); cambio(d); return JSON.stringify(d); };
+    const pruebas = [
+      [null, { vuelta: ms, fantasma: texto }],
+      ['tiempo', { vuelta: ms - 500, fantasma: texto }],
+      ['salto', { vuelta: ms, fantasma: trucar((d) => { d.d[30] += 2000; }) }],
+      ['meta', { vuelta: ms, fantasma: trucar((d) => { for (let i = 0; i < d.d.length; i += 3) d.d[i + 1] -= 700; }) }],
+      ['muestras', { vuelta: ms, fantasma: trucar((d) => { d.d.splice(30, 30); }) }],
+      ['vuelta', { vuelta: minimo - 1, fantasma: trucar((d) => { d.tiempo = (minimo - 1) / 1000; }) }]
+    ];
+    pruebasRecord.push(...pruebas.map(([esperado, r]) => ({ esperado, circuito: circuito.clave, r: { circuito: circuito.clave, carril: mejor.carril, ...r } })));
+  }
+  const php = spawnSync('php', ['tools/validar-record.php'], { input: pruebasRecord.map((p) => JSON.stringify(p.r)).join('\n') + '\n', encoding: 'utf8' });
+  if (php.error || php.status !== 0) {
+    console.log(`  sin PHP no se comprueban los récords del servidor (${php.error?.code || php.stderr})`);
+  } else {
+    const respuestas = php.stdout.trim().split('\n').map((l) => JSON.parse(l));
+    const mal = pruebasRecord.filter((p, i) => respuestas[i] !== p.esperado);
+    console.log(`  el servidor acepta las ${CIRCUITOS.length} vueltas de verdad y rechaza las trucadas: ${pruebasRecord.length - mal.length} de ${pruebasRecord.length}`);
+    comprobar(mal.length === 0, `records.php: ${mal.map((p) => `${p.circuito} esperaba ${p.esperado} y dio ${respuestas[pruebasRecord.indexOf(p)]}`).join(', ')}`);
   }
   comprobar(sinGrabar.grabar === false && sinGrabar.coches[0].grabadas.length === 0, 'una carrera sin grabar graba');
   comprobar(['', '{}', '{"v":1}', 'nada', JSON.stringify({ v: 1, paso: 1 / 30, tiempo: 9, d: [1, 2] })].every((t) => decodificar(t) === null),

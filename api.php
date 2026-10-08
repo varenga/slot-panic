@@ -8,6 +8,9 @@
  *   POST { accion: 'denunciar', id }        una por huella; con DENUNCIAS se oculta
  *   POST { accion: 'jugado', id }           una por huella y día
  *
+ *   GET  ?records=<circuito>                 los récords de vuelta: los 10 mejores y el fantasma del primero
+ *   POST { accion: 'record', circuito, alias, vuelta, carril, fantasma }   una vuelta (servidor/records.php)
+ *
  * El juego nunca espera a este fichero: sin red se construye y se corre igual.
  * Es el api.php de Race Panic (PDO, errores en JSON, credenciales en
  * config.php, fuera de git) con la cuadrícula validada en PHP
@@ -23,6 +26,9 @@ const PUBLICAR_AL_DIA = 5;      // por huella, en las últimas 24 h
 // El nombre: un índice de cada lista de i18n.js (nombre.a.* y nombre.s.*). El arnés lo comprueba.
 const ADJETIVOS       = 16;
 const SUSTANTIVOS     = 16;
+const RECORDS_TABLA   = 10;     // los que se ven
+const RECORDS_GUARDA  = 50;     // los que se guardan por circuito
+const RECORDS_AL_DIA  = 60;     // por huella, en las últimas 24 h
 // Quién puede llamar desde otro origen: la app (Capacitor en Android e iOS)
 const ORIGENES = ['https://slot.pnyk.es', 'https://localhost', 'capacitor://localhost',
   'http://127.0.0.1:8124'];   // y las pruebas en local (?api=): la galería es pública, y borrar pide la llave
@@ -52,6 +58,7 @@ foreach (['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS', 'SAL_HUELLA'] as $constant
   if (!defined($constante)) fail(500, "Falta $constante en config.php");
 }
 require __DIR__ . '/servidor/cuadricula.php';
+require __DIR__ . '/servidor/records.php';
 
 $origen = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (in_array($origen, ORIGENES, true)) {
@@ -99,6 +106,35 @@ function id_de($body) {
 function entero($valor, $tope) {
   if (!is_int($valor) || $valor < 0 || $valor >= $tope) fail(400, 'Nombre inválido');
   return $valor;
+}
+
+// --- Los récords --------------------------------------------------------------
+
+/** Los 10 mejores de un circuito (a igualdad, el más antiguo) y el fantasma del primero. */
+function tabla_records($pdo, $circuito) {
+  $consulta = $pdo->prepare('SELECT alias, vuelta, carril, fecha FROM records WHERE circuito = ? ORDER BY vuelta ASC, fecha ASC, id ASC LIMIT ' . RECORDS_TABLA);
+  $consulta->execute([$circuito]);
+  $filas = array_map(function ($f) {
+    return ['alias' => $f['alias'], 'vuelta' => (int) $f['vuelta'], 'carril' => (int) $f['carril'], 'fecha' => $f['fecha']];
+  }, $consulta->fetchAll());
+  $fantasma = null;
+  if ($filas) {
+    $primero = $pdo->prepare('SELECT fantasma FROM records WHERE circuito = ? ORDER BY vuelta ASC, fecha ASC, id ASC LIMIT 1');
+    $primero->execute([$circuito]);
+    $fantasma = $primero->fetchColumn() ?: null;
+  }
+  return ['records' => $filas, 'fantasma' => $fantasma];
+}
+
+if ($method === 'GET' && isset($_GET['records'])) {
+  $circuito = (string) $_GET['records'];
+  if (!isset(RECORDS_CIRCUITOS[$circuito])) fail(400, 'Circuito inválido');
+  try {
+    echo json_encode(tabla_records(db(), $circuito));
+  } catch (PDOException $e) {
+    fail(500, 'Error al leer los récords', $e->getMessage());
+  }
+  exit;
 }
 
 // --- La galería ---------------------------------------------------------------
@@ -174,6 +210,39 @@ if ($accion === 'publicar') {
     // Dos que publican el mismo a la vez: el segundo choca con la clave única.
     if ($e->getCode() === '23000') fail(409, 'Ya publicado');
     fail(500, 'Error al publicar', $e->getMessage());
+  }
+  exit;
+}
+
+// --- Un récord ---------------------------------------------------------------------
+
+if ($accion === 'record') {
+  $alias = $body['alias'] ?? '';
+  if (!is_string($alias) || !preg_match('/^[A-Z0-9]{1,3}$/', $alias)) fail(400, 'Alias inválido');
+  $circuito = $body['circuito'] ?? null;
+  $vuelta = $body['vuelta'] ?? null;
+  $carril = $body['carril'] ?? null;
+  $fantasma = $body['fantasma'] ?? null;
+  $motivo = records_validar($circuito, $vuelta, $carril, $fantasma);
+  if ($motivo !== null) fail(400, 'Récord inválido', $motivo);
+  $huella = huella();
+  try {
+    $pdo = db();
+    $hoy = $pdo->prepare('SELECT COUNT(*) FROM records WHERE huella = ? AND fecha > NOW() - INTERVAL 1 DAY');
+    $hoy->execute([$huella]);
+    if ((int) $hoy->fetchColumn() >= RECORDS_AL_DIA) fail(429, 'Límite diario');
+    $pdo->prepare('INSERT INTO records (circuito, alias, vuelta, carril, fantasma, huella) VALUES (?, ?, ?, ?, ?, ?)')
+        ->execute([$circuito, $alias, $vuelta, $carril, $fantasma, $huella]);
+    $id = (int) $pdo->lastInsertId();
+    // Solo se guardan los 50 mejores de cada circuito.
+    $pdo->prepare('DELETE FROM records WHERE circuito = ? AND id NOT IN (SELECT id FROM (SELECT id FROM records WHERE circuito = ? ORDER BY vuelta ASC, fecha ASC, id ASC LIMIT ' . RECORDS_GUARDA . ') AS mejores)')
+        ->execute([$circuito, $circuito]);
+    // El puesto: cuántos hay por delante (más rápidos, o igual de rápidos y antes).
+    $delante = $pdo->prepare('SELECT COUNT(*) FROM records WHERE circuito = ? AND (vuelta < ? OR (vuelta = ? AND id < ?))');
+    $delante->execute([$circuito, $vuelta, $vuelta, $id]);
+    echo json_encode(['puesto' => (int) $delante->fetchColumn() + 1] + tabla_records($pdo, $circuito));
+  } catch (PDOException $e) {
+    fail(500, 'Error al guardar el récord', $e->getMessage());
   }
   exit;
 }
