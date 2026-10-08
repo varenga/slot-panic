@@ -10,7 +10,8 @@ import {
   SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import {
-  aceptarNormas, estado, guardarAlias, guardarMejorVuelta, leerFantasmaPropio, leerMejorVuelta, leerTipoFantasma, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
+  aceptarNormas, estado, guardarAlias, guardarMejorVuelta, guardarTipoFantasma, leerFantasmaPropio, leerMejorVuelta,
+  leerTipoFantasma, TIPOS_FANTASMA, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
   leerAlias, leerCircuito, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
@@ -35,7 +36,7 @@ import {
   actualizarParticulas, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
 } from './particulas.js';
 import {
-  botonesFin, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
+  botonesFin, cajaRecordsPortada, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
   nombreCircuito, opcionesPortada
 } from './pantalla.js';
 import {
@@ -47,9 +48,11 @@ import { cargarAnalitica, evento } from './analitica.js';
 import { apuntarJugado, borrarPublicado, cargarGaleria, denunciar, galeria, publicar } from './publicos.js';
 import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra, LETRAS_ALIAS, otroNombre } from './publicar.js';
 import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from './galeria.js';
+import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js';
+import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
-  altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
+  altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
 } from './lupa.js';
 
@@ -522,6 +525,7 @@ function limpiarPista() {
 /** La portada hace correr a dos pilotos por el circuito: enseña de qué va el juego. */
 function irAPortada() {
   estado.fase = 'portada';
+  if (conRecords()) cargarRecords(estado.circuito.clave);
   estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot);
   vestir(estado.carrera);
   estado.pilotos = EXHIBICION.map((opciones) => crearPiloto({ ...opciones, semilla: semilla() }));
@@ -547,6 +551,7 @@ function empezarCarrera() {
   estado.pilotos = [0, 1].map(() => crearPiloto({ ...CPU_SLOT, semilla: semilla() }));
   estado.humanos = [false, false];
   estado.fantasma = fantasmaElegido();
+  if (conRecords()) cargarRecords(estado.circuito.clave);
   estado.ultimaAvisada = false;
   limpiarPista();
 }
@@ -559,7 +564,9 @@ const conRecords = () => CIRCUITOS.includes(estado.circuito);
 /** El fantasma contra el que corre el J1, según lo elegido. Sin el del récord, el propio. */
 function fantasmaElegido() {
   if (!conRecords() || estado.tipoFantasma === 'no') return null;
-  return leerFantasmaPropio(estado.circuito.clave);
+  const { clave } = estado.circuito;
+  if (estado.tipoFantasma === 'record' && tablaDe(clave).fantasma) return tablaDe(clave).fantasma;
+  return leerFantasmaPropio(clave);
 }
 
 /*
@@ -583,8 +590,97 @@ function apuntarVuelta(i) {
 /** Lo que dice la portada de un oficial: tu mejor vuelta, si la tienes. */
 function marcaPortada() {
   if (!conRecords()) return null;
-  const mejor = leerMejorVuelta(estado.circuito.clave);
-  return mejor ? t('portada.tuMejor', { tiempo: formatearTiempo(mejor.tiempo) }) : null;
+  const { clave } = estado.circuito;
+  const primero = tablaDe(clave).lista?.[0];
+  const mejor = leerMejorVuelta(clave);
+  const partes = [
+    primero && t('portada.record', { tiempo: formatearTiempo(primero.vuelta / 1000), alias: primero.alias }),
+    mejor && t('portada.tuMejor', { tiempo: formatearTiempo(mejor.tiempo) })
+  ].filter(Boolean);
+  return partes.length ? partes.join('  ·  ') : t('portada.verRecords');
+}
+
+/*
+ * La mejor vuelta de la carrera que haya dado entera una persona (de los dos
+ * coches, si juegan dos), con su fantasma; o null.
+ */
+function mejorVueltaHumana() {
+  let mejor = null;
+  estado.carrera.coches.forEach((slot, i) => {
+    if (!estado.humanos[i] || slot.humanoDesde === undefined) return;
+    for (const vuelta of slot.grabadas) {
+      if (vuelta.inicio >= slot.humanoDesde && (!mejor || vuelta.tiempo < mejor.tiempo)) mejor = vuelta;
+    }
+  });
+  return mejor;
+}
+
+// --- La tabla de récords y la firma --------------------------------------------
+
+/*
+ * RÉCORDS (tablaRecords.js), desde la portada (botón o R) o tras firmar.
+ * Desde el fin, SEGUIR vuelve al cartel.
+ */
+const recordsUI = { desdeFin: false, resaltado: null };
+
+function abrirRecords(desdeFin = false, resaltado = null) {
+  if (!conRecords()) return;
+  Object.assign(recordsUI, { desdeFin, resaltado });
+  estado.fase = 'records';
+  if (!resaltado) cargarRecords(estado.circuito.clave);
+  punteros.clear();
+}
+
+function salirDeRecords() {
+  if (recordsUI.desdeFin) estado.fase = 'fin';
+  else irAPortada();
+}
+
+function cambiarTipoFantasma() {
+  estado.tipoFantasma = TIPOS_FANTASMA[(TIPOS_FANTASMA.indexOf(estado.tipoFantasma) + 1) % TIPOS_FANTASMA.length];
+  guardarTipoFantasma(estado.tipoFantasma);
+}
+
+/*
+ * Al acabar, si la mejor vuelta humana entra en la tabla, se firma antes del
+ * cartel (como en Race Panic). En el campeonato y en la prueba del
+ * constructor, no: sería parar a mitad.
+ */
+function pedirFirma() {
+  if (!conRecords() || estado.campeonato || estado.probando) return false;
+  const vuelta = mejorVueltaHumana();
+  if (!vuelta || !entraEnTabla(estado.circuito.clave, vuelta.tiempo)) return false;
+  estado.firma = { vuelta, letras: leerAlias().split(''), cursor: 0, enviando: false };
+  estado.fase = 'firma';
+  return true;
+}
+
+const LETRAS_FIRMA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+function cambiarLetraFirma(i, paso) {
+  const { letras } = estado.firma;
+  const n = LETRAS_FIRMA.length;
+  letras[i] = LETRAS_FIRMA[(LETRAS_FIRMA.indexOf(letras[i]) + paso + n) % n];
+}
+
+async function firmar() {
+  const { firma } = estado;
+  if (firma.enviando) return;
+  const alias = firma.letras.join('');
+  guardarAlias(alias);
+  firma.enviando = true;
+  const { clave } = estado.circuito;
+  try {
+    const puesto = await enviarRecord(clave, alias, firma.vuelta);
+    evento('firmar_record', { ...datosCarrera(), puesto, vuelta: Math.round(firma.vuelta.tiempo * 1000) });
+    estado.firma = null;
+    abrirRecords(true, puesto);
+  } catch (error) {
+    estado.firma = null;
+    estado.fase = 'fin';
+    const clave2 = { 429: 'firma.limite', 0: 'firma.sinRed' }[error.estado] || 'firma.error';
+    estado.avisoFin = { texto: t(clave2), vida: 3 };
+  }
 }
 
 function terminarCarrera() {
@@ -604,6 +700,7 @@ function terminarCarrera() {
   }
   sfxFin(gana);
   if (gana) emitirConfeti(estado.particulas);
+  pedirFirma();
 }
 
 /*
@@ -886,6 +983,67 @@ const ESCENAS = {
     }
   },
 
+  records: {
+    actualizar(dt) {
+      // Detrás, la exhibición (desde la portada) o los coches parándose (desde el fin).
+      if (recordsUI.desdeFin) avanzarMundo([], dt);
+      else ESCENAS.portada.actualizar(dt);
+      if (estado.fase === 'portada') estado.fase = 'records';
+      sonido(false);
+    },
+    dibujar() {
+      dibujarMundo();
+      const { clave } = estado.circuito;
+      dibujarRecords(vistaGaleria(), {
+        nombre: nombreCircuito(estado.circuito), tabla: tablaDe(clave), mejor: leerMejorVuelta(clave),
+        tipoFantasma: estado.tipoFantasma, resaltado: recordsUI.resaltado, desdeFin: recordsUI.desdeFin, tiempo: reloj
+      });
+    },
+    teclear(codigo) {
+      if (codigo === 'Escape' || empezar(codigo)) salirDeRecords();
+      else if (codigo === 'KeyF') cambiarTipoFantasma();
+    },
+    pulsar(p) {
+      punteros.clear();
+      const caja = cajasRecords(vistaGaleria()).find((c) => dentro(p, c));
+      if (caja?.id === 'volver') salirDeRecords();
+      else if (caja?.id === 'fantasma') cambiarTipoFantasma();
+    }
+  },
+
+  firma: {
+    actualizar(dt) {
+      avanzarMundo([], dt);
+      estado.esperaReinicio = Math.max(0, estado.esperaReinicio - dt);
+      sonido(false);
+    },
+    dibujar() {
+      dibujarMundo();
+      dibujarFirma(vistaGaleria(), { ...estado.firma, tactil: estado.tactil });
+    },
+    teclear(codigo) {
+      // Quien cruza la meta lleva una tecla pisada: hasta que pasa la espera, nada.
+      if (estado.esperaReinicio > 0 || estado.firma.enviando) return;
+      const letra = /^Key([A-Z])$/.exec(codigo)?.[1] || /^(?:Digit|Numpad)([0-9])$/.exec(codigo)?.[1];
+      const { firma } = estado;
+      if (codigo === 'Escape') estado.fase = 'fin';
+      else if (empezar(codigo)) firmar();
+      else if (letra) {
+        firma.letras[firma.cursor] = letra;
+        firma.cursor = (firma.cursor + 1) % firma.letras.length;
+      }
+    },
+    pulsar(p) {
+      punteros.clear();
+      if (estado.esperaReinicio > 0 || estado.firma.enviando) return;
+      const caja = cajasFirma(vistaGaleria()).find((c) => dentro(p, c));
+      if (caja?.id === 'arriba') cambiarLetraFirma(caja.i, 1);
+      else if (caja?.id === 'abajo') cambiarLetraFirma(caja.i, -1);
+      else if (caja?.id === 'firmar') firmar();
+      else if (caja?.id === 'saltar') estado.fase = 'fin';
+    }
+  },
+
   circuitos: {
     actualizar() {
       sonido(false);
@@ -954,10 +1112,13 @@ const ESCENAS = {
       else if (codigo === 'KeyB') abrirConstructor();
       else if (codigo === 'KeyG') abrirCircuitos();
       else if (codigo === 'KeyT') empezarCampeonato();
+      else if (codigo === 'KeyR') abrirRecords();
     },
     pulsar(p) {
       const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada()).find((caja) => dentro(p, caja));
-      if (opcion) opcionPulsada(opcion.id);
+      const records = conRecords() && dentro(p, estado.lupa ? cajaRecordsPortadaLupa() : cajaRecordsPortada(estado.circuito));
+      if (records) abrirRecords();
+      else if (opcion) opcionPulsada(opcion.id);
       else empezarCarrera();
       // El toque que arranca no debe tomar ya un carril.
       punteros.clear();
@@ -1017,15 +1178,18 @@ const ESCENAS = {
       // Los coches frenan hasta pararse, detrás del cartel.
       avanzarMundo([], dt);
       estado.esperaReinicio = Math.max(0, estado.esperaReinicio - dt);
+      if (estado.avisoFin && (estado.avisoFin.vida -= dt) <= 0) estado.avisoFin = null;
       sonido(false);
     },
     dibujar() {
       dibujarMundo();
       if (estado.lupa) {
         dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas, estado.campeonato, idsFin());
+        if (estado.avisoFin) dibujarAvisosLupa([estado.avisoFin]);
         return;
       }
       dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil, estado.campeonato, idsFin());
+      if (estado.avisoFin) dibujarAvisos([estado.avisoFin]);
       dibujarConfeti(estado.particulas);
     },
     teclear(codigo) {

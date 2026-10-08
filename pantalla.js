@@ -127,8 +127,9 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo
     texto(t(tactil ? 'portada.jugarTactil' : 'portada.jugar'), x, y + 34, { tam: 24, color: COLOR.ambar, peso: 700 });
   }
   texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: VUELTAS_SLOT }), x, y + 80, { tam: 14, color: COLOR.texto });
-  // En un oficial con récord, tu mejor vuelta; si no, cómo se juega contra la CPU.
-  texto(marca || t('slot.cpuLibre'), x, y + 104, { tam: 14, color: marca ? COLOR.ambar : COLOR.texto, peso: marca ? 700 : 400 });
+  // En un oficial, el botón de los récords (con el récord y tu mejor vuelta); si no, cómo se juega contra la CPU.
+  if (marca) boton(cajaRecordsPortada(circuito), marca + '  ›', false, 14);
+  else texto(t('slot.cpuLibre'), x, y + 104, { tam: 14, color: COLOR.texto });
 
   bandas();
   const valores = {
@@ -143,6 +144,12 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo
     boton(opcion, (tactil ? '' : TECLA_OPCION[opcion.id] + '  ·  ') + t('opcion.' + opcion.id, { v: valores[opcion.id] }));
   }
   texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
+}
+
+/** El botón de los récords, en el panel de la portada de un oficial. Dibujo y pulsación. */
+export function cajaRecordsPortada(circuito) {
+  const { x, y } = centro(circuito);
+  return { id: 'records', x: x - 200, y: y + 96, ancho: 400, alto: 28 };
 }
 
 export function boton(caja, etiqueta, destacado = false, tamMaximo = 13) {

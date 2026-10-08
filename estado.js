@@ -196,5 +196,7 @@ export const estado = {
   denuncia: null,      // en el fin de un público ajeno: null, 'pendiente' (preguntando) o 'hecha'
   tipoFantasma: 'tuyo', // contra qué fantasma corre el J1 (TIPOS_FANTASMA)
   fantasma: null,      // la vuelta contra la que corre el J1 ahora (nucleo/fantasma.js), o null
+  firma: null,         // firmando un récord: { vuelta, letras, cursor, enviando }
+  avisoFin: null,      // un aviso en el cartel de fin (la firma que no se pudo enviar)
   fps: 0
 };
