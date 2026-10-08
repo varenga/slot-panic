@@ -30,6 +30,7 @@ import {
   SUBE_POTENCIA, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from '../config.js';
 import { normalizarAngulo } from './geometria.js';
+import { cerrar, crearGrabacion, grabar } from './fantasma.js';
 
 const DESPLAZAMIENTO_SALIDA = 0.3;  // fracción de la velocidad que sale hacia fuera al soltarse
 const QUIETO = 12;                  // px/s por debajo de los que el coche se da por parado en la mesa
@@ -57,6 +58,11 @@ export const CARRILES = [-CARRIL, CARRIL];
 function signoVuelta(circuito, s) {
   if (circuito.cambiosCarril % 2 === 0) return 1;
   return Math.abs(Math.floor(s / circuito.largo)) % 2 ? -1 : 1;
+}
+
+/** El carril (0 o 1, el índice de CARRILES) por el que va un coche en la coordenada `s`. */
+export function carrilEn(circuito, lateral, s) {
+  return lateral * signoVuelta(circuito, s) < 0 ? 0 : 1;
 }
 
 /** El desplazamiento del carril en la coordenada `s` de un coche que salió por `lateral`. */
@@ -174,16 +180,27 @@ function crearSlot(circuito, lateral, color) {
     completadas: 0,
     vueltas: [],
     inicioVuelta: 0,
+    // Cada vuelta se graba (nucleo/fantasma.js): la que va en curso y las
+    // acabadas, con su tiempo, cuándo empezó y por qué carril.
+    grabacion: crearGrabacion(),
+    grabadas: [],
+    carrilVuelta: 0,
     salidas: 0,         // veces que se ha salido
     terminado: null     // s de carrera al completar la última vuelta
   };
   colocarEnCarril(slot, circuito);
+  slot.carrilVuelta = carrilEn(circuito, lateral, slot.s + ATRAS_SALIDA);
   return slot;
 }
 
-export function crearCarreraSlot(circuito, colores, turno = 0) {
-  return {
+/*
+ * `grabar`: grabar las vueltas (los fantasmas). Lo pide el juego en sus
+ * carreras; el arnés, solo donde lo mide (en miles de carreras triplicaba su tiempo).
+ */
+export function crearCarreraSlot(circuito, colores, turno = 0, { grabar: grabarVueltas = false } = {}) {
+  const carrera = {
     circuito,
+    grabar: grabarVueltas,
     // El coche i va por el carril (i + turno) % 2.
     coches: colores.map((color, i) => crearSlot(circuito, CARRILES[(i + turno) % 2], color)),
     fase: 'cuenta',     // 'cuenta' | 'carrera' | 'fin'
@@ -194,6 +211,9 @@ export function crearCarreraSlot(circuito, colores, turno = 0) {
     solapados: false,   // si los dos coches se tocaban en el paso anterior (ver `comprobarChoque`)
     eventos: []         // { tipo, coche } del último avance: cuenta, salida, sale, clac, vuelta, fin
   };
+  // La primera vuelta empieza en la parrilla, parado.
+  if (grabarVueltas) for (const slot of carrera.coches) grabar(slot.grabacion, slot.coche, 0);
+  return carrera;
 }
 
 /** Avanza `dt` segundos con los mandos de cada coche, troceados en pasos de física. */
@@ -228,6 +248,9 @@ function pasoCarreraSlot(carrera, mandos, dt) {
     const acelerar = carrera.fase === 'carrera' && slot.terminado === null && !!mandos[i]?.acelerar;
     const evento = pasoSlot(slot, carrera.circuito, acelerar, dt);
     if (evento) carrera.eventos.push({ tipo: evento, coche: i });
+    if (carrera.grabar && carrera.fase === 'carrera' && slot.terminado === null) {
+      grabar(slot.grabacion, slot.coche, carrera.tiempo - slot.inicioVuelta);
+    }
     if (carrera.fase === 'carrera') contarVueltas(carrera, slot, i);
   });
   if (carrera.coches.length === 2) comprobarChoque(carrera);
@@ -414,7 +437,16 @@ function contarVueltas(carrera, slot, i) {
   const completadas = Math.floor(slot.progreso / carrera.circuito.largo);
   if (completadas <= slot.completadas) return;
   slot.completadas = completadas;
-  slot.vueltas.push(carrera.tiempo - slot.inicioVuelta);
+  const tiempo = carrera.tiempo - slot.inicioVuelta;
+  slot.vueltas.push(tiempo);
+  if (carrera.grabar) {
+    slot.grabadas.push({ ...cerrar(slot.grabacion, tiempo), inicio: slot.inicioVuelta, carril: slot.carrilVuelta });
+    // La siguiente empieza aquí, a 0 s: sin esta pose, su primera muestra
+    // sería la del paso siguiente, 1/120 s tarde (~3 px, lo midió el arnés).
+    slot.grabacion = crearGrabacion();
+    grabar(slot.grabacion, slot.coche, 0);
+  }
+  slot.carrilVuelta = carrilEn(carrera.circuito, slot.lateral, slot.s);
   slot.inicioVuelta = carrera.tiempo;
   if (completadas < VUELTAS_SLOT) {
     carrera.eventos.push({ tipo: 'vuelta', coche: i });
