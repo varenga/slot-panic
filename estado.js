@@ -74,8 +74,65 @@ export function guardarMisCircuitos(lista) {
   }
 }
 
+/*
+ * Lo de publicar (publicos.js). La llave es un número al azar que solo tiene
+ * este dispositivo: con ella se borra lo publicado (el servidor guarda su
+ * hash). Si no hay almacenamiento, se inventa cada vez: se publica igual,
+ * pero no se podrá borrar.
+ */
+export function leerLlave() {
+  const nueva = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+  try {
+    let llave = localStorage.getItem(`${GAME_SLUG}.llave`);
+    if (!/^[0-9a-f]{32}$/.test(llave || '')) {
+      llave = nueva();
+      localStorage.setItem(`${GAME_SLUG}.llave`, llave);
+    }
+    return llave;
+  } catch (error) {
+    return nueva();
+  }
+}
+
+/** El alias de 3 letras con que se publica: se recuerda para la próxima. */
+export function leerAlias() {
+  try {
+    const alias = localStorage.getItem(`${GAME_SLUG}.alias`);
+    return /^[A-Z0-9]{3}$/.test(alias || '') ? alias : 'AAA';
+  } catch (error) {
+    return 'AAA';
+  }
+}
+
+export function guardarAlias(alias) {
+  try { localStorage.setItem(`${GAME_SLUG}.alias`, alias); } catch (error) { /* modo privado */ }
+}
+
+/** Los publicados desde aquí: { id, codigo }. Son los que se pueden borrar. */
+export function leerPublicados() {
+  try {
+    const lista = JSON.parse(localStorage.getItem(`${GAME_SLUG}.publicados`) || '[]');
+    return Array.isArray(lista) ? lista.filter((c) => Number.isInteger(c?.id) && typeof c.codigo === 'string') : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export function guardarPublicados(lista) {
+  try { localStorage.setItem(`${GAME_SLUG}.publicados`, JSON.stringify(lista)); } catch (error) { /* modo privado */ }
+}
+
+/** Las normas de publicar se aceptan una vez. */
+export function normasAceptadas() {
+  try { return localStorage.getItem(`${GAME_SLUG}.normas`) === '1'; } catch (error) { return false; }
+}
+
+export function aceptarNormas() {
+  try { localStorage.setItem(`${GAME_SLUG}.normas`, '1'); } catch (error) { /* modo privado */ }
+}
+
 export const estado = {
-  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'constructor'
+  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'constructor' | 'galeria'
   circuito: null,      // el que se corre, de CIRCUITOS (circuitos/indice.js)
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario
@@ -94,5 +151,6 @@ export const estado = {
   edicion: null,       // el constructor abierto (constructor.js); sigue vivo mientras se prueba
   probando: false,     // la carrera es la prueba del constructor: al acabar se vuelve a él
   campeonato: null,    // el campeonato en curso (nucleo/campeonato.js), o null
+  denuncia: null,      // en el fin de un público ajeno: null, 'pendiente' (preguntando) o 'hecha'
   fps: 0
 };

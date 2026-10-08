@@ -15,6 +15,8 @@
 import {
   AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRIL, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { CIRCUITOS } from './circuitos/indice.js';
 import { enCruce } from './nucleo/circuito.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
@@ -587,6 +589,43 @@ console.log('\nLa cuadrícula');
   console.log(`  ${todos.length} trazados van y vuelven por su código (el marco: ${aCodigo(marco)})`);
 
   /*
+   * El servidor valida lo mismo (servidor/cuadricula.php): los códigos de
+   * todos estos trazados, cada uno con letras cambiadas (casi todos dejan de
+   * valer, cada uno por su motivo) y cosas que no son códigos. PHP y JS tienen
+   * que decir lo mismo: si se lee, el error y el código canónico.
+   */
+  {
+    const tirarCodigo = azar(11);
+    const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const validos = [...todos, ...prohibidos.map(([, t]) => t)]
+      .filter((t) => t.pasos.every((p) => VARIANTES[p.giro ? 'curva' : 'recta'].includes(p.variante)))
+      .map(aCodigo);
+    const codigos = [...validos, '', 'A', 'AQ', '!!!!', 'AQMFAA==', 'AgMAAAAA', 'AQMF', 'AQMFAA'];
+    for (const codigo of validos) {
+      for (let k = 0; k < 12; k++) {
+        const i = Math.floor(tirarCodigo() * codigo.length);
+        const letra = ALFABETO[Math.floor(tirarCodigo() * 64)];
+        codigos.push(codigo.slice(0, i) + letra + codigo.slice(i + 1));
+      }
+      codigos.push(codigo + 'A', codigo.slice(0, -1), codigo + 'AAAA');
+    }
+    const php = spawnSync('php', ['tools/validar-cuadricula.php'], { input: codigos.join('\n') + '\n', encoding: 'utf8' });
+    if (php.error || php.status !== 0) {
+      console.log(`  sin PHP no se compara la validación del servidor (${php.error?.code || php.stderr})`);
+    } else {
+      const respuestas = php.stdout.trim().split('\n').map((l) => JSON.parse(l));
+      const distintos = codigos.filter((codigo, i) => {
+        const trazado = deCodigo(codigo);
+        const js = { lee: trazado !== null, error: trazado && validarTrazado(trazado), canonico: trazado && aCodigo(trazado) };
+        return JSON.stringify(js) !== JSON.stringify(respuestas[i]);
+      });
+      const motivos = new Set(respuestas.map((r) => r.error?.motivo).filter(Boolean));
+      console.log(`  el servidor (PHP) y el juego validan igual ${codigos.length - distintos.length} de ${codigos.length} códigos (${motivos.size} motivos distintos)`);
+      comprobar(respuestas.length === codigos.length && distintos.length === 0, `PHP y JS no validan igual: ${distintos.slice(0, 3).join(', ')}`);
+    }
+  }
+
+  /*
    * El trazo del constructor: dibujar con el dedo, casilla a casilla, cada
    * trazado válido lo cierra y da el mismo trazado (sin variantes, que se
    * ponen tocando); ida y vuelta, igual. Volver por el trazo borra, a la meta
@@ -719,6 +758,24 @@ console.log('\nIdiomas');
     comprobar(!faltan.length && !sobran.length, `${codigo}: faltan [${faltan}] sobran [${sobran}]`);
   }
   console.log(`  ${Object.keys(CATALOGOS).length} idiomas, ${base.length} claves cada uno`);
+
+  /*
+   * Los nombres de los circuitos públicos: en cada idioma, las mismas listas
+   * que cuenta api.php (ADJETIVOS, SUSTANTIVOS), el sustantivo con su género
+   * y el adjetivo con sus dos formas.
+   */
+  const api = readFileSync('api.php', 'utf8');
+  const constante = (nombre) => Number(new RegExp(`const ${nombre}\\s*=\\s*(\\d+)`).exec(api)?.[1]);
+  for (const [codigo, catalogo] of Object.entries(CATALOGOS)) {
+    const adjetivos = Object.keys(catalogo).filter((k) => k.startsWith('nombre.a.'));
+    const sustantivos = Object.keys(catalogo).filter((k) => k.startsWith('nombre.s.'));
+    comprobar(adjetivos.length === constante('ADJETIVOS') && sustantivos.length === constante('SUSTANTIVOS'),
+      `${codigo}: ${adjetivos.length} adjetivos y ${sustantivos.length} sustantivos, y api.php espera ${constante('ADJETIVOS')} y ${constante('SUSTANTIVOS')}`);
+    comprobar(adjetivos.every((k) => /^[^|]+\|[^|]+$/.test(catalogo[k])) && sustantivos.every((k) => /^[^|]+\|[mf]$/.test(catalogo[k])),
+      `${codigo}: un adjetivo sin sus dos formas o un sustantivo sin género`);
+    comprobar(/\{a\}/.test(catalogo['nombre.formato']) && /\{s\}/.test(catalogo['nombre.formato']), `${codigo}: el formato del nombre no lleva {a} y {s}`);
+  }
+  console.log(`  ${constante('ADJETIVOS')} × ${constante('SUSTANTIVOS')} nombres de circuito en cada idioma`);
 }
 
 console.log(`\n${aserciones - fallos}/${aserciones} aserciones en verde`);

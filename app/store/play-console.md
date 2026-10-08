@@ -33,27 +33,46 @@ ya pasó por la consola.
   —coches de juguete que se salen del carril y una mano que los devuelve; sin
   personas ni daño—. Sin sexo, sin lenguaje malsonante, sin sustancias, sin
   apuestas ni simulación de apuestas, sin compras. Interacción entre usuarios:
-  no (los dos jugadores comparten una pantalla; no hay red). No comparte la
-  ubicación. Resultado esperado: PEGI 3 / Everyone.
+  **sí, desde la v0.8.0**: se comparte contenido generado por usuarios (los
+  circuitos de la galería, con un alias de 3 letras); no hay chat, ni texto
+  libre, ni mensajes, ni imágenes. No comparte la ubicación. Resultado
+  esperado: PEGI 3 / Everyone, con la nota «Los usuarios interactúan».
+* **Contenido generado por usuarios** (política de UGC de Play), lo que pide y
+  dónde está:
+  * Normas que se aceptan antes de publicar: el diálogo de publicar, la primera
+    vez (`publicar.norma.*` en `i18n.js`).
+  * Denunciar desde la app: la ⚑ de cada tarjeta de la galería y DENUNCIAR en el
+    fin de un circuito ajeno. Con 3 denuncias (de 3 IP distintas) se oculta.
+  * Moderación: lo oculto se revisa a mano en la base (`oculto` en
+    `circuitos`; 0 lo devuelve, o se borra la fila).
+  * Sin texto libre: el nombre sale de dos listas y el alias son 3 letras o
+    cifras. Lo único que podría ofender es un alias: se denuncia como el resto.
 * **Aplicaciones gubernamentales**: no. **Funciones financieras**: ninguna.
   **Aplicaciones de salud**: no. **Noticias**: no.
 
 ## Seguridad de los datos (*Data safety*)
 
-**¿Recoge o comparte datos?** No. La app no tiene récords en servidor, ni
-cuentas, ni analítica: dentro de la app no se carga Google Analytics (APP.md
-§5.2; la web sí lo usa, `G-LWMERSV8WH`, solo tras consentimiento, y no cuenta
-aquí), y no hace ninguna petición de red. Lo único que guarda son preferencias
-en el propio dispositivo (`localStorage`: idioma, sonido, circuito, escenario y
-hora), que nunca salen de él y que Play no considera «datos recogidos».
+Hasta la v0.7.0 la respuesta era «No recoge datos». **Desde la v0.8.0 (la
+galería) sí**, y el formulario cambia. Dentro de la app sigue sin cargarse
+Google Analytics (APP.md §5.2). Las preferencias del dispositivo
+(`localStorage`) no salen de él y no cuentan.
 
-Con eso, el formulario se contesta con «No» a la primera pregunta y no hay que
-marcar ningún tipo de dato.
+**¿Recoge o comparte datos?** Recoge: sí. Comparte con terceros: no. Cifrados
+en tránsito: sí (HTTPS). Se puede pedir que se borren: sí (desde el dispositivo
+con que se publicó, o por correo; política común de pnyk.es).
+
+| Tipo de dato (Play) | Qué es | Obligatorio | Finalidad |
+|---|---|---|---|
+| Actividad en la app › Otro contenido generado por el usuario | El circuito publicado, su nombre (dos índices de unas listas) y el alias de 3 letras | Opcional: solo si se publica | Funcionalidad de la app |
+| Identificadores del dispositivo u otros | El hash de la llave al azar del dispositivo (permite borrar lo propio) y la huella de la IP (HMAC con sal, no reversible) | Opcional: solo al publicar, denunciar o jugar un circuito público | Funcionalidad de la app; prevención de fraude y seguridad (límite diario, una denuncia por persona) |
+
+No hay cuentas ni correo; nada se usa para publicidad ni se vende.
 
 ## Permisos
 
-Solo `INTERNET`, que Capacitor declara siempre. La app no hace ninguna petición
-de red: todo va dentro.
+Solo `INTERNET`, que Capacitor declara siempre. El juego va entero dentro de la
+app; la red solo la usa la galería (`https://slot.pnyk.es/api.php`, con CORS
+para `https://localhost`), y sin red se juega igual.
 
 ## Versión
 

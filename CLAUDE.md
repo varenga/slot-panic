@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.7.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
+Prototipo jugable (v0.8.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
 ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
 coche; uno
 contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos). Un constructor: el circuito
-se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo y se
-comparte con un enlace (`?c=`). Con el móvil en vertical, el modo
+se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
+comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
 lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cuatro escenarios de día, al
 atardecer o de noche, siete idiomas (una página por idioma, con SEO), sonido, teclado y
 táctil; instalable como PWA y sin red. La app de Android (Capacitor, `es.pnyk.slot`) está
@@ -99,6 +99,10 @@ que quitarlo (DevTools › Application, o seguirá sirviendo su caché).
 python -m http.server 8124   # y abrir http://127.0.0.1:8124
 ```
 
+Python no ejecuta PHP: en local la galería dice «sin conexión». Para probarla contra la
+API publicada, `?api=https://slot.pnyk.es/` (solo sirviendo en local; `api.php` admite el
+origen `http://127.0.0.1:8124`). Ojo: publica y denuncia de verdad, en la base de Plesk.
+
 Ojo en esta máquina: `localhost:8000` y `localhost:8123` los intercepta un service worker
 de otro proyecto (Phabetia); `127.0.0.1` es otro origen y no le afecta. Una pestaña en
 segundo plano no ejecuta `requestAnimationFrame`: el juego se queda congelado.
@@ -143,9 +147,13 @@ demás, en `BITACORA.md`). Mide y comprueba:
    coches iguales sin X, cruces ni estrechas no chocan nunca; en cada X, cada cruce y
    cada estrecha, lanzados con 21 desfases, chocan en alguno y nunca dos veces seguidas.
    Las curvas a tope incluyen el peralte, la de derrape, la deslizante y los baches.
-4. **Idiomas**: los siete catálogos tienen las mismas claves.
+4. **Idiomas**: los siete catálogos tienen las mismas claves, y los nombres de los
+   circuitos públicos (adjetivo y sustantivo, con género) son tantos como espera
+   `api.php`.
 5. **La cuadrícula del constructor**: lo que deja pasar `validarTrazado` se puede correr
-   (trazados a mano y al azar pasan las secciones 1 a 3, sin las cifras de calibrado).
+   (trazados a mano y al azar pasan las secciones 1 a 3, sin las cifras de calibrado), y
+   el servidor valida igual: con `php` en el PATH, compara `servidor/cuadricula.php` con
+   la de JS en cientos de códigos (sin PHP lo avisa y no lo compara).
 6. **El campeonato**: corre los circuitos oficiales en orden, las victorias suman las
    carreras, al que no acaba se le pone más tiempo que al ganador y, con las mismas
    victorias, gana el menor tiempo sumado.
@@ -226,6 +234,12 @@ lupa.js                el modo lupa (móvil en vertical): la cámara que sigue a
                        pantalla.js
 constructor.js         la escena del constructor: gestos, trazo, barra. Cerrado y
                        válido, construye el circuito y lo pinta con dibujo.js
+publicar.js            el diálogo de compartir y publicar (normas, nombre, alias)
+galeria.js             la galería de circuitos públicos: tarjetas y miniaturas
+publicos.js            la red de la galería (api.php): nunca bloquea el juego
+api.php                los circuitos públicos (PHP + MySQL); config.php, fuera de git
+servidor/cuadricula.php  la cuadrícula en PHP: la validación del servidor (no se sirve)
+schema.sql             las tablas de api.php (no se sirve)
 arnes.mjs              el arnés (no lo carga el juego)
 
 tools/gen-pages.mjs    genera las páginas por idioma, el manifest y el service worker;

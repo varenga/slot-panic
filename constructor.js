@@ -295,7 +295,7 @@ function ejeCasilla(casilla, entra, sale) {
 }
 
 /** El eje aproximado de todo el trazo, en orden. */
-function ejeTrazo(trazo) {
+export function ejeTrazo(trazo) {
   const lista = rumbos(trazo);
   const puntos = [];
   trazo.casillas.forEach((casilla, i) => {

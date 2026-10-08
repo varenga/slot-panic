@@ -94,8 +94,11 @@ corra la página.
   `~/.slotpanic/` (`upload.jks` y `keystore.properties`). `build.gradle` la lee y firma
   `bundleRelease`; sin ella el bundle sale sin firmar. **Ese directorio se copia a un sitio
   seguro**: si se pierde, hay que pedir a Play un reemplazo.
-* **Privacidad**: la común de PNYK, https://pnyk.es/privacidad/#juegos. La app no recoge
-  nada; la web, solo GA4 (`G-LWMERSV8WH`) tras consentimiento.
+* **Privacidad**: la común de PNYK, https://pnyk.es/privacidad/#juegos. La web carga GA4
+  (`G-LWMERSV8WH`) solo tras consentimiento; la app, nunca. Desde la v0.8.0 los dos
+  publican circuitos en la galería (`api.php`): el circuito, el alias, el hash de la
+  llave del dispositivo y una huella cifrada de la IP (`privacy.content` en
+  `pnyk/proyectos.js`). Las respuestas de la consola, en `app/store/play-console.md`.
 * **Ficha**: `app/store/` (textos, respuestas de la consola, imagen destacada, capturas).
 
 ## 7. El flujo de una versión
@@ -139,7 +142,10 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
 * [x] Slot Panic en la política común de pnyk.es (`privacy` en `pnyk/proyectos.js`, con
   su GA4 `G-LWMERSV8WH` y sin récords), publicada en pnyk.es.
 * [ ] Crear la app en la consola de Play con el paquete `es.pnyk.slot`, rellenar la ficha
-  y subir el bundle a pruebas internas, aceptando *Play App Signing*.
+  y subir el bundle a pruebas internas, aceptando *Play App Signing*. Si el bundle es de
+  la v0.8.0 o posterior (con la galería), la seguridad de los datos y el contenido de
+  usuarios se contestan como dice `app/store/play-console.md`, no con «no recoge
+  datos».
 * [ ] Pruebas internas, luego pública.
 
 ### Fase D — La de iOS

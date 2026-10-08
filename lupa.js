@@ -23,7 +23,7 @@ import {
 import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import {
-  barraPotencia, boton, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, panel, pintarCabeceraCampeonato,
+  barraPotencia, boton, DESTACADO, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, panel, pintarCabeceraCampeonato,
   pintarTablaCampeonato, semaforo
 } from './pantalla.js';
 import { dibujarConfeti } from './particulas.js';
@@ -56,6 +56,9 @@ export function prepararLupa(nuevaDensidad, nuevoAlto) {
 }
 
 prepararLupa(1, ALTO_LUPA);
+
+/** El alto del lienzo de la lupa, en px lógicos: lo que no es la carrera (la galería) también lo usa. */
+export const altoLienzoLupa = () => altoLienzo;
 
 /** El alto del lienzo para una pantalla de `ancho` × `altoPantalla`. */
 export function altoLupa(ancho, altoPantalla) {
@@ -261,7 +264,7 @@ export function dibujarAvisosLupa(avisos) {
 // --- Portada ---------------------------------------------------------------------
 
 /* Las opciones, en dos columnas abajo. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'campeonato', 'construir'];
+const OPCIONES = ['circuito', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'campeonato', 'galeria'];
 
 export function opcionesPortadaLupa() {
   const columnas = 2, alto = 44, hueco = 12;
@@ -306,7 +309,10 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
 export function botonesFinLupa(ids = ['repetir', 'menu'], y = altoLienzo / 2 + 150) {
   const ancho = 220, alto = 56, hueco = 20;
   const x0 = ANCHO_LUPA / 2 - ancho - hueco / 2;
-  return ids.map((id, i) => ({ id, x: x0 + i * (ancho + hueco), y, ancho, alto }));
+  // De dos en dos: el tercero (denunciar), en otra fila debajo, centrado.
+  return ids.map((id, i) => i < 2
+    ? { id, x: x0 + i * (ancho + hueco), y, ancho, alto }
+    : { id, x: ANCHO_LUPA / 2 - ancho / 2, y: y + alto + hueco, ancho, alto });
 }
 
 /** Los del campeonato van más abajo: encima va la tabla. */
@@ -314,7 +320,7 @@ export function botonesFinCampeonatoLupa(campeonato) {
   return botonesFinLupa(idsFinCampeonato(campeonato), altoLienzo / 2 + 230);
 }
 
-export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null) {
+export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null, ids = undefined) {
   ctx.fillStyle = COLOR.velo;
   ctx.fillRect(0, 0, ANCHO_LUPA, altoLienzo);
   const x = ANCHO_LUPA / 2, y = altoLienzo / 2;
@@ -335,7 +341,11 @@ export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null) 
     texto(nombreSlot(i, humanos), x - 192, fila, { tam: 20, color: COLOR.hud, peso: 800, alinear: 'left' });
     texto(t('slot.resumen', { tiempo: formatearTiempo(mejorVueltaSlot(slot)), n: slot.salidas }), x, fila + 26, { tam: 16, color: COLOR.texto });
   });
-  for (const caja of botonesFinLupa()) boton(caja, t(ETIQUETA_BOTON[caja.id]), caja.id === 'repetir', 20);
+  for (const caja of botonesFinLupa(ids)) {
+    ctx.globalAlpha = caja.id === 'denunciado' ? 0.45 : 1;
+    boton(caja, t(ETIQUETA_BOTON[caja.id]), DESTACADO.has(caja.id), 20);
+  }
+  ctx.globalAlpha = 1;
   confeti(particulas);
 }
 

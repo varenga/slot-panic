@@ -604,3 +604,81 @@ app en la consola de Play.
   - **Lo nuevo**: un trazado a mano con las piezas nuevas (`juguete`), dos prohibidos más
     y la sección 6, el campeonato (incluido el desempate). 598/598 en verde, en ~7 s.
 - Los mejores momentos quedan planteados en `IDEAS.md` §5.
+
+## Circuitos públicos (08/10/2026, rama `14-circuitos-publicos`, v0.8.0)
+
+> Última rama de la Fase 2b: que lo que se dibuja en el constructor se pueda publicar y
+> que los demás lo corran.
+
+- **Lo que estaba decidido**, y se ha hecho así:
+  - Sin registro: para publicar basta un alias de 3 letras y una **llave anónima**
+    guardada en el dispositivo, que permite borrar lo propio. Sin correo ni contraseña.
+  - Se publica al instante y se puede denunciar.
+  - El nombre sale de dos listas, sin texto libre.
+  - Tres decisiones más: el nombre sale **al azar con «otro»**, se oculta con **3
+    denuncias**, que se revisan a mano en la base, y el límite es de **5 publicaciones al
+    día**.
+- **El servidor** (`api.php`, `schema.sql`, `servidor/cuadricula.php`). Es el de Race
+  Panic: PDO, errores en JSON y `config.php` fuera de git.
+  - **Galería**: nuevos o más jugados, de 12 en 12.
+  - **Publicar**: solo el código canónico y válido. El mismo código es el mismo circuito,
+    y otro que dé el mismo trazado se rechaza.
+  - **Borrar**, con la llave (se guarda su SHA-256).
+  - **Denunciar**: una por huella; con 3 se oculta.
+  - **Jugado**: una por huella y día.
+  - **La huella** es un HMAC de la IP con una sal de `config.php`: la IP nunca se guarda.
+  - **CORS** para la app (`https://localhost`, `capacitor://localhost`) y para las pruebas
+    en local.
+  - Si falta `config.php`, o le falta una constante, la API lo dice sin enseñar su
+    contenido: la primera vez dio un 500 vacío.
+  - En una cuenta de denuncias, MySQL evalúa de izquierda a derecha las asignaciones de un
+    `UPDATE`: sumar y ocultar van en dos sentencias.
+- **La cuadrícula, también en PHP**: un port línea a línea de `deCodigo`, `aCodigo` y
+  `validarTrazado`. El arnés compara las dos con `php` (`tools/validar-cuadricula.php`)
+  en 648 códigos: los de sus trazados, cientos de mutaciones y cadenas que no son códigos.
+  Coinciden en todo, con 9 motivos de error distintos.
+- **Los nombres**: 16 adjetivos × 16 sustantivos en cada idioma (`nombre.a.*`,
+  `nombre.s.*`).
+  - **Género**: el sustantivo lleva su género (`|m`, `|f`) y el adjetivo sus dos formas,
+    para que concuerden («PISTA TRAVIESA», «SERPIENTE LOCA»).
+  - **Orden**: cada idioma pone el suyo (`nombre.formato`).
+  - **Comprobado**: el arnés mira que estén completas y que sean tantas como espera
+    `api.php`.
+- **El cliente**:
+  - **Red** (`publicos.js`): la galería se pide sin bloquear. Sin red lo dice y se sigue
+    jugando.
+  - **Galería** (`galeria.js`): sustituye a CONSTRUIR en la portada (tecla G) y lleva el
+    constructor dentro.
+    - **Tarjetas**: 12 en 4 × 3 (2 × 6 en la lupa), cada una con la miniatura del trazo
+      aproximado, el nombre, el alias y las jugadas. Construir doce circuitos de verdad
+      sería caro en el móvil.
+    - **Elegir** uno lo lleva a la portada; la carrera apunta una jugada.
+    - **Borrar y denunciar**: la ✕ borra lo propio y la ⚑ denuncia lo ajeno, las dos con
+      un segundo toque.
+  - **Compartir** abre un diálogo (`publicar.js`): copiar el enlace o publicar.
+    - **Normas**: se aceptan la primera vez.
+    - **Nombre y alias**: el nombre sale al azar, y el alias son tres letras con ▲▼ o
+      tecleadas, que se recuerdan.
+    - **Al soltar**: los botones del diálogo actúan al soltar el dedo, porque el
+      portapapeles pide un gesto completo.
+  - **Fin de carrera**: en un circuito ajeno, DENUNCIAR (un segundo toque para
+    confirmar).
+- **Probado contra la base de Plesk**:
+  - **Con `curl`**: publicar, que no se duplique, los rechazos (código, alias y nombre),
+    jugado una vez, la denuncia que no se repite, el CORS (sí a la app, no a ajenos),
+    borrar sin la llave (403) y el límite (la sexta, 429).
+  - **Desde el juego**, en local con `?api=`: publicar desde el constructor, verlo en la
+    galería, jugarlo (sube a 1 jugada) y borrarlo con la ✕.
+  - **Sin probar**: que se oculte con 3 denuncias, porque cada una tiene que venir de una
+    IP distinta.
+- **El servidor salió antes**: `api.php` y lo suyo se publicaron en `master` antes que el
+  juego, para probar la API, y el juego publicado no lo usaba.
+- **Privacidad y Play**:
+  - **La política común de pnyk.es** gana el campo `privacy.content` («contenido que
+    publicas») y un párrafo con la finalidad, la base legal (interés legítimo en evitar
+    abusos), la conservación y cómo pedir el borrado (rama `10-slot-panic-publicos` de
+    pnyk).
+  - **Google Play**: en `app/store/play-console.md`, la seguridad de los datos (desde la
+    v0.8.0 sí recoge: el contenido publicado y los identificadores, sin compartirlos) y la
+    política de contenido de usuarios (normas, denuncias y moderación).
+- Arnés: 620/620 en verde.
