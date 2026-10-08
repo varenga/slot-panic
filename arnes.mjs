@@ -16,6 +16,7 @@ import {
   AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRIL, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { CIRCUITOS } from './circuitos/indice.js';
 import { enCruce } from './nucleo/circuito.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
@@ -757,6 +758,24 @@ console.log('\nIdiomas');
     comprobar(!faltan.length && !sobran.length, `${codigo}: faltan [${faltan}] sobran [${sobran}]`);
   }
   console.log(`  ${Object.keys(CATALOGOS).length} idiomas, ${base.length} claves cada uno`);
+
+  /*
+   * Los nombres de los circuitos públicos: en cada idioma, las mismas listas
+   * que cuenta api.php (ADJETIVOS, SUSTANTIVOS), el sustantivo con su género
+   * y el adjetivo con sus dos formas.
+   */
+  const api = readFileSync('api.php', 'utf8');
+  const constante = (nombre) => Number(new RegExp(`const ${nombre}\\s*=\\s*(\\d+)`).exec(api)?.[1]);
+  for (const [codigo, catalogo] of Object.entries(CATALOGOS)) {
+    const adjetivos = Object.keys(catalogo).filter((k) => k.startsWith('nombre.a.'));
+    const sustantivos = Object.keys(catalogo).filter((k) => k.startsWith('nombre.s.'));
+    comprobar(adjetivos.length === constante('ADJETIVOS') && sustantivos.length === constante('SUSTANTIVOS'),
+      `${codigo}: ${adjetivos.length} adjetivos y ${sustantivos.length} sustantivos, y api.php espera ${constante('ADJETIVOS')} y ${constante('SUSTANTIVOS')}`);
+    comprobar(adjetivos.every((k) => /^[^|]+\|[^|]+$/.test(catalogo[k])) && sustantivos.every((k) => /^[^|]+\|[mf]$/.test(catalogo[k])),
+      `${codigo}: un adjetivo sin sus dos formas o un sustantivo sin género`);
+    comprobar(/\{a\}/.test(catalogo['nombre.formato']) && /\{s\}/.test(catalogo['nombre.formato']), `${codigo}: el formato del nombre no lleva {a} y {s}`);
+  }
+  console.log(`  ${constante('ADJETIVOS')} × ${constante('SUSTANTIVOS')} nombres de circuito en cada idioma`);
 }
 
 console.log(`\n${aserciones - fallos}/${aserciones} aserciones en verde`);

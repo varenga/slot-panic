@@ -20,7 +20,7 @@ import { circulo, ctx, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { BANDA_TEXTO } from './nucleo/decorado.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { clasificacion } from './nucleo/campeonato.js';
-import { idiomaActual, t } from './i18n.js';
+import { idiomaActual, nombreCompuesto, t } from './i18n.js';
 import { silenciado } from './audio.js';
 
 /** Dónde van la portada y los carteles: el interior del circuito, o el centro. */
@@ -29,6 +29,7 @@ function centro(circuito) {
 }
 
 export function nombreCircuito(circuito) {
+  if (circuito.publico) return nombreCompuesto(circuito.publico.adjetivo, circuito.publico.sustantivo);
   if (circuito.mio) return t('circuito.mio', { n: circuito.mio });
   return t('circuito.' + (circuito.dibujado ? 'dibujado' : circuito.clave));
 }
@@ -102,7 +103,7 @@ export function dibujarAvisos(avisos) {
 // --- Portada -------------------------------------------------------------------
 
 /* Las opciones de la portada, en la banda de arriba. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'campeonato', 'construir', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
+const OPCIONES = ['circuito', 'campeonato', 'galeria', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
 
 export function opcionesPortada() {
   const alto = 30, hueco = 10;
@@ -113,7 +114,7 @@ export function opcionesPortada() {
   }));
 }
 
-const TECLA_OPCION = { circuito: 'C', campeonato: 'T', construir: 'B', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
+const TECLA_OPCION = { circuito: 'C', campeonato: 'T', galeria: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
 
 export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo) {
   const { x, y } = centro(circuito);
@@ -167,10 +168,19 @@ export function botonesFin(ids = ['repetir', 'menu'], y = ALTO / 2 + 130) {
   return ids.map((id, i) => ({ id, x: x0 + i * (ancho + hueco), y, ancho, alto }));
 }
 
-export const ETIQUETA_BOTON = { repetir: 'fin.botonRepetir', siguiente: 'fin.botonSiguiente', menu: 'fin.botonMenu' };
+export const ETIQUETA_BOTON = {
+  repetir: 'fin.botonRepetir', siguiente: 'fin.botonSiguiente', menu: 'fin.botonMenu',
+  denunciar: 'fin.botonDenunciar', confirmarDenuncia: 'fin.botonConfirmarDenuncia', denunciado: 'fin.botonDenunciado'
+};
+// Los que van destacados (en ámbar).
+export const DESTACADO = new Set(['repetir', 'siguiente', 'confirmarDenuncia']);
 
 function botones(cajas) {
-  for (const caja of cajas) boton(caja, t(ETIQUETA_BOTON[caja.id]), caja.id !== 'menu');
+  for (const caja of cajas) {
+    ctx.globalAlpha = caja.id === 'denunciado' ? 0.45 : 1;
+    boton(caja, t(ETIQUETA_BOTON[caja.id]), DESTACADO.has(caja.id));
+  }
+  ctx.globalAlpha = 1;
 }
 
 // --- La carrera ----------------------------------------------------------------
@@ -257,7 +267,7 @@ function guiaSlot(carrera, humanos, tactil, rotulo) {
   texto(t('slot.cpuLibre'), ANCHO / 2, ALTO - 17, { tam: 12, color: COLOR.texto, peso: 500 });
 }
 
-export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null) {
+export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null, ids = undefined) {
   ctx.fillStyle = COLOR.velo;
   ctx.fillRect(0, 0, ANCHO, ALTO);
   if (campeonato) {
@@ -276,7 +286,7 @@ export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null) {
     texto(t('slot.resumen', { tiempo: formatearTiempo(mejorVueltaSlot(slot)), n: slot.salidas }), x + 260, fila, { tam: 16, color: COLOR.texto, alinear: 'right' });
   });
   if (!tactil) texto(t('fin.repetir'), x, y + 95, { tam: 14, color: COLOR.texto, peso: 500 });
-  botones(botonesFin());
+  botones(botonesFin(ids));
 }
 
 /*

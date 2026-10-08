@@ -10,8 +10,8 @@ import {
   SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import {
-  estado, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, leerCircuito, leerEscenario, leerMisCircuitos,
-  leerModelo
+  aceptarNormas, estado, guardarAlias, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
+  leerAlias, leerCircuito, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { CIRCUITOS } from './circuitos/indice.js';
@@ -42,9 +42,12 @@ import {
 } from './audio.js';
 import { cambiarIdioma, idiomaActual, t } from './i18n.js';
 import { cargarAnalitica, evento } from './analitica.js';
+import { apuntarJugado, borrarPublicado, cargarGaleria, denunciar, galeria, publicar } from './publicos.js';
+import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra, LETRAS_ALIAS, otroNombre } from './publicar.js';
+import { cajasGaleria, dibujarGaleria } from './galeria.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
-  altoLupa, botonesFinCampeonatoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
+  altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
 } from './lupa.js';
 
@@ -74,9 +77,11 @@ const camara = crearCamara();
  */
 const DIBUJADO = circuitoDeCodigo(parametros.get('c'));
 let MIOS = cargarMios();
+// El último elegido en la galería: va el primero de la lista y no se recuerda.
+let PUBLICO = null;
 
 function listaCircuitos() {
-  return [...(DIBUJADO ? [DIBUJADO] : []), ...CIRCUITOS, ...MIOS];
+  return [...(DIBUJADO ? [DIBUJADO] : []), ...(PUBLICO ? [PUBLICO] : []), ...CIRCUITOS, ...MIOS];
 }
 
 function cargarMios() {
@@ -149,7 +154,7 @@ function cambiarCircuito() {
   const lista = listaCircuitos();
   const i = lista.indexOf(estado.circuito);
   estado.circuito = lista[(i + 1) % lista.length];
-  if (estado.circuito !== DIBUJADO) guardarCircuito(estado.circuito.clave);
+  if (estado.circuito !== DIBUJADO && estado.circuito !== PUBLICO) guardarCircuito(estado.circuito.clave);
   estado.decorado = generarDecorado(estado.circuito, estado.escenario);
   irAPortada();
 }
@@ -197,7 +202,7 @@ function seguir() {
 let circuitoAntes = null;     // el de la portada, para volver a él sin guardar
 let salirSinGuardar = false;  // el primer «volver» con cambios sin guardar avisa
 let eliminarPendiente = false; // y el primer «eliminar», también
-let compartirPendiente = null; // el dedo que pulsó «compartir»: se comparte al soltarlo
+let pulsadoPendiente = null;   // el dedo que pulsó un botón que actúa al soltar: { id, caja, p }
 
 /*
  * Se abre con el circuito de la portada si es de la cuadrícula (uno mío se
@@ -342,17 +347,143 @@ async function compartirConstructor() {
   }
 }
 
+/*
+ * Compartir abre un diálogo (publicar.js): copiar el enlace o publicar en la
+ * galería. La primera vez que se publica, las normas.
+ */
+function abrirDialogo() {
+  const edicion = estado.edicion;
+  if (!listo(edicion)) return;
+  edicion.dialogo = crearDialogo(leerAlias());
+}
+
+function accionDialogo(caja) {
+  const edicion = estado.edicion;
+  const dialogo = edicion?.dialogo;
+  if (!dialogo || dialogo.paso === 'enviando') return;
+  if (caja.id === 'cancelar') edicion.dialogo = null;
+  else if (caja.id === 'enlace') {
+    edicion.dialogo = null;
+    compartirConstructor();
+  } else if (caja.id === 'publicar') dialogo.paso = normasAceptadas() ? 'publicar' : 'normas';
+  else if (caja.id === 'aceptar') {
+    aceptarNormas();
+    dialogo.paso = 'publicar';
+  } else if (caja.id === 'otro') otroNombre(dialogo);
+  else if (caja.id === 'arriba') cambiarLetra(dialogo, caja.i, 1);
+  else if (caja.id === 'abajo') cambiarLetra(dialogo, caja.i, -1);
+  else if (caja.id === 'enviar') enviarPublicacion();
+}
+
+/** Publica lo que hay. Sin red, o con el límite del día, lo dice y no pasa nada más. */
+async function enviarPublicacion() {
+  const edicion = estado.edicion;
+  const { dialogo } = edicion;
+  const alias = dialogo.alias.join('');
+  guardarAlias(alias);
+  dialogo.paso = 'enviando';
+  let aviso, color = COLOR.rojo;
+  try {
+    const { id, nuevo } = await publicar({
+      codigo: edicion.codigo, alias, adjetivo: dialogo.adjetivo, sustantivo: dialogo.sustantivo, llave: leerLlave()
+    });
+    if (nuevo) guardarPublicados([...leerPublicados(), { id, codigo: edicion.codigo }]);
+    aviso = nuevo ? 'publicar.hecho' : 'publicar.yaEstaba';
+    color = COLOR.verde;
+    evento('publicar_circuito', { nuevo, casillas: edicion.trazo.casillas.length });
+  } catch (error) {
+    aviso = { 429: 'publicar.limite', 409: 'publicar.retirado', 0: 'publicar.sinRed' }[error.estado] || 'publicar.error';
+  }
+  edicion.dialogo = null;
+  avisar(edicion, t(aviso), color);
+}
+
 function botonConstructor(id) {
   const edicion = estado.edicion;
   if (id !== 'volver') salirSinGuardar = false;
   if (id !== 'eliminar') eliminarPendiente = false;
   if (id === 'volver') salirDelConstructor();
   else if (id === 'eliminar') eliminarConstructor();
-  else if (id === 'compartir') compartirConstructor();
+  else if (id === 'compartir') abrirDialogo();
   else if (id === 'deshacer') deshacer(edicion, estado.escenario);
   else if (id === 'borrar') borrar(edicion, estado.escenario);
   else if (id === 'probar') probarConstructor();
   else if (id === 'guardar') guardarConstructor();
+}
+
+// --- La galería -------------------------------------------------------------
+
+/*
+ * Los circuitos que ha publicado la gente (galeria.js, publicos.js). Elegir
+ * uno lo lleva a la portada, el primero de la lista. Borrar lo propio y
+ * denunciar lo ajeno piden un segundo toque.
+ */
+const galeriaUI = { pendiente: null, aviso: null };
+
+function abrirGaleria() {
+  estado.fase = 'galeria';
+  galeriaUI.pendiente = null;
+  galeriaUI.aviso = null;
+  cargarGaleria(galeria.orden, 0);
+  punteros.clear();
+  aplicarVista();
+  evento('abrir_galeria', { lupa: estado.lupa });
+}
+
+function vistaGaleria() {
+  return estado.lupa ? { ancho: ANCHO_LUPA, alto: altoLienzoLupa() } : { ancho: ANCHO, alto: ALTO };
+}
+
+function avisarGaleria(clave, color = COLOR.ambar) {
+  galeriaUI.aviso = { texto: t(clave), color, vida: 1.8 };
+}
+
+const propios = () => new Set(leerPublicados().map((c) => c.id));
+
+function elegirPublico(publico) {
+  const circuito = circuitoDeCodigo(publico.codigo);
+  if (!circuito) {
+    avisarGaleria('galeria.noCorre', COLOR.rojo);
+    return;
+  }
+  circuito.publico = publico;
+  PUBLICO = circuito;
+  estado.circuito = circuito;
+  estado.decorado = generarDecorado(circuito, estado.escenario);
+  irAPortada();
+  aplicarVista();
+}
+
+function pulsarGaleria(caja) {
+  const lista = galeria.lista || [];
+  if (caja.id !== 'esquina') galeriaUI.pendiente = null;
+  if (caja.id === 'volver') {
+    irAPortada();
+    aplicarVista();
+  } else if (caja.id === 'orden') cargarGaleria(galeria.orden === 'jugados' ? 'nuevos' : 'jugados', 0);
+  else if (caja.id === 'construir') abrirConstructor();
+  else if (caja.id === 'anterior' && galeria.pagina > 0) cargarGaleria(galeria.orden, galeria.pagina - 1);
+  else if (caja.id === 'siguiente' && galeria.mas) cargarGaleria(galeria.orden, galeria.pagina + 1);
+  else if (caja.id === 'tarjeta') elegirPublico(lista[caja.i]);
+  else if (caja.id === 'esquina') esquinaGaleria(lista[caja.i], caja.i);
+}
+
+/** La esquina de una tarjeta: el primer toque avisa; el segundo borra (lo propio) o denuncia (lo ajeno). */
+function esquinaGaleria(publico, i) {
+  const propio = propios().has(publico.id);
+  if (galeriaUI.pendiente?.i !== i) {
+    galeriaUI.pendiente = { i };
+    avisarGaleria(propio ? 'galeria.borrarOtraVez' : 'galeria.denunciarOtraVez', COLOR.rojo);
+    return;
+  }
+  galeriaUI.pendiente = null;
+  const peticion = propio ? borrarPublicado(publico.id, leerLlave()) : denunciar(publico.id);
+  peticion.then(() => {
+    if (propio) guardarPublicados(leerPublicados().filter((c) => c.id !== publico.id));
+    avisarGaleria(propio ? 'galeria.borrado' : 'galeria.denunciado', COLOR.verde);
+    evento(propio ? 'borrar_publico' : 'denunciar_publico');
+    cargarGaleria();
+  }, () => avisarGaleria('publicar.sinRed', COLOR.rojo));
 }
 
 /** Salir de una carrera: a la portada (abandonando el campeonato) o, si era la prueba, al constructor. */
@@ -388,6 +519,8 @@ function irAPortada() {
  */
 function empezarCarrera() {
   evento('empezar_carrera', datosCarrera());
+  if (estado.circuito.publico) apuntarJugado(estado.circuito.publico.id);
+  estado.denuncia = null;
   estado.fase = 'carrera';
   // Cada carrera, los coches se cambian de carril: no son iguales.
   estado.turno = 1 - estado.turno;
@@ -418,6 +551,22 @@ function terminarCarrera() {
   if (gana) emitirConfeti(estado.particulas);
 }
 
+/*
+ * Los botones del fin fuera del campeonato. En un circuito público ajeno,
+ * también denunciarlo: el primer toque pregunta y el segundo lo envía.
+ */
+function idsFin() {
+  const { publico } = estado.circuito;
+  if (!publico || propios().has(publico.id) || estado.probando) return ['repetir', 'menu'];
+  return ['repetir', 'menu', { null: 'denunciar', pendiente: 'confirmarDenuncia', hecha: 'denunciado' }[estado.denuncia]];
+}
+
+function denunciarDesdeFin() {
+  estado.denuncia = 'hecha';
+  denunciar(estado.circuito.publico.id).catch(() => { estado.denuncia = null; });
+  evento('denunciar_publico');
+}
+
 /** Para la analítica: quién llevaba un coche. */
 function nombreDe(i) {
   return estado.humanos[i] ? 'j' + (i + 1) : 'cpu';
@@ -426,7 +575,7 @@ function nombreDe(i) {
 /** Lo que acompaña a cada evento de carrera en la analítica. */
 function datosCarrera() {
   return {
-    circuito: estado.circuito.dibujado ? 'dibujado' : estado.circuito.clave,
+    circuito: estado.circuito.publico ? 'publico' : estado.circuito.dibujado ? 'dibujado' : estado.circuito.clave,
     escenario: estado.escenario,
     hora: estado.hora,
     coche: estado.modelo,
@@ -515,7 +664,7 @@ function opcionPulsada(id) {
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
   else if (id === 'coche') cambiarCoche();
-  else if (id === 'construir') abrirConstructor();
+  else if (id === 'galeria') abrirGaleria();
   else if (id === 'campeonato') empezarCampeonato();
 }
 
@@ -610,8 +759,18 @@ const ESCENAS = {
       const { edicion } = estado;
       const nombre = edicion.mio ? t('circuito.mio', { n: edicion.mio }) : t('circuito.dibujado');
       dibujarConstructor(edicion, { tiempo: reloj, tactil: estado.tactil, nombre });
+      if (edicion.dialogo) dibujarDialogo(edicion.dialogo, estado.tactil);
     },
     teclear(codigo) {
+      const { dialogo } = estado.edicion;
+      if (dialogo) {
+        const letra = /^Key([A-Z])$/.exec(codigo)?.[1] || /^(?:Digit|Numpad)([0-9])$/.exec(codigo)?.[1];
+        if (codigo === 'Escape') accionDialogo({ id: 'cancelar' });
+        else if (dialogo.paso === 'normas' && empezar(codigo)) accionDialogo({ id: 'aceptar' });
+        else if (dialogo.paso === 'publicar' && empezar(codigo)) accionDialogo({ id: 'enviar' });
+        else if (dialogo.paso === 'publicar' && letra && LETRAS_ALIAS.includes(letra)) escribirLetra(dialogo, letra);
+        return;
+      }
       if (codigo === 'Escape') botonConstructor('volver');
       else if (codigo === 'Backspace' || codigo === 'KeyZ') botonConstructor('deshacer');
       else if (codigo === 'Delete') botonConstructor('borrar');
@@ -623,10 +782,15 @@ const ESCENAS = {
     pulsar(p, id) {
       punteros.clear();
       if (punteroConstructor !== null) return;   // dibuja un dedo; los demás no cuentan
+      const { dialogo } = estado.edicion;
+      if (dialogo) {
+        // Los botones del diálogo actúan al soltar: copiar el enlace pide un gesto completo.
+        const caja = cajasDialogo(dialogo).find((b) => dentro(p, b));
+        if (caja) pulsadoPendiente = { id, caja, p };
+        return;
+      }
       const caja = botonesConstructor().find((b) => dentro(p, b));
-      // Compartir necesita un gesto completo (el navegador no lo da al bajar el dedo).
-      if (caja?.id === 'compartir') compartirPendiente = { id, caja, p };
-      else if (caja) botonConstructor(caja.id);
+      if (caja) botonConstructor(caja.id);
       if (caja) return;
       salirSinGuardar = false;
       eliminarPendiente = false;
@@ -635,17 +799,41 @@ const ESCENAS = {
     },
     mover(p, id) {
       if (id === punteroConstructor) moverGesto(estado.edicion, p);
-      if (id === compartirPendiente?.id) compartirPendiente.p = p;
+      if (id === pulsadoPendiente?.id) pulsadoPendiente.p = p;
     },
     soltar(id) {
-      if (id === compartirPendiente?.id) {
-        const { caja, p } = compartirPendiente;
-        compartirPendiente = null;
-        if (dentro(p, caja)) botonConstructor('compartir');
+      if (id === pulsadoPendiente?.id) {
+        const { caja, p } = pulsadoPendiente;
+        pulsadoPendiente = null;
+        if (dentro(p, caja)) accionDialogo(caja);
       }
       if (id !== punteroConstructor) return;
       punteroConstructor = null;
       acabarGesto(estado.edicion, estado.escenario);
+    }
+  },
+
+  galeria: {
+    actualizar(dt) {
+      if (galeriaUI.aviso && (galeriaUI.aviso.vida -= dt) <= 0) galeriaUI.aviso = null;
+      sonido(false);
+    },
+    dibujar() {
+      dibujarGaleria(vistaGaleria(), { galeria, propios: propios(), pendiente: galeriaUI.pendiente, aviso: galeriaUI.aviso });
+    },
+    teclear(codigo) {
+      if (codigo === 'Escape') pulsarGaleria({ id: 'volver' });
+      else if (codigo === 'ArrowLeft') pulsarGaleria({ id: 'anterior' });
+      else if (codigo === 'ArrowRight') pulsarGaleria({ id: 'siguiente' });
+      else if (codigo === 'KeyO') pulsarGaleria({ id: 'orden' });
+      else if (codigo === 'KeyB') pulsarGaleria({ id: 'construir' });
+    },
+    pulsar(p) {
+      punteros.clear();
+      // La esquina va encima de su tarjeta: se busca primero.
+      const cajas = cajasGaleria(vistaGaleria(), (galeria.lista || []).length);
+      const caja = cajas.find((c) => c.id === 'esquina' && dentro(p, c)) || cajas.find((c) => dentro(p, c));
+      if (caja) pulsarGaleria(caja);
     }
   },
 
@@ -672,6 +860,7 @@ const ESCENAS = {
       else if (codigo === 'KeyH') cambiarHora();
       else if (codigo === 'KeyK') cambiarCoche();
       else if (codigo === 'KeyB') abrirConstructor();
+      else if (codigo === 'KeyG') abrirGaleria();
       else if (codigo === 'KeyT') empezarCampeonato();
     },
     pulsar(p) {
@@ -740,10 +929,10 @@ const ESCENAS = {
     dibujar() {
       dibujarMundo();
       if (estado.lupa) {
-        dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas, estado.campeonato);
+        dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas, estado.campeonato, idsFin());
         return;
       }
-      dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil, estado.campeonato);
+      dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil, estado.campeonato, idsFin());
       dibujarConfeti(estado.particulas);
     },
     teclear(codigo) {
@@ -754,12 +943,14 @@ const ESCENAS = {
       if (estado.esperaReinicio > 0) return;
       const { campeonato } = estado;
       const cajas = estado.lupa
-        ? (campeonato ? botonesFinCampeonatoLupa(campeonato) : botonesFinLupa())
-        : botonesFin(campeonato ? idsFinCampeonato(campeonato) : undefined);
+        ? (campeonato ? botonesFinCampeonatoLupa(campeonato) : botonesFinLupa(idsFin()))
+        : botonesFin(campeonato ? idsFinCampeonato(campeonato) : idsFin());
       const boton = cajas.find((caja) => dentro(p, caja));
       if (boton?.id === 'repetir') repetir();
       else if (boton?.id === 'siguiente') correrSiguiente();
       else if (boton?.id === 'menu') alMenu();
+      else if (boton?.id === 'denunciar') estado.denuncia = 'pendiente';
+      else if (boton?.id === 'confirmarDenuncia') denunciarDesdeFin();
       punteros.clear();
     }
   }

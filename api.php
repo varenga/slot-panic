@@ -23,8 +23,9 @@ const PUBLICAR_AL_DIA = 5;      // por huella, en las últimas 24 h
 // El nombre: un índice de cada lista de i18n.js (nombre.a.* y nombre.s.*). El arnés lo comprueba.
 const ADJETIVOS       = 16;
 const SUSTANTIVOS     = 16;
-// Quién puede llamar desde otro origen: la app (Capacitor en Android e iOS).
-const ORIGENES = ['https://slot.pnyk.es', 'https://localhost', 'capacitor://localhost'];
+// Quién puede llamar desde otro origen: la app (Capacitor en Android e iOS)
+const ORIGENES = ['https://slot.pnyk.es', 'https://localhost', 'capacitor://localhost',
+  'http://127.0.0.1:8124'];   // y las pruebas en local (?api=): la galería es pública, y borrar pide la llave
 
 require __DIR__ . '/config.php';
 require __DIR__ . '/servidor/cuadricula.php';
