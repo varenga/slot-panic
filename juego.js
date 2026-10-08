@@ -561,12 +561,20 @@ function empezarCarrera() {
 /** Solo los circuitos oficiales tienen récords (y fantasma). */
 const conRecords = () => CIRCUITOS.includes(estado.circuito);
 
-/** El fantasma contra el que corre el J1, según lo elegido. Sin el del récord, el propio. */
+/*
+ * El fantasma propio del J1 (el que se guarda en el dispositivo). El del
+ * récord no se fija al empezar: la tabla puede llegar con la carrera ya en
+ * marcha, y se mira al pintar (`fantasmaDelJ1`).
+ */
 function fantasmaElegido() {
   if (!conRecords() || estado.tipoFantasma === 'no') return null;
-  const { clave } = estado.circuito;
-  if (estado.tipoFantasma === 'record' && tablaDe(clave).fantasma) return tablaDe(clave).fantasma;
-  return leerFantasmaPropio(clave);
+  return leerFantasmaPropio(estado.circuito.clave);
+}
+
+/** Contra qué fantasma corre ahora el J1: el del récord si se eligió y ha llegado; si no, el propio. */
+function fantasmaDelJ1() {
+  if (estado.tipoFantasma === 'record' && conRecords()) return tablaDe(estado.circuito.clave).fantasma || estado.fantasma;
+  return estado.fantasma;
 }
 
 /*
@@ -884,7 +892,8 @@ function dibujarMundo() {
  * J1 lo conduzca alguien.
  */
 function pintarFantasma() {
-  const { carrera, fantasma } = estado;
+  const { carrera } = estado;
+  const fantasma = fantasmaDelJ1();
   if (!fantasma || estado.fase !== 'carrera') return;
   if (carrera.fase !== 'cuenta' && !estado.humanos[0]) return;
   const slot = carrera.coches[0];

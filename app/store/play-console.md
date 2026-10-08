@@ -63,8 +63,8 @@ con que se publicó, o por correo; política común de pnyk.es).
 
 | Tipo de dato (Play) | Qué es | Obligatorio | Finalidad |
 |---|---|---|---|
-| Actividad en la app › Otro contenido generado por el usuario | El circuito publicado, su nombre (dos índices de unas listas) y el alias de 3 letras | Opcional: solo si se publica | Funcionalidad de la app |
-| Identificadores del dispositivo u otros | El hash de la llave al azar del dispositivo (permite borrar lo propio) y la huella de la IP (HMAC con sal, no reversible) | Opcional: solo al publicar, denunciar o jugar un circuito público | Funcionalidad de la app; prevención de fraude y seguridad (límite diario, una denuncia por persona) |
+| Actividad en la app › Otro contenido generado por el usuario | El circuito publicado, su nombre (dos índices de unas listas) y el alias de 3 letras; desde la v0.9.0, también el récord de vuelta que se firma (el alias, el tiempo, el carril y el recorrido de la vuelta) | Opcional: solo si se publica o se firma | Funcionalidad de la app |
+| Identificadores del dispositivo u otros | El hash de la llave al azar del dispositivo (permite borrar lo propio) y la huella de la IP (HMAC con sal, no reversible) | Opcional: solo al publicar, firmar un récord, denunciar o jugar un circuito público | Funcionalidad de la app; prevención de fraude y seguridad (límite diario, una denuncia por persona) |
 
 No hay cuentas ni correo; nada se usa para publicidad ni se vende.
 

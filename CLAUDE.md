@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.8.1): carreras de slot en cuatro circuitos (*La horquilla*, y *El
+Prototipo jugable (v0.9.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
 ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos). Un constructor: el circuito
+contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos), y récords de vuelta online con
+fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
 lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cuatro escenarios de día, al
@@ -114,7 +115,7 @@ node arnes.mjs
 ```
 
 Importa los módulos reales del núcleo (no tocan el DOM) y corre carreras enteras con
-pilotos automáticos en unos segundos (hoy, ~7 s). Si las piezas de un circuito no
+pilotos automáticos en unos segundos (hoy, ~20 s). Si las piezas de un circuito no
 cierran, ni arranca: lo dice `construirDePiezas` al importarlo. Sale con código 1 si algo falla. No admite
 argumentos: siempre corre todas las secciones enteras. Es `.mjs` a propósito: el
 `.htaccess` deniega `*.mjs` (y `*.md`, `pnyk.json`), así que no se publica; por lo
@@ -157,6 +158,10 @@ demás, en `BITACORA.md`). Mide y comprueba:
 6. **El campeonato**: corre los circuitos oficiales en orden, las victorias suman las
    carreras, al que no acaba se le pone más tiempo que al ganador y, con las mismas
    victorias, gana el menor tiempo sumado.
+7. **El fantasma**: en cada oficial, la vuelta grabada se separa < 1 px del coche, acaba
+   en la meta, desaparece después y guardada ocupa < 12.000 caracteres; con `php`, el
+   servidor (`servidor/records.php`) tiene el circuito, su mínimo por debajo de una vuelta
+   fina y su meta, acepta la vuelta de verdad y rechaza las trucadas.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).
@@ -204,6 +209,8 @@ nucleo/slot.js         el núcleo: carriles (lateralEn), el coche enganchado (s 
 nucleo/piloto.js       la CPU, la exhibición y el instrumento del arnés: decidirSlot()
 nucleo/campeonato.js   el campeonato: los oficiales en orden, victorias, tiempos (el
                        del que no acaba, a su ritmo) y el desempate
+nucleo/fantasma.js     cada vuelta grabada a 1/30 s y reproducida con su reloj;
+                       codificar() / decodificar() para guardarla y enviarla
 nucleo/cuadricula.js   el constructor, en enteros: el trazado (meta + un paso por
                        casilla), validarTrazado(), el código (?c=) y aPiezas()
 nucleo/trazo.js        lo que el dedo dibuja: pisar(), cerrar, cambiarVariante()
@@ -238,8 +245,11 @@ publicar.js            el diálogo de compartir y publicar (normas, nombre, alia
 galeria.js             CIRCUITOS (galería o constructor) y la galería de circuitos
                        públicos: tarjetas y miniaturas
 publicos.js            la red de la galería (api.php): nunca bloquea el juego
+records.js             la red de los récords de vuelta (api.php): la tabla y firmar
+tablaRecords.js        RÉCORDS (la tabla y el fantasma elegido) y la firma
 api.php                los circuitos públicos (PHP + MySQL); config.php, fuera de git
 servidor/cuadricula.php  la cuadrícula en PHP: la validación del servidor (no se sirve)
+servidor/records.php   qué vuelta se acepta como récord (no se sirve)
 schema.sql             las tablas de api.php (no se sirve)
 arnes.mjs              el arnés (no lo carga el juego)
 

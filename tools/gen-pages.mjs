@@ -230,6 +230,7 @@ ${jsonLd}
       <li>${esc(t('page.how7'))}</li>
       <li>${esc(t('page.how8'))}</li>
       <li>${esc(t('page.how9'))}</li>
+      <li>${esc(t('page.how10'))}</li>
     </ul>
 
     <h2>${esc(t('page.controlsTitle'))}</h2>
@@ -463,6 +464,8 @@ ${circuitos}
   carril donde se salió: salirse cuesta tiempo, no la carrera.
 - En las piezas en X los carriles se cruzan y los coches cambian de carril; en una X
   o un cruce, dos coches que llegan a la vez chocan.
+- Récords de vuelta en los circuitos oficiales (una tabla por circuito, firmada con tres
+  letras) y un fantasma para correr contra la mejor vuelta propia o la del récord.
 - Campeonato: los circuitos oficiales seguidos; gana quien gane más carreras y, con
   empate, el menor tiempo sumado.
 - En las estrechas los carriles se juntan y dos coches a la par se tocan; la curva

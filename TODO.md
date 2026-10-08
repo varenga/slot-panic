@@ -24,7 +24,9 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] Más circuitos oficiales (hoy cuatro).
 - [ ] Estética de juguete: piezas con juntas, trencillas, la mesa.
 - [ ] Niveles de CPU (hoy una, `CPU_SLOT`, ~1,2 s por vuelta del mejor piloto).
-- [ ] Récords (y fantasma) por circuito y carril.
+- [ ] Playtest de los récords: ¿el fantasma ayuda o estorba (hoy al 0,3)?, ¿se entiende
+      firmar?, ¿el mínimo de vuelta del servidor (el 80 % del mejor piloto automático)
+      deja pasar a los buenos?
 - [ ] Playtest del modo lupa: ¿qué zoom (hoy 1,2, `?lupa=1.5` para probar otro)?, ¿se ven
       a tiempo las curvas que vienen? Si tuviera que bajar de lo que llena la mesa (0,93),
       algo barato más allá de ella: el suelo del escenario estirado o un patrón.
