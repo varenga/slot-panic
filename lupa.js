@@ -282,7 +282,7 @@ export function opcionesPortadaLupa() {
   }));
 }
 
-export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo }) {
+export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo, marca }) {
   dibujarMapa(circuito, carrera.coches);
   const x = ANCHO_LUPA / 2, y = BAJO_MAPA + 30;
   panel(x, y, 440, 200);
@@ -291,7 +291,8 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
   if (Math.floor(tiempo * 1.6) % 2 === 0) {
     texto(t('portada.jugarTactil'), x, y + 138, { tam: 26, color: COLOR.ambar, peso: 700 });
   }
-  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: VUELTAS_SLOT }), x, y + 174, { tam: 15, color: COLOR.texto });
+  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: VUELTAS_SLOT }), x, y + (marca ? 166 : 174), { tam: 15, color: COLOR.texto });
+  if (marca) texto(marca, x, y + 188, { tam: 14, color: COLOR.ambar, peso: 700 });
 
   const valores = {
     circuito: nombreCircuito(circuito),

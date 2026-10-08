@@ -116,7 +116,7 @@ export function opcionesPortada() {
 
 const TECLA_OPCION = { circuito: 'C', campeonato: 'T', circuitos: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
 
-export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo) {
+export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo, marca = null) {
   const { x, y } = centro(circuito);
   panel(x, y - 120, 470, 252);
   texto('SLOT PANIC', x, y - 70, { tam: 64, color: COLOR.hud, peso: 800 });
@@ -127,7 +127,8 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo
     texto(t(tactil ? 'portada.jugarTactil' : 'portada.jugar'), x, y + 34, { tam: 24, color: COLOR.ambar, peso: 700 });
   }
   texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: VUELTAS_SLOT }), x, y + 80, { tam: 14, color: COLOR.texto });
-  texto(t('slot.cpuLibre'), x, y + 104, { tam: 14, color: COLOR.texto });
+  // En un oficial con récord, tu mejor vuelta; si no, cómo se juega contra la CPU.
+  texto(marca || t('slot.cpuLibre'), x, y + 104, { tam: 14, color: marca ? COLOR.ambar : COLOR.texto, peso: marca ? 700 : 400 });
 
   bandas();
   const valores = {

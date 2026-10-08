@@ -459,6 +459,17 @@ export function dibujarCocheSlot(slot) {
   ctx.restore();
 }
 
+/*
+ * El fantasma de una vuelta (nucleo/fantasma.js): el mismo coche que el J1, en
+ * su pose y translúcido (0,3, como en Race Panic: al 0,5 parecía otro coche).
+ */
+export function dibujarFantasma(pose, coche) {
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  dibujarCoche({ ...coche, x: pose.x, y: pose.y, angulo: pose.angulo, vx: 0, vy: 0, frenando: false, atras: false });
+  ctx.restore();
+}
+
 // --- Lo que se mueve -----------------------------------------------------------------
 
 const SOMBRA_COCHE = { x: 2, y: 2.5 };

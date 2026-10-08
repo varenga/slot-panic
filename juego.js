@@ -10,7 +10,7 @@ import {
   SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import {
-  aceptarNormas, estado, guardarAlias, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
+  aceptarNormas, estado, guardarAlias, guardarMejorVuelta, leerFantasmaPropio, leerMejorVuelta, leerTipoFantasma, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
   leerAlias, leerCircuito, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
@@ -26,8 +26,10 @@ import {
 import { construirDePiezas } from './nucleo/piezas.js';
 import { validarCircuito } from './nucleo/validar.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato } from './nucleo/campeonato.js';
+import { posar } from './nucleo/fantasma.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
-import { dibujarCarriles, dibujarCocheSlot, dibujarFondo } from './dibujo.js';
+import { dibujarCarriles, dibujarCocheSlot, dibujarFantasma, dibujarFondo } from './dibujo.js';
+import { formatearTiempo } from './nucleo/slot.js';
 import { MODELOS, siguienteModelo } from './coches.js';
 import {
   actualizarParticulas, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
@@ -540,12 +542,49 @@ function empezarCarrera() {
   estado.fase = 'carrera';
   // Cada carrera, los coches se cambian de carril: no son iguales.
   estado.turno = 1 - estado.turno;
-  estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno);
+  estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno, { grabar: conRecords() });
   vestir(estado.carrera);
   estado.pilotos = [0, 1].map(() => crearPiloto({ ...CPU_SLOT, semilla: semilla() }));
   estado.humanos = [false, false];
+  estado.fantasma = fantasmaElegido();
   estado.ultimaAvisada = false;
   limpiarPista();
+}
+
+// --- Récords -------------------------------------------------------------------
+
+/** Solo los circuitos oficiales tienen récords (y fantasma). */
+const conRecords = () => CIRCUITOS.includes(estado.circuito);
+
+/** El fantasma contra el que corre el J1, según lo elegido. Sin el del récord, el propio. */
+function fantasmaElegido() {
+  if (!conRecords() || estado.tipoFantasma === 'no') return null;
+  return leerFantasmaPropio(estado.circuito.clave);
+}
+
+/*
+ * Una vuelta acabada: si la ha dado entera una persona (tomó el carril antes
+ * de empezarla) y baja de su mejor vuelta, es récord personal: se guarda con
+ * su fantasma y, si corría contra el propio, la siguiente ya corre contra ella.
+ */
+function apuntarVuelta(i) {
+  if (!conRecords()) return;
+  const slot = estado.carrera.coches[i];
+  const vuelta = slot.grabadas.at(-1);
+  if (!vuelta || slot.humanoDesde === undefined || vuelta.inicio < slot.humanoDesde) return;
+  const { clave } = estado.circuito;
+  const mejor = leerMejorVuelta(clave);
+  if (mejor && vuelta.tiempo >= mejor.tiempo) return;
+  guardarMejorVuelta(clave, vuelta);
+  estado.avisos.push({ texto: t('aviso.recordVuelta', { tiempo: formatearTiempo(vuelta.tiempo) }), vida: 1.8, color: COLOR.verde });
+  if (i === 0 && estado.tipoFantasma === 'tuyo') estado.fantasma = vuelta;
+}
+
+/** Lo que dice la portada de un oficial: tu mejor vuelta, si la tienes. */
+function marcaPortada() {
+  if (!conRecords()) return null;
+  const mejor = leerMejorVuelta(estado.circuito.clave);
+  return mejor ? t('portada.tuMejor', { tiempo: formatearTiempo(mejor.tiempo) }) : null;
 }
 
 function terminarCarrera() {
@@ -613,7 +652,10 @@ function mandos() {
     // En la lupa se juega solo: el otro carril es siempre de la CPU.
     if (estado.lupa && i === 1) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
     const pulsado = pulsada(CONTROLES_SLOT[i]) || lados.has(i === 0 ? 'izq' : 'der');
-    if (pulsado) estado.humanos[i] = true;
+    if (pulsado && !estado.humanos[i]) {
+      estado.humanos[i] = true;
+      slot.humanoDesde = carrera.fase === 'carrera' ? carrera.tiempo : 0;
+    }
     return estado.humanos[i]
       ? { acelerar: pulsado, frenar: false, giro: 0 }
       : decidirSlot(estado.pilotos[i], slot, carrera.circuito);
@@ -739,10 +781,25 @@ function dibujarMundo() {
   pintarMundo();
 }
 
+/*
+ * El fantasma del J1, con el reloj de su vuelta: debajo de los coches y
+ * translúcido. En la cuenta atrás ya está en la parrilla; luego, mientras el
+ * J1 lo conduzca alguien.
+ */
+function pintarFantasma() {
+  const { carrera, fantasma } = estado;
+  if (!fantasma || estado.fase !== 'carrera') return;
+  if (carrera.fase !== 'cuenta' && !estado.humanos[0]) return;
+  const slot = carrera.coches[0];
+  const pose = posar(fantasma, carrera.tiempo - slot.inicioVuelta);
+  if (pose) dibujarFantasma(pose, slot.coche);
+}
+
 function pintarMundo() {
   dibujarFondo(estado.circuito, estado.decorado);
   dibujarCarriles(estado.circuito);
   dibujarHumo(estado.particulas);
+  pintarFantasma();
   // El que va por el aire, encima.
   const coches = [...estado.carrera.coches].sort((a, b) => a.altura - b.altura);
   coches.forEach(dibujarCocheSlot);
@@ -882,10 +939,10 @@ const ESCENAS = {
     dibujar() {
       dibujarMundo();
       if (estado.lupa) {
-        dibujarPortadaLupa({ ...estado, tiempo: reloj });
+        dibujarPortadaLupa({ ...estado, tiempo: reloj, marca: marcaPortada() });
         return;
       }
-      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo);
+      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo, marcaPortada());
     },
     teclear(codigo) {
       if (empezar(codigo)) empezarCarrera();
@@ -920,7 +977,8 @@ const ESCENAS = {
         }
         else if (evento.tipo === 'choque') sfxChoque();
         else if (evento.tipo === 'clac') sfxClac();
-        else if (evento.tipo === 'vuelta') {
+        else if (evento.tipo === 'vuelta' || evento.tipo === 'fin') apuntarVuelta(evento.coche);
+        if (evento.tipo === 'vuelta') {
           sfxVuelta();
           // El primero que entra en la última vuelta la anuncia.
           if (!estado.ultimaAvisada && carrera.coches[evento.coche].completadas === VUELTAS_SLOT - 1) {
@@ -1085,6 +1143,7 @@ estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coars
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
 estado.modelo = leerModelo(MODELOS.map((m) => m.id));
+estado.tipoFantasma = leerTipoFantasma();
 const elegido = leerCircuito([...CIRCUITOS, ...MIOS].map((c) => c.clave));
 estado.circuito = DIBUJADO || [...CIRCUITOS, ...MIOS].find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);
