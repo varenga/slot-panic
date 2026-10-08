@@ -26,3 +26,6 @@ Thumbs.db
 
 # Desarrollo
 _desarrollo/
+
+# Credenciales de api.php (se suben a mano al servidor)
+/config.php
