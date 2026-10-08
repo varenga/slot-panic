@@ -7,5 +7,6 @@
 import { PRIMERO } from './primero.js';
 import { OCHO } from './ocho.js';
 import { NUDO } from './nudo.js';
+import { RESBALON } from './resbalon.js';
 
-export const CIRCUITOS = [PRIMERO, OCHO, NUDO];
+export const CIRCUITOS = [PRIMERO, OCHO, NUDO, RESBALON];

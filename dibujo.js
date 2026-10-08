@@ -136,8 +136,9 @@ function pintarPista(circuito) {
 /*
  * Las marcas de las piezas especiales (`nucleo/piezas.js`), para que se lean
  * antes de llegar: el peralte, una banda clara rayada por fuera (la pista sube);
- * la curva de derrape, su arcén plano y gris por fuera del piano; los baches,
- * franjas oscuras a lo ancho.
+ * la curva de derrape, su arcén plano y gris por fuera del piano; la
+ * deslizante, franjas ámbar a los dos lados de los carriles juntos; los baches,
+ * franjas oscuras a lo ancho. La estrecha no lleva marca: se ven los carriles.
  */
 function pintarPiezas(circuito) {
   const { eje, ancho } = circuito;
@@ -147,7 +148,7 @@ function pintarPiezas(circuito) {
   ctx.lineCap = 'butt';
   for (let i = 0; i < n; i++) {
     const p = eje[i], q = eje[(i + 1) % n];
-    if (!p.efecto || p.efecto === 'chicane') continue;
+    if (!p.efecto || p.efecto === 'chicane' || p.efecto === 'estrecha') continue;
     const fuera = -p.curva;
     if (p.efecto === 'peralte') {
       ctx.fillStyle = i % 2 ? 'rgba(230, 232, 238, 0.10)' : 'rgba(230, 232, 238, 0.22)';
@@ -156,6 +157,13 @@ function pintarPiezas(circuito) {
       const k = fuera < 0 ? 0 : 1;
       ctx.fillStyle = 'rgba(201, 204, 214, 0.32)';
       poligono([a(p, fuera, p.borde[k]), a(q, fuera, q.borde[k]), a(q, fuera, q.borde[k] + 30), a(p, fuera, p.borde[k] + 30)]);
+    } else if (p.efecto === 'deslizante') {
+      // Franjas ámbar a los dos lados de los carriles, que van juntos por el centro.
+      if (Math.floor(p.s / 16) % 2) continue;
+      ctx.fillStyle = 'rgba(242, 170, 60, 0.6)';
+      for (const lado of [-1, 1]) {
+        poligono([a(p, lado, 14), a(q, lado, 14), a(q, lado, ancho / 2 - 3), a(p, lado, ancho / 2 - 3)]);
+      }
     } else if (p.efecto === 'baches' && i % 2 === 0) {
       ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
       ctx.lineWidth = 3;

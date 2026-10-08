@@ -164,13 +164,21 @@ export const FUERA_MAXIMO = 2.2;        // s fuera, como mucho, antes de que lle
  *   (radio 95).
  * - Los BACHES sacuden la guía: en la recta agarra como en una curva, y por
  *   encima de VELOCIDAD_BACHES derrapa.
- * - El CHOQUE: dos coches en el carril a menos de esto (en una X o un cruce)
+ * - En la ESTRECHA los carriles se acercan al eje hasta ESTRECHA veces su
+ *   distancia: a la par, dos coches se tocan (a 2 · CARRIL · ESTRECHA, menos
+ *   que CHOQUE). Es la chicane del juguete: adelantar ahí es arriesgarse.
+ * - La CURVA DESLIZANTE es amplia, resbaladiza y estrecha: se toma derrapando.
+ *   Hasta `tolera` veces el agarre de más, la cola sale mucho y frena, pero el
+ *   derrape no se acumula; pasado eso, sí, y a fondo se sale como en todas.
+ * - El CHOQUE: dos coches en el carril a menos de esto (en una X, un cruce o una estrecha)
  *   salen los dos. Menos que los 2 · CARRIL de dos carriles en paralelo, y
  *   crece con el coche: se chocan cuando se ve que se tocan (era 14 con el
  *   coche de 22×11).
  */
 export const AGARRE_PERALTE = 1.4;
-export const CURVA_DERRAPE = { acumula: 0.4, freno: 0.5, limite: 1, coleteo: 1.6 };
+export const CURVA_DERRAPE = { acumula: 0.4, freno: 0.5, limite: 1, coleteo: 1.6, tolera: 0 };
+export const CURVA_DESLIZANTE = { acumula: 2, freno: 0.1, limite: 1, coleteo: 2.2, tolera: 0.25 };
+export const ESTRECHA = 0.4;            // fracción de CARRIL a la que se acercan los carriles
 export const VELOCIDAD_BACHES = 330;    // px/s
 export const CHOQUE = 20;               // px entre los centros de los dos coches
 /*

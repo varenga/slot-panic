@@ -25,6 +25,7 @@ import {
 } from './constructor.js';
 import { construirDePiezas } from './nucleo/piezas.js';
 import { validarCircuito } from './nucleo/validar.js';
+import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato } from './nucleo/campeonato.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
 import { dibujarCarriles, dibujarCocheSlot, dibujarFondo } from './dibujo.js';
 import { MODELOS, siguienteModelo } from './coches.js';
@@ -32,7 +33,8 @@ import {
   actualizarParticulas, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
 } from './particulas.js';
 import {
-  botonesFin, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, opcionesPortada
+  botonesFin, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
+  nombreCircuito, opcionesPortada
 } from './pantalla.js';
 import {
   actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
@@ -42,7 +44,7 @@ import { cambiarIdioma, idiomaActual, t } from './i18n.js';
 import { cargarAnalitica, evento } from './analitica.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
-  altoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
+  altoLupa, botonesFinCampeonatoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
 } from './lupa.js';
 
@@ -150,6 +152,44 @@ function cambiarCircuito() {
   if (estado.circuito !== DIBUJADO) guardarCircuito(estado.circuito.clave);
   estado.decorado = generarDecorado(estado.circuito, estado.escenario);
   irAPortada();
+}
+
+// --- El campeonato ---------------------------------------------------------
+
+/*
+ * Los circuitos oficiales, uno detrás de otro (`nucleo/campeonato.js`).
+ * Mientras dura, el fin lleva a la carrera siguiente y ESC lo abandona.
+ */
+function empezarCampeonato() {
+  estado.campeonato = crearCampeonato(CIRCUITOS);
+  evento('empezar_campeonato', { tactil: estado.tactil, lupa: estado.lupa });
+  correrSiguiente();
+}
+
+function correrSiguiente() {
+  estado.circuito = circuitoDelCampeonato(estado.campeonato);
+  estado.decorado = generarDecorado(estado.circuito, estado.escenario);
+  empezarCarrera();
+}
+
+/** Lo que se lee en la cuenta atrás de una carrera del campeonato. */
+function rotuloCampeonato() {
+  const { campeonato } = estado;
+  if (!campeonato) return null;
+  const n = campeonato.carreras.length + 1;
+  return `${t('campeonato.carrera', { n, total: campeonato.circuitos.length })} · ${nombreCircuito(estado.circuito)}`;
+}
+
+/** Repetir en el fin: la misma carrera o, acabado el campeonato, otro. */
+function repetir() {
+  if (estado.campeonato) empezarCampeonato();
+  else empezarCarrera();
+}
+
+/** Seguir en el fin: en el campeonato, la siguiente; si no, repetir. */
+function seguir() {
+  if (estado.campeonato && !clasificacion(estado.campeonato).acabado) correrSiguiente();
+  else repetir();
 }
 
 // --- El constructor ---------------------------------------------------------
@@ -315,10 +355,13 @@ function botonConstructor(id) {
   else if (id === 'guardar') guardarConstructor();
 }
 
-/** Salir de una carrera: a la portada o, si era la prueba, al constructor. */
+/** Salir de una carrera: a la portada (abandonando el campeonato) o, si era la prueba, al constructor. */
 function alMenu() {
   if (estado.probando) volverAlConstructor();
-  else irAPortada();
+  else {
+    estado.campeonato = null;
+    irAPortada();
+  }
 }
 
 function limpiarPista() {
@@ -359,10 +402,25 @@ function empezarCarrera() {
 function terminarCarrera() {
   estado.fase = 'fin';
   estado.esperaReinicio = ESPERA_REINICIO;
-  const gana = estado.humanos[estado.carrera.ganador];
+  let gana = estado.humanos[estado.carrera.ganador];
   evento('acabar_carrera', { ...datosCarrera(), jugadores: estado.humanos.filter(Boolean).length });
+  const { campeonato } = estado;
+  if (campeonato) {
+    anotarCarrera(campeonato, estado.carrera, estado.humanos);
+    const { acabado, delante } = clasificacion(campeonato);
+    // Al acabar, lo que se celebra es el campeonato.
+    if (acabado) {
+      gana = delante !== null && estado.humanos[delante];
+      evento('acabar_campeonato', { campeon: delante === null ? 'empate' : nombreDe(delante), tactil: estado.tactil });
+    }
+  }
   sfxFin(gana);
   if (gana) emitirConfeti(estado.particulas);
+}
+
+/** Para la analítica: quién llevaba un coche. */
+function nombreDe(i) {
+  return estado.humanos[i] ? 'j' + (i + 1) : 'cpu';
 }
 
 /** Lo que acompaña a cada evento de carrera en la analítica. */
@@ -458,6 +516,7 @@ function opcionPulsada(id) {
   else if (id === 'hora') cambiarHora();
   else if (id === 'coche') cambiarCoche();
   else if (id === 'construir') abrirConstructor();
+  else if (id === 'campeonato') empezarCampeonato();
 }
 
 /** Lo único de la interfaz que no se pinta en el lienzo. */
@@ -613,6 +672,7 @@ const ESCENAS = {
       else if (codigo === 'KeyH') cambiarHora();
       else if (codigo === 'KeyK') cambiarCoche();
       else if (codigo === 'KeyB') abrirConstructor();
+      else if (codigo === 'KeyT') empezarCampeonato();
     },
     pulsar(p) {
       const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada()).find((caja) => dentro(p, caja));
@@ -653,15 +713,16 @@ const ESCENAS = {
       dibujarMundo();
       if (estado.lupa) {
         dibujarMapa(estado.circuito, estado.carrera.coches);
-        dibujarMarcadorLupa(estado.carrera, estado.humanos);
+        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCampeonato());
         dibujarAvisosLupa(estado.avisos);
         return;
       }
-      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil);
+      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCampeonato());
       dibujarAvisos(estado.avisos);
     },
     teclear(codigo) {
-      if (codigo === 'KeyR') empezarCarrera();
+      // En el campeonato no se repite una carrera a medias.
+      if (codigo === 'KeyR' && !estado.campeonato) empezarCarrera();
       else if (codigo === 'Escape') alMenu();
     },
     pulsar() {
@@ -679,20 +740,25 @@ const ESCENAS = {
     dibujar() {
       dibujarMundo();
       if (estado.lupa) {
-        dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas);
+        dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas, estado.campeonato);
         return;
       }
-      dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil);
+      dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil, estado.campeonato);
       dibujarConfeti(estado.particulas);
     },
     teclear(codigo) {
       if (codigo === 'Escape') alMenu();
-      else if ((empezar(codigo) || codigo === 'KeyR') && estado.esperaReinicio === 0) empezarCarrera();
+      else if ((empezar(codigo) || codigo === 'KeyR') && estado.esperaReinicio === 0) seguir();
     },
     pulsar(p) {
       if (estado.esperaReinicio > 0) return;
-      const boton = (estado.lupa ? botonesFinLupa() : botonesFin()).find((caja) => dentro(p, caja));
-      if (boton?.id === 'repetir') empezarCarrera();
+      const { campeonato } = estado;
+      const cajas = estado.lupa
+        ? (campeonato ? botonesFinCampeonatoLupa(campeonato) : botonesFinLupa())
+        : botonesFin(campeonato ? idsFinCampeonato(campeonato) : undefined);
+      const boton = cajas.find((caja) => dentro(p, caja));
+      if (boton?.id === 'repetir') repetir();
+      else if (boton?.id === 'siguiente') correrSiguiente();
       else if (boton?.id === 'menu') alMenu();
       punteros.clear();
     }

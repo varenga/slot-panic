@@ -228,6 +228,7 @@ ${jsonLd}
       <li>${esc(t('page.how5'))}</li>
       <li>${esc(t('page.how6'))}</li>
       <li>${esc(t('page.how7'))}</li>
+      <li>${esc(t('page.how8'))}</li>
     </ul>
 
     <h2>${esc(t('page.controlsTitle'))}</h2>
@@ -461,6 +462,10 @@ ${circuitos}
   carril donde se salió: salirse cuesta tiempo, no la carrera.
 - En las piezas en X los carriles se cruzan y los coches cambian de carril; en una X
   o un cruce, dos coches que llegan a la vez chocan.
+- Campeonato: los circuitos oficiales seguidos; gana quien gane más carreras y, con
+  empate, el menor tiempo sumado.
+- En las estrechas los carriles se juntan y dos coches a la par se tocan; la curva
+  deslizante aguanta más derrape que ninguna.
 - Un constructor de circuitos: se dibuja con el dedo en una cuadrícula, se prueba contra
   la CPU, se guarda en el dispositivo y se comparte con un enlace (?c=<código>).
 - Política de privacidad: la común de PNYK, ${privacidadDe('es')}

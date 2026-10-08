@@ -93,5 +93,6 @@ export const estado = {
   esperaReinicio: 0,
   edicion: null,       // el constructor abierto (constructor.js); sigue vivo mientras se prueba
   probando: false,     // la carrera es la prueba del constructor: al acabar se vuelve a él
+  campeonato: null,    // el campeonato en curso (nucleo/campeonato.js), o null
   fps: 0
 };

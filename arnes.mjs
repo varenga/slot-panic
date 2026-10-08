@@ -28,6 +28,7 @@ import { validarCircuito } from './nucleo/validar.js';
 import { aCodigo, aPiezas, COLUMNAS, deCodigo, FILAS, validarTrazado, VARIANTES } from './nucleo/cuadricula.js';
 import { construirDePiezas } from './nucleo/piezas.js';
 import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucleo/trazo.js';
+import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato, tiempoFinal } from './nucleo/campeonato.js';
 
 const DT = 1 / 60;
 let aserciones = 0;
@@ -188,6 +189,12 @@ function cocheSolo(circuito, turno) {
   const c = crearCarreraSlot(circuito, ['#f00'], turno);
   c.fase = 'carrera';
   return c;
+}
+
+/** Dónde empieza cada estrecha (también la de una curva deslizante), en s. */
+const estrecho = (p) => p.efecto === 'estrecha' || p.efecto === 'deslizante';
+function estrechas(circuito) {
+  return circuito.eje.filter((p, i, eje) => estrecho(p) && !estrecho(eje[(i - 1 + eje.length) % eje.length])).map((p) => p.s);
 }
 
 /** Lo que limita la velocidad: una curva o una recta de baches. */
@@ -381,23 +388,27 @@ function seccionSlot(circuito, oficial) {
 
   /*
    * Los choques. En paralelo, dos coches no se tocan nunca: con el mismo piloto
-   * van juntos toda la carrera y sin X ni cruces no chocan. En cada X y cada cruce, dos coches que llegan a la vez chocan, y una
+   * van juntos toda la carrera y sin X, cruces ni estrechas no chocan. En cada X, cada cruce y cada estrecha, dos coches que llegan a la vez chocan, y una
    * vez devueltos por la mano no vuelven a chocar sin haber avanzado.
    */
   {
     const juntos = correrSlot(circuito, [{ prudencia: 1 }, { prudencia: 1 }], { juntos: true });
     const completa = juntos.carrera.coches.every((c) => c.vueltas.length === VUELTAS_SLOT);
     console.log(`  dos coches iguales en la misma pista: ${juntos.choques} choques`);
-    // Con una X pueden chocar (si llegan a la vez); sin X ni cruces, nunca.
-    if (!circuito.cambiosCarril && !circuito.cruces.length) comprobar(juntos.choques === 0, `dos coches iguales chocan ${juntos.choques} veces sin X ni cruces`);
+    // Con una X pueden chocar (si llegan a la vez) y en una estrecha, si van a
+    // la par; sin X, cruces ni estrechas, nunca.
+    if (!circuito.cambiosCarril && !circuito.cruces.length && !estrechas(circuito).length) {
+      comprobar(juntos.choques === 0, `dos coches iguales chocan ${juntos.choques} veces sin X, cruces ni estrechas`);
+    }
     comprobar(completa, 'dos coches juntos no terminan la carrera');
     comprobar(juntos.choqueRepetido === 0, `la mano deja dos coches chocando ${juntos.choqueRepetido} veces`);
 
-    // Los encuentros: cada cruce (dos tramos) y cada X (el mismo tramo).
+    // Los encuentros: cada cruce (dos tramos), cada X y cada estrecha (el mismo tramo).
     const encuentros = [
       ...circuito.cruces.map((c) => c.s),
       ...circuito.eje.filter((p, i, eje) => p.tipo === 'x' && eje[(i - 1 + eje.length) % eje.length].tipo !== 'x')
-        .map((p) => [p.s, p.s])
+        .map((p) => [p.s, p.s]),
+      ...estrechas(circuito).map((s) => [s, s])
     ];
     for (const [sa, sb] of encuentros) {
       let chocan = 0, repetidos = 0;
@@ -633,6 +644,46 @@ console.log('\nLa cuadrícula');
     seccionCircuito(circuito, false, { decorado: false });
     seccionSlot(circuito, false);
   }
+}
+
+// --- 6. El campeonato ------------------------------------------------------------
+
+/*
+ * Los circuitos oficiales, en orden, con dos pilotos distintos: gana quien
+ * gane más carreras, y con las mismas, el menor tiempo sumado. Al que no ha
+ * acabado se le pone el tiempo a su ritmo: más que el del ganador.
+ */
+console.log('\nEl campeonato');
+{
+  const campeonato = crearCampeonato(CIRCUITOS);
+  const estimados = [];
+  for (let circuito = circuitoDelCampeonato(campeonato); circuito; circuito = circuitoDelCampeonato(campeonato)) {
+    const r = correrSlot(circuito, [{ prudencia: 1.6 }, { ...CPU_SLOT, semilla: campeonato.carreras.length + 1 }], { juntos: true });
+    const { carrera } = r;
+    estimados.push(...carrera.coches.filter((slot) => slot.terminado === null || slot !== carrera.coches[carrera.ganador])
+      .map((slot) => tiempoFinal(carrera, slot) / carrera.coches[carrera.ganador].terminado));
+    anotarCarrera(campeonato, carrera, [false, false]);
+  }
+  const { victorias, tiempos, delante, acabado } = clasificacion(campeonato);
+  console.log(`  ${campeonato.carreras.map((c) => `${c.clave}: gana el ${c.ganador}`).join(', ')}`);
+  console.log(`  victorias ${victorias.join(' - ')}, tiempos ${tiempos.map(formatearTiempo).join(' y ')}: campeón el ${delante}`);
+  comprobar(acabado && campeonato.carreras.length === CIRCUITOS.length, 'el campeonato no corre todos los circuitos oficiales');
+  comprobar(circuitoDelCampeonato(campeonato) === null, 'acabado, el campeonato aún tiene circuito');
+  comprobar(victorias[0] + victorias[1] === CIRCUITOS.length, 'las victorias no suman las carreras');
+  comprobar(estimados.every((f) => f >= 1), 'al que no acaba se le pone menos tiempo que al ganador');
+
+  // El desempate, con carreras de mentira: dos victorias cada uno.
+  const empate = crearCampeonato(CIRCUITOS);
+  for (const [ganador, tiemposCarrera] of [[0, [50, 51]], [1, [62, 60]], [0, [40, 45]], [1, [70, 69]]]) {
+    empate.carreras.push({ clave: 'x', ganador, tiempos: tiemposCarrera, humanos: [true, false] });
+  }
+  const desempate = clasificacion(empate);
+  comprobar(desempate.porTiempo && desempate.delante === 0, `con 2-2 no gana el menor tiempo (${desempate.tiempos.join(' y ')})`);
+  // Las victorias del 0, por poco: ahora suma más tiempo.
+  empate.carreras[0].tiempos = [58, 59];
+  empate.carreras[2].tiempos = [46, 47];
+  empate.carreras[1].tiempos = [70, 60];
+  comprobar(clasificacion(empate).delante === 1, 'con 2-2 el desempate no cambia con los tiempos');
 }
 
 // --- 4. Los idiomas -----------------------------------------------------------
