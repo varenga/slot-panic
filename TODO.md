@@ -53,15 +53,6 @@ los demás elijan entre los publicados. Decidido:
 
 Por ramas, en este orden:
 
-- [ ] **13 — Chicanes y campeonato** (v0.7.0). Hecho en la rama: las piezas del juguete
-      que juntan los carriles (la **estrecha** corta y la larga, y la **curva
-      deslizante**: amplia, resbaladiza y con los carriles juntos), el cuarto circuito,
-      **El resbalón**, y el **campeonato** (los cuatro oficiales seguidos; gana quien gane
-      más carreras y, con empate, el menor tiempo sumado). Falta:
-  - [ ] Playtest: ¿la deslizante se toma derrapando y se nota que aguanta más?, ¿los
-        choques en las estrechas divierten o frustran?, ¿el campeonato engancha?
-  - [ ] Las piezas nuevas en la cuadrícula del constructor (variantes nuevas, antes de
-        publicar circuitos: cambia lo que valida el PHP).
 - [ ] **14 — Circuitos públicos** (v0.8.0). `api.php` + `schema.sql` copiados de Race
       Panic (MySQL en Plesk): publicar (el mismo código da el mismo circuito), lista
       por nuevos o más jugados, borrar con la llave, denunciar (una por huella de IP) y

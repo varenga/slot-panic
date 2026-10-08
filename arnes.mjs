@@ -13,13 +13,13 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
+  AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRIL, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { CIRCUITOS } from './circuitos/indice.js';
 import { enCruce } from './nucleo/circuito.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
 import {
-  avanzarSlot, CARRILES, crearCarreraSlot, formatearTiempo, largoCarril, mejorVueltaSlot, trazadoCarril
+  avanzarSlot, CARRILES, crearCarreraSlot, formatearTiempo, largoCarril, mejorVueltaSlot, radioAgarre, trazadoCarril
 } from './nucleo/slot.js';
 import { CATALOGOS } from './i18n.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
@@ -412,22 +412,34 @@ function seccionSlot(circuito, oficial) {
     ];
     for (const [sa, sb] of encuentros) {
       let chocan = 0, repetidos = 0;
-      // Los dos lanzados a la misma velocidad, el segundo algo adelantado o retrasado.
-      for (let desfase = -40; desfase <= 40; desfase += 4) {
+      /*
+       * Los dos lanzados a la misma velocidad, el segundo algo adelantado o
+       * retrasado: 250 px/s, o menos si antes hay una curva que no la aguanta
+       * (en un dibujado, una X o una estrecha puede seguir a una de media casilla).
+       */
+      const aguanta = (s0) => Math.min(...circuito.eje.filter((p) => p.s > s0 - 200 && p.s <= s0)
+        .map((p) => Math.sqrt(AGARRE_SLOT * Math.min(radioAgarre(p, CARRIL * p.carril), radioAgarre(p, -CARRIL * p.carril)))));
+      const lanzada = Math.min(250, 0.9 * aguanta(sa), 0.9 * aguanta(sb));
+      // ±80 px: tras una curva cerrada, el coche de dentro llega ~50 px de s por delante.
+      for (let desfase = -80; desfase <= 80; desfase += 8) {
         const c = crearCarreraSlot(circuito, ['#f00', '#00f']);
         c.fase = 'carrera';
         c.coches[0].s = sa - 150;
         c.coches[1].s = sb - 150 + desfase;
-        for (const slot of c.coches) Object.assign(slot, { v: 250, potencia: 250 / VELOCIDAD_SLOT });
-        let veces = 0;
+        for (const slot of c.coches) Object.assign(slot, { v: lanzada, potencia: lanzada / VELOCIDAD_SLOT });
+        /*
+         * Dónde choca cada vez (la s del primer coche). Repetir es volver a chocar
+         * en el mismo sitio; otra estrecha más adelante es otro encuentro.
+         */
+        const donde = [];
         for (let k = 0; k < 4 / DT; k++) {
-          avanzarSlot(c, c.coches.map((slot) => ({ acelerar: slot.v < 250 })), DT);
-          veces += c.eventos.filter((e) => e.tipo === 'choque').length;
+          avanzarSlot(c, c.coches.map((slot) => ({ acelerar: slot.v < lanzada })), DT);
+          for (const e of c.eventos) if (e.tipo === 'choque') donde.push(c.coches[0].s);
         }
-        if (veces) chocan++;
-        if (veces > 1) repetidos++;
+        if (donde.length) chocan++;
+        if (donde.some((s0, i) => i > 0 && Math.abs(s0 - donde[0]) < 150)) repetidos++;
       }
-      console.log(`  en el encuentro de s ${sa.toFixed(0)} y ${sb.toFixed(0)}: chocan en ${chocan} de 21 desfases`);
+      console.log(`  en el encuentro de s ${sa.toFixed(0)} y ${sb.toFixed(0)}: chocan en ${chocan} de 21 desfases (a ${lanzada.toFixed(0)} px/s)`);
       comprobar(chocan > 0, `dos coches que llegan a la vez al encuentro de s ${sa.toFixed(0)} no chocan`);
       comprobar(repetidos === 0, `en el encuentro de s ${sa.toFixed(0)} chocan dos veces seguidas ${repetidos} veces`);
     }
@@ -451,12 +463,15 @@ for (const circuito of CIRCUITOS) seccionSlot(circuito, true);
 
 /*
  * Un trazado a mano, desde la meta: R recta, D derecha, I izquierda, y la
- * variante detrás: b baches, x X, c chicane a la izquierda, C a la derecha;
- * p peralte, d derrape, a amplia.
+ * variante detrás: b baches, x X, c chicane a la izquierda, C a la derecha,
+ * e estrecha, E estrecha larga; p peralte, d derrape, a amplia, s deslizante.
  */
-const LETRA_VARIANTE = { b: 'baches', x: 'x', c: 'chicaneIzquierda', C: 'chicaneDerecha', p: 'peralte', d: 'derrape', a: 'amplia' };
+const LETRA_VARIANTE = {
+  b: 'baches', x: 'x', c: 'chicaneIzquierda', C: 'chicaneDerecha', e: 'estrecha', E: 'estrechaLarga',
+  p: 'peralte', d: 'derrape', a: 'amplia', s: 'deslizante'
+};
 function aMano(col, fila, rumbo, texto) {
-  const pasos = [...texto.matchAll(/([RDI])([bxcCpda]?)/g)].map(([, giro, letra]) =>
+  const pasos = [...texto.matchAll(/([RDI])([bxcCeEpdas]?)/g)].map(([, giro, letra]) =>
     ({ giro: { R: 0, D: 1, I: -1 }[giro], variante: LETRA_VARIANTE[letra] || '' }));
   return { col, fila, rumbo, pasos };
 }
@@ -470,7 +485,9 @@ const A_MANO = {
   serpiente: aMano(1, 0, 0, 'R' + 'R'.repeat(8) + 'DdDd' + 'R'.repeat(8) + 'IpIp' + 'R'.repeat(8) + 'DD' +
     'R'.repeat(8) + 'II' + 'R'.repeat(8) + 'DD' + 'R'.repeat(9) + 'D' + 'R'.repeat(4) + 'D'),
   // El más pequeño que se puede cerrar: seis casillas.
-  minimo: aMano(3, 3, 0, 'RDDRDD')
+  minimo: aMano(3, 3, 0, 'RDDRDD'),
+  // El marco con las piezas del juguete: estrechas, estrecha larga y deslizante.
+  juguete: aMano(3, 5, 0, 'R' + 'RReRRERR' + 'Is' + 'RRcRRIp' + 'RRcRRRRERRR' + 'Id' + 'RRRxRI' + 'RR')
 };
 
 /** Un trazado al azar: un paseo por la cuadrícula que vuelve a la meta, con variantes donde la validación las deja. */
@@ -547,7 +564,11 @@ console.log('\nLa cuadrícula');
     // La amplia de una horquilla: no hay recta después.
     ['amplia', cambiado(serpiente, 9, 'amplia')],
     // La amplia que se llevaría la recta de la meta.
-    ['amplia', cambiado(minimo, 5, 'amplia')]
+    ['amplia', cambiado(minimo, 5, 'amplia')],
+    // La deslizante, donde no cabría la amplia.
+    ['deslizante', cambiado(serpiente, 9, 'deslizante')],
+    // Una estrecha larga que acaba en una curva.
+    ['estrecha', cambiado(marco, marco.pasos.findIndex((p) => p.variante === 'derrape') - 1, 'estrechaLarga')]
   ];
   for (const [motivo, trazado] of prohibidos) {
     const error = validarTrazado(trazado);

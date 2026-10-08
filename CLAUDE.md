@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.6.0): carreras de slot en tres circuitos (*La horquilla*, y *El
-ocho* y *El nudo*, de piezas), dos coches enganchados a carriles que se cambian en cada
+Prototipo jugable (v0.7.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
+ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
-dosifica a toques), derrape antes de salirse, choques en las X y los cruces y una mano que devuelve el
+dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma). Un constructor: el circuito
+contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos). Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo y se
 comparte con un enlace (`?c=`). Con el móvil en vertical, el modo
 lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cuatro escenarios de día, al

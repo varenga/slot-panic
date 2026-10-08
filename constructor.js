@@ -345,7 +345,8 @@ function pintarTrazo(trazo) {
 }
 
 const ICONO = {
-  baches: '≋', x: '✕', chicaneIzquierda: '↰', chicaneDerecha: '↱', peralte: '◢', derrape: '∿', amplia: '◠'
+  baches: '≋', x: '✕', chicaneIzquierda: '↰', chicaneDerecha: '↱', peralte: '◢', derrape: '∿', amplia: '◠',
+  estrecha: '><', estrechaLarga: '>=<', deslizante: '≈'
 };
 
 /** La meta, la punta abierta (que late) y la casilla del error. */
