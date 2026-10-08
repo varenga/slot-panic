@@ -103,7 +103,7 @@ export function dibujarAvisos(avisos) {
 // --- Portada -------------------------------------------------------------------
 
 /* Las opciones de la portada, en la banda de arriba. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'campeonato', 'galeria', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
+const OPCIONES = ['circuito', 'campeonato', 'circuitos', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
 
 export function opcionesPortada() {
   const alto = 30, hueco = 10;
@@ -114,7 +114,7 @@ export function opcionesPortada() {
   }));
 }
 
-const TECLA_OPCION = { circuito: 'C', campeonato: 'T', galeria: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
+const TECLA_OPCION = { circuito: 'C', campeonato: 'T', circuitos: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
 
 export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo) {
   const { x, y } = centro(circuito);

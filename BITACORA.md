@@ -682,3 +682,20 @@ app en la consola de Play.
     v0.8.0 sí recoge: el contenido publicado y los identificadores, sin compartirlos) y la
     política de contenido de usuarios (normas, denuncias y moderación).
 - Arnés: 620/620 en verde.
+
+## CIRCUITOS en la portada (08/10/2026, rama `15-menu-circuitos`, v0.8.1)
+
+> En el ordenador no se encontraba el constructor: en la v0.8.0 la opción CONSTRUIR de la
+> portada se cambió por GALERÍA, y el constructor quedó dentro de la galería (o en la
+> tecla B, que ya no se veía escrita en ningún sitio).
+
+- La opción de la portada pasa a ser **CIRCUITOS** (tecla G), y abre una pantalla con dos
+  botones grandes: **GALERÍA** («corre los que ha publicado la gente») y **CONSTRUIR**
+  («dibuja el tuyo en una cuadrícula»). Están uno al lado del otro en la mesa y uno
+  encima del otro en la lupa. Con el teclado, G y B. La B de la portada sigue abriendo el
+  constructor directamente.
+- Se descartaron dos alternativas: volver a poner CONSTRUIR en la portada (nueve opciones
+  en la barra, con la letra aún más pequeña) y dejarlo dentro de la galería con un rótulo
+  «GALERÍA · CONSTRUIR».
+- La pantalla está en `galeria.js` (`cajasCircuitos`, `dibujarCircuitos`); sus cajas
+  sirven al dibujo y a la pulsación.
