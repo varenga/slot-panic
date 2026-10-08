@@ -27,6 +27,7 @@ import { azar, cabe, distanciaAPista, generarDecorado, torreCabe } from './nucle
 import { validarCircuito } from './nucleo/validar.js';
 import { aCodigo, aPiezas, COLUMNAS, deCodigo, FILAS, validarTrazado, VARIANTES } from './nucleo/cuadricula.js';
 import { construirDePiezas } from './nucleo/piezas.js';
+import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucleo/trazo.js';
 
 const DT = 1 / 60;
 let aserciones = 0;
@@ -552,6 +553,53 @@ console.log('\nLa cuadrícula');
   comprobar(mal.length === 0, `${mal.length} trazados no vuelven iguales de su código`);
   comprobar(['', 'A', 'AQ', 'AgMAAAA', '!!!!', 'AQMFAA=='].every((c) => deCodigo(c) === null), 'se lee como circuito algo que no es un código');
   console.log(`  ${todos.length} trazados van y vuelven por su código (el marco: ${aCodigo(marco)})`);
+
+  /*
+   * El trazo del constructor: dibujar con el dedo, casilla a casilla, cada
+   * trazado válido lo cierra y da el mismo trazado (sin variantes, que se
+   * ponen tocando); ida y vuelta, igual. Volver por el trazo borra, a la meta
+   * solo se llega por detrás y un cruce solo se hace en recta.
+   */
+  const sinVariantes = (t) => ({ ...t, pasos: t.pasos.map((p) => ({ ...p, variante: '' })) });
+  let dibujados = 0;
+  for (const trazado of todos) {
+    const trazo = crearTrazo();
+    const casillas = deTrazado(trazado).casillas;
+    const pasos = [...casillas, casillas[0]].map((c) => pisar(trazo, c));
+    const bien = pasos.at(-1) === 'cierra' && pasos.slice(0, -1).every((r) => r === 'empieza' || r === 'avanza') &&
+      JSON.stringify(aTrazado(trazo)) === JSON.stringify(sinVariantes(trazado)) &&
+      JSON.stringify(aTrazado(deTrazado(trazado))) === JSON.stringify(trazado);
+    if (bien) dibujados++;
+  }
+  comprobar(dibujados === todos.length, `${todos.length - dibujados} trazados no se dibujan igual con el dedo`);
+  {
+    const trazo = crearTrazo();
+    const c = (col, fila) => ({ col, fila });
+    pisar(trazo, c(3, 3)); pisar(trazo, c(4, 3)); pisar(trazo, c(5, 3));
+    comprobar(pisar(trazo, c(4, 3)) === 'retrocede' && trazo.casillas.length === 2, 'volver por el trazo no borra');
+    comprobar(pisar(trazo, c(6, 3)) === null, 'se salta una casilla');
+    pisar(trazo, c(5, 3)); pisar(trazo, c(5, 4)); pisar(trazo, c(4, 4));
+    comprobar(pisar(trazo, c(3, 4)) === 'avanza' && pisar(trazo, c(3, 3)) === null, 'a la meta se llega de lado');
+    comprobar(pisar(trazo, c(4, 4)) === 'retrocede', 'volver por el trazo no borra');
+    // (5, 4) es curva: no se cruza.
+    pisar(trazo, c(3, 4)); pisar(trazo, c(3, 5)); pisar(trazo, c(4, 5)); pisar(trazo, c(5, 5));
+    comprobar(pisar(trazo, c(5, 4)) === null, 'se cruza una curva');
+    // El ocho: cruza la recta de meta en (5, 3), en perpendicular, y sale recto.
+    const ocho = crearTrazo();
+    const resultados = deTrazado(A_MANO.ocho).casillas.map((k) => pisar(ocho, k));
+    comprobar(resultados.every(Boolean) && pisar(ocho, deTrazado(A_MANO.ocho).casillas[0]) === 'cierra', 'el ocho no se dibuja');
+    // Tocar: la meta no cambia; cada pieza pasa por sus variantes, saltándose las que no caben.
+    comprobar(cambiarVariante(ocho, 0) === null, 'la meta tiene variante');
+    let invalidas = 0, vistas = 0;
+    for (let i = 1; i < ocho.casillas.length; i++) {
+      for (let k = 0; k < 5; k++) {
+        if (cambiarVariante(ocho, i)) vistas++;
+        if (validarTrazado(aTrazado(ocho))) invalidas++;
+      }
+    }
+    comprobar(invalidas === 0 && vistas > 0, `tocando las piezas del ocho quedan ${invalidas} trazados no válidos`);
+  }
+  console.log(`  ${dibujados} trazados se dibujan con el dedo y cierran igual`);
 
   // Los trazados al azar: la geometría, todos; la carrera, unos pocos.
   const pistas = azarosos.map((t, i) => ({ trazado: t, circuito: construirDePiezas(aPiezas(t, `azar-${i + 1}`)) }));

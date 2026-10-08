@@ -7,15 +7,22 @@
 
 import {
   ALTO, ANCHO, ANCHO_LUPA, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
-  TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
+  SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
-import { estado, guardarCircuito, guardarEscenario, guardarModelo, leerCircuito, leerEscenario, leerModelo } from './estado.js';
+import {
+  estado, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, leerCircuito, leerEscenario, leerMisCircuitos,
+  leerModelo
+} from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { CIRCUITOS } from './circuitos/indice.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
 import { avanzarSlot, crearCarreraSlot } from './nucleo/slot.js';
 import { generarDecorado } from './nucleo/decorado.js';
 import { aPiezas, deCodigo, validarTrazado } from './nucleo/cuadricula.js';
+import {
+  acabarGesto, actualizarAviso, actualizarEdicion, avisar, borrar, botonesConstructor, crearEdicion, deshacer,
+  dibujarConstructor, empezarGesto, listo, moverGesto
+} from './constructor.js';
 import { construirDePiezas } from './nucleo/piezas.js';
 import { validarCircuito } from './nucleo/validar.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
@@ -31,7 +38,7 @@ import {
   actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
   sfxSalida, sfxVuelta, vibrar
 } from './audio.js';
-import { cambiarIdioma, t } from './i18n.js';
+import { cambiarIdioma, idiomaActual, t } from './i18n.js';
 import { cargarAnalitica, evento } from './analitica.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
@@ -43,6 +50,7 @@ const lienzo = document.getElementById('lienzo');
 const otros = document.getElementById('otros');
 const teclas = {};
 const punteros = new Map();   // pointerId → 'izq' | 'der'
+let punteroConstructor = null; // el dedo que dibuja en el constructor
 let reloj = 0;                // s desde que se cargó la página (parpadeos)
 
 /*
@@ -57,15 +65,23 @@ const VERTICAL = typeof matchMedia !== 'undefined' ? matchMedia('(orientation: p
 const camara = crearCamara();
 
 /*
- * Un circuito de la cuadrícula, compartido por su código: ?c=<código>. Se
- * corre si la cuadrícula lo deja y cabe en la mesa; va el primero de la
- * lista y no se recuerda. Mientras no haya constructor, es lo que deja
- * probar los trazados en pantalla (el arnés imprime los suyos).
+ * Los circuitos de la cuadrícula. Uno compartido por su código (?c=<código>)
+ * va el primero de la lista y no se recuerda; «Mis circuitos», los guardados
+ * en este dispositivo, van detrás de los oficiales. Cada uno se corre si la
+ * cuadrícula lo deja y cabe en la mesa.
  */
-const DIBUJADO = circuitoCompartido(parametros.get('c'));
-const LISTA = DIBUJADO ? [DIBUJADO, ...CIRCUITOS] : CIRCUITOS;
+const DIBUJADO = circuitoDeCodigo(parametros.get('c'));
+let MIOS = cargarMios();
 
-function circuitoCompartido(codigo) {
+function listaCircuitos() {
+  return [...(DIBUJADO ? [DIBUJADO] : []), ...CIRCUITOS, ...MIOS];
+}
+
+function cargarMios() {
+  return leerMisCircuitos().map(({ n, codigo }) => circuitoDeCodigo(codigo, n)).filter(Boolean);
+}
+
+function circuitoDeCodigo(codigo, mio = null) {
   if (!codigo) return null;
   const trazado = deCodigo(codigo);
   if (!trazado) {
@@ -84,6 +100,8 @@ function circuitoCompartido(codigo) {
     return null;
   }
   circuito.dibujado = true;
+  circuito.trazado = trazado;
+  circuito.mio = mio;
   return circuito;
 }
 
@@ -126,11 +144,181 @@ function cambiarEscenario() {
 
 /** El circuito siguiente: su decorado y, en la portada, la exhibición en él. */
 function cambiarCircuito() {
-  const i = LISTA.indexOf(estado.circuito);
-  estado.circuito = LISTA[(i + 1) % LISTA.length];
-  if (!estado.circuito.dibujado) guardarCircuito(estado.circuito.clave);
+  const lista = listaCircuitos();
+  const i = lista.indexOf(estado.circuito);
+  estado.circuito = lista[(i + 1) % lista.length];
+  if (estado.circuito !== DIBUJADO) guardarCircuito(estado.circuito.clave);
   estado.decorado = generarDecorado(estado.circuito, estado.escenario);
   irAPortada();
+}
+
+// --- El constructor ---------------------------------------------------------
+
+let circuitoAntes = null;     // el de la portada, para volver a él sin guardar
+let salirSinGuardar = false;  // el primer «volver» con cambios sin guardar avisa
+let eliminarPendiente = false; // y el primer «eliminar», también
+let compartirPendiente = null; // el dedo que pulsó «compartir»: se comparte al soltarlo
+
+/*
+ * Se abre con el circuito de la portada si es de la cuadrícula (uno mío se
+ * edita y se guarda encima; uno compartido, se guarda como nuevo) o vacío.
+ */
+function abrirConstructor() {
+  const { circuito } = estado;
+  circuitoAntes = circuito;
+  estado.edicion = crearEdicion(circuito.trazado || null, circuito.mio || null);
+  actualizarEdicion(estado.edicion, estado.escenario);
+  salirSinGuardar = false;
+  eliminarPendiente = false;
+  estado.fase = 'constructor';
+  estado.probando = false;
+  punteros.clear();
+  aplicarVista();
+  evento('abrir_constructor', datosCarrera());
+}
+
+function volverAlConstructor() {
+  estado.probando = false;
+  estado.fase = 'constructor';
+  limpiarPista();
+  actualizarEdicion(estado.edicion, estado.escenario);
+  punteros.clear();
+  aplicarVista();
+}
+
+/** Prueba lo que hay, contra la CPU; al acabar, de vuelta al constructor. */
+function probarConstructor() {
+  const edicion = estado.edicion;
+  if (!listo(edicion)) return;
+  estado.circuito = edicion.circuito;
+  estado.decorado = edicion.decorado;
+  estado.probando = true;
+  edicion.aviso = null;
+  empezarCarrera();
+  aplicarVista();
+}
+
+function guardarConstructor() {
+  const edicion = estado.edicion;
+  if (!listo(edicion) || (edicion.guardado && edicion.mio)) return;
+  const lista = leerMisCircuitos();
+  const propio = lista.find((c) => c.n === edicion.mio);
+  if (propio) propio.codigo = edicion.codigo;
+  else {
+    edicion.mio = lista.reduce((n, c) => Math.max(n, c.n), 0) + 1;
+    lista.push({ n: edicion.mio, codigo: edicion.codigo });
+  }
+  if (!guardarMisCircuitos(lista)) {
+    avisar(edicion, t('constructor.sinSitio'), COLOR.rojo);
+    return;
+  }
+  edicion.guardado = true;
+  edicion.circuito.mio = edicion.mio;
+  MIOS = cargarMios();
+  avisar(edicion, t('constructor.guardadoAviso'), COLOR.verde);
+  evento('guardar_circuito', { casillas: edicion.trazo.casillas.length });
+}
+
+/*
+ * A la portada. Con lo guardado elegido; si no, con el circuito de antes. Con
+ * cambios sin guardar, el primer «volver» solo avisa.
+ */
+function salirDelConstructor() {
+  const edicion = estado.edicion;
+  if (!edicion.guardado && edicion.historial.length && !salirSinGuardar) {
+    salirSinGuardar = true;
+    avisar(edicion, t('constructor.sinGuardar'), COLOR.rojo);
+    return;
+  }
+  const guardado = edicion.guardado && edicion.mio && MIOS.find((c) => c.mio === edicion.mio);
+  estado.circuito = guardado || circuitoAntes;
+  if (guardado) guardarCircuito(guardado.clave);
+  estado.decorado = generarDecorado(estado.circuito, estado.escenario);
+  estado.edicion = null;
+  estado.probando = false;
+  irAPortada();
+  aplicarVista();
+}
+
+/*
+ * Quita el circuito de «Mis circuitos» y vuelve a la portada. El primer toque
+ * solo avisa: no se puede deshacer.
+ */
+function eliminarConstructor() {
+  const edicion = estado.edicion;
+  if (!edicion.mio) return;
+  if (!eliminarPendiente) {
+    eliminarPendiente = true;
+    avisar(edicion, t('constructor.eliminarOtraVez'), COLOR.rojo);
+    return;
+  }
+  const lista = leerMisCircuitos().filter((c) => c.n !== edicion.mio);
+  if (!guardarMisCircuitos(lista)) {
+    avisar(edicion, t('constructor.sinSitio'), COLOR.rojo);
+    return;
+  }
+  const quitado = edicion.mio;
+  MIOS = cargarMios();
+  evento('eliminar_circuito');
+  estado.circuito = circuitoAntes.mio === quitado ? CIRCUITOS[0] : circuitoAntes;
+  guardarCircuito(estado.circuito.clave);
+  estado.decorado = generarDecorado(estado.circuito, estado.escenario);
+  estado.edicion = null;
+  estado.probando = false;
+  irAPortada();
+  aplicarVista();
+}
+
+/*
+ * El enlace que abre este circuito en la web (también desde la app, cuyo
+ * origen es https://localhost), en el idioma de ahora.
+ */
+function enlaceCircuito(codigo) {
+  return `${SITE_ORIGIN}${idiomaActual().dir}?c=${codigo}`;
+}
+
+/*
+ * Con el menú de compartir del sistema si lo hay; si no, al portapapeles. Los
+ * dos piden un gesto del usuario: con el dedo, se llama al soltarlo.
+ */
+async function compartirConstructor() {
+  const edicion = estado.edicion;
+  if (!listo(edicion)) return;
+  const url = enlaceCircuito(edicion.codigo);
+  evento('compartir_circuito', { casillas: edicion.trazo.casillas.length });
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Slot Panic', url });
+      return;
+    } catch (error) {
+      if (error?.name === 'AbortError') return;   // lo ha cerrado quien comparte
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    avisar(edicion, t('constructor.enlaceCopiado'), COLOR.verde);
+  } catch (error) {
+    avisar(edicion, t('constructor.sinCompartir'), COLOR.rojo);
+  }
+}
+
+function botonConstructor(id) {
+  const edicion = estado.edicion;
+  if (id !== 'volver') salirSinGuardar = false;
+  if (id !== 'eliminar') eliminarPendiente = false;
+  if (id === 'volver') salirDelConstructor();
+  else if (id === 'eliminar') eliminarConstructor();
+  else if (id === 'compartir') compartirConstructor();
+  else if (id === 'deshacer') deshacer(edicion, estado.escenario);
+  else if (id === 'borrar') borrar(edicion, estado.escenario);
+  else if (id === 'probar') probarConstructor();
+  else if (id === 'guardar') guardarConstructor();
+}
+
+/** Salir de una carrera: a la portada o, si era la prueba, al constructor. */
+function alMenu() {
+  if (estado.probando) volverAlConstructor();
+  else irAPortada();
 }
 
 function limpiarPista() {
@@ -246,16 +434,20 @@ lienzo.addEventListener('pointerdown', (evento) => {
   if (evento.pointerType === 'touch') estado.tactil = true;
   const p = aLienzo(evento);
   punteros.set(evento.pointerId, ladoDe(p));
-  ESCENAS[estado.fase].pulsar(p);
+  ESCENAS[estado.fase].pulsar(p, evento.pointerId);
   // Capturar el puntero es una comodidad (seguir el dedo fuera del lienzo); si
   // el navegador se niega, no puede llevarse por delante la pulsación.
   try { lienzo.setPointerCapture(evento.pointerId); } catch (error) { /* sin captura */ }
 });
 lienzo.addEventListener('pointermove', (evento) => {
   if (punteros.has(evento.pointerId)) punteros.set(evento.pointerId, ladoDe(aLienzo(evento)));
+  ESCENAS[estado.fase].mover?.(aLienzo(evento), evento.pointerId);
 });
 for (const tipo of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-  lienzo.addEventListener(tipo, (evento) => punteros.delete(evento.pointerId));
+  lienzo.addEventListener(tipo, (evento) => {
+    punteros.delete(evento.pointerId);
+    ESCENAS[estado.fase].soltar?.(evento.pointerId);
+  });
 }
 
 function opcionPulsada(id) {
@@ -265,6 +457,7 @@ function opcionPulsada(id) {
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
   else if (id === 'coche') cambiarCoche();
+  else if (id === 'construir') abrirConstructor();
 }
 
 /** Lo único de la interfaz que no se pinta en el lienzo. */
@@ -349,6 +542,54 @@ function sonido(activo) {
 }
 
 const ESCENAS = {
+  constructor: {
+    actualizar(dt) {
+      actualizarAviso(estado.edicion, dt);
+      sonido(false);
+    },
+    dibujar() {
+      const { edicion } = estado;
+      const nombre = edicion.mio ? t('circuito.mio', { n: edicion.mio }) : t('circuito.dibujado');
+      dibujarConstructor(edicion, { tiempo: reloj, tactil: estado.tactil, nombre });
+    },
+    teclear(codigo) {
+      if (codigo === 'Escape') botonConstructor('volver');
+      else if (codigo === 'Backspace' || codigo === 'KeyZ') botonConstructor('deshacer');
+      else if (codigo === 'Delete') botonConstructor('borrar');
+      else if (empezar(codigo)) botonConstructor('probar');
+      else if (codigo === 'KeyG') botonConstructor('guardar');
+      else if (codigo === 'KeyX') botonConstructor('eliminar');
+      else if (codigo === 'KeyS') botonConstructor('compartir');
+    },
+    pulsar(p, id) {
+      punteros.clear();
+      if (punteroConstructor !== null) return;   // dibuja un dedo; los demás no cuentan
+      const caja = botonesConstructor().find((b) => dentro(p, b));
+      // Compartir necesita un gesto completo (el navegador no lo da al bajar el dedo).
+      if (caja?.id === 'compartir') compartirPendiente = { id, caja, p };
+      else if (caja) botonConstructor(caja.id);
+      if (caja) return;
+      salirSinGuardar = false;
+      eliminarPendiente = false;
+      punteroConstructor = id;
+      empezarGesto(estado.edicion, p);
+    },
+    mover(p, id) {
+      if (id === punteroConstructor) moverGesto(estado.edicion, p);
+      if (id === compartirPendiente?.id) compartirPendiente.p = p;
+    },
+    soltar(id) {
+      if (id === compartirPendiente?.id) {
+        const { caja, p } = compartirPendiente;
+        compartirPendiente = null;
+        if (dentro(p, caja)) botonConstructor('compartir');
+      }
+      if (id !== punteroConstructor) return;
+      punteroConstructor = null;
+      acabarGesto(estado.edicion, estado.escenario);
+    }
+  },
+
   portada: {
     actualizar(dt) {
       const { carrera } = estado;
@@ -371,6 +612,7 @@ const ESCENAS = {
       else if (codigo === 'KeyC') cambiarCircuito();
       else if (codigo === 'KeyH') cambiarHora();
       else if (codigo === 'KeyK') cambiarCoche();
+      else if (codigo === 'KeyB') abrirConstructor();
     },
     pulsar(p) {
       const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada()).find((caja) => dentro(p, caja));
@@ -420,7 +662,7 @@ const ESCENAS = {
     },
     teclear(codigo) {
       if (codigo === 'KeyR') empezarCarrera();
-      else if (codigo === 'Escape') irAPortada();
+      else if (codigo === 'Escape') alMenu();
     },
     pulsar() {
       // Cada mitad del lienzo es el acelerador de un carril: lo lee mandos().
@@ -444,14 +686,14 @@ const ESCENAS = {
       dibujarConfeti(estado.particulas);
     },
     teclear(codigo) {
-      if (codigo === 'Escape') irAPortada();
+      if (codigo === 'Escape') alMenu();
       else if ((empezar(codigo) || codigo === 'KeyR') && estado.esperaReinicio === 0) empezarCarrera();
     },
     pulsar(p) {
       if (estado.esperaReinicio > 0) return;
       const boton = (estado.lupa ? botonesFinLupa() : botonesFin()).find((caja) => dentro(p, caja));
       if (boton?.id === 'repetir') empezarCarrera();
-      else if (boton?.id === 'menu') irAPortada();
+      else if (boton?.id === 'menu') alMenu();
       punteros.clear();
     }
   }
@@ -522,7 +764,8 @@ function quitarLoDeLaWeb() {
 let densidadLupa = 1;
 
 function aplicarVista() {
-  const lupa = LUPA_FORZADA || Boolean(VERTICAL?.matches);
+  // El constructor es la mesa entera: en vertical se ve pequeño, pero entero.
+  const lupa = (LUPA_FORZADA || Boolean(VERTICAL?.matches)) && estado.fase !== 'constructor';
   // En la lupa, el alto del lienzo sigue la proporción del sitio que hay (sin
   // las muescas): así no quedan bandas en un móvil alargado.
   let alto = 0;
@@ -550,8 +793,8 @@ estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coars
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
 estado.modelo = leerModelo(MODELOS.map((m) => m.id));
-const elegido = leerCircuito(CIRCUITOS.map((c) => c.clave));
-estado.circuito = DIBUJADO || CIRCUITOS.find((c) => c.clave === elegido);
+const elegido = leerCircuito([...CIRCUITOS, ...MIOS].map((c) => c.clave));
+estado.circuito = DIBUJADO || [...CIRCUITOS, ...MIOS].find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);
 iniciarLienzo(lienzo);
 aplicarVista();

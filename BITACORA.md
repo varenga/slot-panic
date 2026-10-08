@@ -498,3 +498,39 @@ app en la consola de Play.
   nadie; en el marco y la serpiente la barra queda a 13 px de lo que se pisa. Es el
   precio de dejar dibujar: se cambian de carril en cada carrera.
 
+
+## El constructor (08/10/2026, rama `12-constructor`, v0.6.0)
+
+> Segunda rama de la Fase 2b: la interfaz del constructor sobre el núcleo de la
+> cuadrícula. Dibujar con el dedo, probarlo, guardarlo y compartirlo, en local y sin red.
+
+- **La escena** (`constructor.js`) y **las reglas del trazo** (`nucleo/trazo.js`, en el
+  arnés). Se arrastra desde la punta abierta, una casilla vecina cada vez (un arrastre
+  rápido se rellena por el eje más lejano); volver por el trazo borra; llegar a la meta
+  por detrás cierra; tocar una pieza cambia su variante. Abierto se pinta un trazo
+  aproximado con las variantes como iconos. Cerrado y válido, se construye el circuito
+  de verdad y se pinta como en la carrera, pero solo al soltar el dedo: en uno grande
+  cuesta décimas de segundo.
+- **La barra**: volver (si hay cambios sin guardar, el primer toque solo avisa), el
+  nombre y el estado en palabras (vacío, abierto, el motivo del error, listo), deshacer
+  (60 gestos; sin historial, abre por la meta uno ya cerrado), borrar, eliminar,
+  compartir, probar y guardar. Con teclado, cada botón con su tecla.
+- **Probar** corre una carrera contra la CPU y al acabar (o con ESC) vuelve al
+  constructor con el trazo intacto.
+- **«Mis circuitos»** se guardan en `localStorage` (`{ n, codigo }`, «Mi circuito n») y
+  salen con la tecla C, detrás de los oficiales. Uno mío se edita y se guarda encima;
+  uno abierto desde `?c=` se guarda como nuevo. **Eliminar** pide dos toques (no se
+  puede deshacer) y vuelve a la portada.
+- **Compartir** da `SITE_ORIGIN` + el idioma + `?c=<código>`, también desde la app, cuyo
+  origen es `https://localhost`. Usa el menú de compartir del sistema si lo hay y, si no,
+  el portapapeles. **Con el dedo se lanza al soltar, no al pulsar**: un `pointerdown`
+  táctil no cuenta como gesto del usuario, y sin gesto el navegador rechaza los dos.
+- **CONSTRUIR en la portada** (tecla B) y también **en la de la lupa**, en una última
+  fila a todo lo ancho. El constructor siempre es la mesa entera: en vertical se ve
+  pequeño, pero entero. Al probar, la carrera vuelve a la lupa.
+- **Playtest en el móvil**: «bastante aceptable». Lo de tocar una pieza para cambiarla
+  no se ve a la primera, pero se acaba deduciendo, así que se deja como está.
+- Para la analítica, `abrir_constructor`, `guardar_circuito`, `compartir_circuito` y
+  `eliminar_circuito`. En la prosa de las páginas y en `llms.txt`, una frase sobre el
+  constructor (`page.how7`).
+- Arnés: 473/473 en verde, con 117 claves en cada idioma.

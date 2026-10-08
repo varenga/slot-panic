@@ -227,6 +227,7 @@ ${jsonLd}
       <li>${esc(t('page.how4', { vueltas: VUELTAS_SLOT }))}</li>
       <li>${esc(t('page.how5'))}</li>
       <li>${esc(t('page.how6'))}</li>
+      <li>${esc(t('page.how7'))}</li>
     </ul>
 
     <h2>${esc(t('page.controlsTitle'))}</h2>
@@ -460,6 +461,8 @@ ${circuitos}
   carril donde se salió: salirse cuesta tiempo, no la carrera.
 - En las piezas en X los carriles se cruzan y los coches cambian de carril; en una X
   o un cruce, dos coches que llegan a la vez chocan.
+- Un constructor de circuitos: se dibuja con el dedo en una cuadrícula, se prueba contra
+  la CPU, se guarda en el dispositivo y se comparte con un enlace (?c=<código>).
 - Política de privacidad: la común de PNYK, ${privacidadDe('es')}
 - De la familia Panic de PNYK: https://pnyk.es/
 `;

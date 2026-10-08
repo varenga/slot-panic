@@ -256,7 +256,7 @@ export function dibujarAvisosLupa(avisos) {
 // --- Portada ---------------------------------------------------------------------
 
 /* Las opciones, en dos columnas abajo. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'coche', 'hora', 'escenario', 'sonido', 'idioma'];
+const OPCIONES = ['circuito', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'construir'];
 
 export function opcionesPortadaLupa() {
   const columnas = 2, alto = 44, hueco = 12;
