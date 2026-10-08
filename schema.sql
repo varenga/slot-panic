@@ -44,3 +44,22 @@ CREATE TABLE IF NOT EXISTS jugadas (
   PRIMARY KEY (circuito, huella, dia),
   CONSTRAINT jugadas_circuito FOREIGN KEY (circuito) REFERENCES circuitos (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Los récords de vuelta de los circuitos oficiales (servidor/records.php): una
+-- fila por marca enviada. La tabla que se ve son las 10 mejores de cada
+-- circuito (a igualdad, la más antigua); se guardan las 50 mejores. El
+-- fantasma es la vuelta entera (nucleo/fantasma.js, `codificar`, ~5 KB): el
+-- del primero se descarga para correr contra él.
+CREATE TABLE IF NOT EXISTS records (
+  id         INT UNSIGNED      NOT NULL AUTO_INCREMENT,
+  circuito   VARCHAR(16)       NOT NULL,
+  alias      VARCHAR(3)        NOT NULL,
+  vuelta     INT UNSIGNED      NOT NULL,   -- ms
+  carril     TINYINT UNSIGNED  NOT NULL,   -- 0 o 1 (CARRILES)
+  fantasma   MEDIUMTEXT        NOT NULL,
+  huella     CHAR(64)          NOT NULL,   -- HMAC de la IP: el límite diario
+  fecha      TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY tabla (circuito, vuelta, fecha),
+  KEY enviados (huella, fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
