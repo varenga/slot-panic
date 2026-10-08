@@ -27,11 +27,31 @@ const SUSTANTIVOS     = 16;
 const ORIGENES = ['https://slot.pnyk.es', 'https://localhost', 'capacitor://localhost',
   'http://127.0.0.1:8124'];   // y las pruebas en local (?api=): la galería es pública, y borrar pide la llave
 
-require __DIR__ . '/config.php';
-require __DIR__ . '/servidor/cuadricula.php';
-
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
+
+// El detalle nunca se envía al cliente: va al log de errores de PHP.
+function fail($status, $msg, $detail = null) {
+  if ($detail !== null) error_log("[slotpanic/api] $msg: $detail");
+  http_response_code($status);
+  echo json_encode(['error' => $msg]);
+  exit;
+}
+
+set_exception_handler(function ($e) {
+  fail(500, 'Error interno', get_class($e) . ' ' . $e->getMessage());
+});
+
+/*
+ * config.php se sube a mano (no está en git): si falta o le falta algo, se dice
+ * qué (nunca su contenido) en vez de un 500 vacío.
+ */
+if (!is_file(__DIR__ . '/config.php')) fail(500, 'Falta config.php junto a api.php');
+require __DIR__ . '/config.php';
+foreach (['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS', 'SAL_HUELLA'] as $constante) {
+  if (!defined($constante)) fail(500, "Falta $constante en config.php");
+}
+require __DIR__ . '/servidor/cuadricula.php';
 
 $origen = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (in_array($origen, ORIGENES, true)) {
@@ -47,18 +67,6 @@ if ($method === 'OPTIONS') {
   http_response_code(204);
   exit;
 }
-
-// El detalle nunca se envía al cliente: va al log de errores de PHP.
-function fail($status, $msg, $detail = null) {
-  if ($detail !== null) error_log("[slotpanic/api] $msg: $detail");
-  http_response_code($status);
-  echo json_encode(['error' => $msg]);
-  exit;
-}
-
-set_exception_handler(function ($e) {
-  fail(500, 'Error interno', get_class($e) . ' ' . $e->getMessage());
-});
 
 function db() {
   try {
