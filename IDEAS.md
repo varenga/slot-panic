@@ -56,3 +56,58 @@ mecanismo), `audio.js` (`tone`, `noiseBurst`), la tabla de récords (`marcas.js`
 Se comparte **copiando como plantilla** (los hermanos se leen, nunca se importan). Si
 una misma corrección hay que portarla más de un par de veces, pasar a una carpeta común
 sincronizada con un script y una prueba en cada arnés que compare su huella.
+
+# 5. Los mejores momentos de cada carrera
+
+Al acabar, repetir lo mejor de la carrera: el choque en la X, el adelantamiento en la
+estrecha, la deslizante tomada al límite, la llegada al foto-finish. Hoy solo está
+planteado; antes de entrar en `TODO.md` hay que decidir lo abierto (abajo).
+
+**Es barato de grabar.** No hace falta volver a simular: basta con un **búfer de poses**.
+En cada fotograma, de cada coche, `x`, `y`, `angulo`, `altura` (la mano) y el estado.
+Son unos 16 bytes por coche y fotograma: a 60 fps, una carrera de 70 s ocupa ~140 KB,
+también en el móvil. Los eventos que ya existen (`carrera.eventos`: choque, sale, clac,
+vuelta, fin) se apuntan con su instante. Las chispas y el humo se vuelven a emitir a
+partir de esos eventos al repetir, porque son cosmética.
+
+> Volver a simular desde los mandos (la física es determinista y la CPU lleva semilla)
+> ocuparía menos, pero `dt` cambia en cada fotograma y el último trozo de cada uno no
+> mide `PASO_FISICA`: habría que grabar también `dt`. Las poses son más simples y no
+> atan la repetición a la versión de la física.
+
+**Qué es un momento** (lo detecta un módulo puro, `nucleo/momentos.js`, que el arnés puede
+probar):
+
+| Momento | Cómo se detecta | Ventana |
+|---|---|---|
+| Choque | evento `choque` (X, cruce o estrecha) | −2 s … +1,5 s |
+| Salida espectacular | evento `sale` a más de ~380 px/s, o con trompo largo | −1,5 s … +2 s |
+| Salvada | derrape > 0,8 sin llegar a salirse (sobre todo en la deslizante) | −1,5 s … +1 s |
+| Adelantamiento | cambia el orden del `progreso`; mejor si es en una estrecha | −2 s … +1 s |
+| Llegada ajustada | el segundo llega a menos de ~0,3 s (por su ritmo) | −3 s … +1 s |
+| Vuelta rápida | la mejor vuelta de la carrera, si es de un humano | la última curva |
+
+Cada momento suma puntos según el tipo y quién lo protagoniza (un humano vale más que la
+CPU). Se eligen los 3 mejores que no se pisen.
+
+**Cómo se ve**: con la cámara de la lupa (`crearCamara` / `seguirCamara`), siguiendo al
+protagonista y algo más cerca, a cámara lenta (×0,5) alrededor del instante y con un
+rótulo («¡CHOQUE EN LA X!», «¡SALVADA EN LA DESLIZANTE!»). En la mesa, la cámara también
+sirve: la repetición ocupa todo el lienzo. Se puede saltar con un toque.
+
+**En el campeonato**: al final, el mejor momento de cada carrera.
+
+**Abierto** (por decidir antes de pasarlo a `TODO.md`):
+
+- ¿Se repiten solos al acabar, o con un botón MOMENTOS en el cartel de fin? Solos alargan
+  el fin; con botón, casi nadie los vería.
+- ¿Cuánto dura todo? Con 3 momentos de ~4 s a cámara lenta, unos 20 s.
+- **Compartir**: grabar la repetición con `canvas.captureStream()` + `MediaRecorder`
+  (WebM; en iOS, MP4) y pasarla a `navigator.share({ files })`. En la app, el plugin de
+  compartir de Capacitor. Pesa: mejor en una fase propia.
+- Si llegan los récords con fantasma (§3), el fantasma y las repeticiones pueden
+  compartir el formato de poses.
+
+Filtro: hace la carrera más divertida (se revive lo que ha pasado y da qué contar), no
+pide ningún control nuevo (un toque para saltar), no toca la física y lo que se detecta
+lo puede medir el arnés.

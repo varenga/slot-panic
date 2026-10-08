@@ -240,7 +240,7 @@ function calcularMuros(circuito) {
   // Lo que se quiere: el ancho de la escapatoria por fuera de las curvas se
   // extiende a los lados con la pendiente del muro.
   const quiere = eje.map((p) => [-1, 1].map((lado) =>
-    p.curva !== 0 && lado !== p.curva ? (p.efecto === 'derrape' ? ESCAPATORIA_DERRAPE : ESCAPATORIA_CURVA) : ESCAPATORIA));
+    p.curva !== 0 && lado !== p.curva ? (p.efecto === 'derrape' || p.efecto === 'deslizante' ? ESCAPATORIA_DERRAPE : ESCAPATORIA_CURVA) : ESCAPATORIA));
   const deseado = eje.map((_, i) => [0, 1].map((k) => {
     let mayor = 0;
     for (let j = 0; j < n; j++) {

@@ -23,12 +23,17 @@ Está en siete idiomas, cada uno con su URL:
 - LA HORQUILLA: dos curvas rápidas y un dedo con una horquilla cerrada.
 - EL OCHO: un ocho con cruce, una horquilla peraltada, una chicane y dos curvas de derrape.
 - EL NUDO: una X en la que los coches cambian de carril, una recta de baches, una horquilla y una chicane.
+- EL RESBALÓN: dos estrechas en las que los carriles se juntan (a la par, los coches se tocan) y una curva deslizante que se toma derrapando.
 
 ## Notas
 - Pasado el agarre el coche derrapa; si insiste, se sale y una mano lo devuelve al
   carril donde se salió: salirse cuesta tiempo, no la carrera.
 - En las piezas en X los carriles se cruzan y los coches cambian de carril; en una X
   o un cruce, dos coches que llegan a la vez chocan.
+- Campeonato: los circuitos oficiales seguidos; gana quien gane más carreras y, con
+  empate, el menor tiempo sumado.
+- En las estrechas los carriles se juntan y dos coches a la par se tocan; la curva
+  deslizante aguanta más derrape que ninguna.
 - Un constructor de circuitos: se dibuja con el dedo en una cuadrícula, se prueba contra
   la CPU, se guarda en el dispositivo y se comparte con un enlace (?c=<código>).
 - Política de privacidad: la común de PNYK, https://pnyk.es/privacidad/#juegos

@@ -14,9 +14,10 @@
  * cerrado: se recorre antes y se sale antes.
  *
  * Las piezas especiales (`piezas.js`) cambian eso donde están: el peralte
- * agarra más, la curva de derrape aguanta más pasado, los baches agarran como
- * una curva, y en la X el carril cruza al otro lado. Dos coches que se
- * encuentran en una X o en un cruce chocan y salen los dos.
+ * agarra más, la curva de derrape aguanta más pasado (y la deslizante, aún
+ * más), los baches agarran como una curva, en la X el carril cruza al otro
+ * lado y en la estrecha se acerca al otro. Dos coches que se encuentran en una
+ * X, en un cruce o a la par en una estrecha chocan y salen los dos.
  *
  * Los mandos siguen siendo `{ acelerar, frenar, giro }`: aquí solo cuenta
  * `acelerar`. No toca el DOM: el arnés lo ejecuta tal cual.
@@ -24,7 +25,7 @@
 
 import {
   ACUMULA_DERRAPE, AGARRE_PERALTE, AGARRE_SLOT, RADIO_GUIA, ALTO, ANCHO, BAJA_POTENCIA, CARRIL, CHOQUE,
-  COLETEO_DERRAPE, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, DURACION_MANO, ESPERA_MANO,
+  COLETEO_DERRAPE, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, CURVA_DESLIZANTE, DURACION_MANO, ESPERA_MANO,
   FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, INERCIA_MOTOR, INERCIA_SOLTAR, LARGO_COCHE, LIMITE_SLOT, PASO_FISICA, RECUPERA_DERRAPE,
   SUBE_POTENCIA, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from '../config.js';
@@ -112,13 +113,13 @@ export function largoCarril(circuito, lateral) {
 
 /*
  * px de carril por px de eje: menos de 1 por dentro de las curvas, y algo más
- * de 1 en la X, que el carril cruza en diagonal. `lateral` es el
- * desplazamiento en ese punto.
+ * de 1 donde el carril se mueve de lado (la X, la estrecha), que lo recorre
+ * en diagonal. `lateral` es el desplazamiento en ese punto.
  */
 function factorCarril(circuito, i, lateral) {
   const p = circuito.eje[i];
   if (p.radio !== Infinity) return radioCarril(p, lateral) / p.radio;
-  if (p.tipo !== 'x') return 1;
+  if (p.tipo !== 'x' && p.efecto !== 'estrecha') return 1;
   const siguiente = circuito.eje[(i + 1) % circuito.eje.length];
   const cambio = Math.abs(lateral) * Math.abs(siguiente.carril - p.carril);
   return Math.hypot(1, cambio / p.largo);
@@ -169,6 +170,7 @@ function crearSlot(circuito, lateral, color) {
     tFuera: 0, tQuieto: 0, tMano: 0,
     desde: null,        // la pose en que la mano lo recoge
     altura: 0,          // [0, 1]: levantado por la mano (para el dibujo)
+    posado: false,      // la mano lo ha dejado en este paso: no empieza a tocarse con nadie
     completadas: 0,
     vueltas: [],
     inicioVuelta: 0,
@@ -232,8 +234,8 @@ function pasoCarreraSlot(carrera, mandos, dt) {
 }
 
 /*
- * Dos coches en el carril que se tocan (en una X o un cruce: en paralelo van
- * a 2 · CARRIL) chocan y salen los dos, cada uno hacia su lado. Solo cuenta
+ * Dos coches en el carril que se tocan (en una X, un cruce o a la par en una
+ * estrecha; en paralelo van a 2 · CARRIL) chocan y salen los dos, cada uno hacia su lado. Solo cuenta
  * al empezar a tocarse y si se acercan: la mano puede dejar uno encima del
  * otro, parados, y no vuelven a chocar al arrancar.
  */
@@ -250,7 +252,14 @@ function comprobarChoque(carrera) {
    * del constructor). Menos que los 2 · CARRIL de dos coches en paralelo.
    */
   carrera.solapados = solapados || (carrera.solapados && distancia < CHOQUE + HOLGURA_CHOQUE);
-  if (!empiezan || a.estado !== 'carril' || b.estado !== 'carril') return;
+  /*
+   * Lo que la mano acaba de posar ya estaba ahí: en una estrecha puede dejarlo
+   * a la par del otro, que ya ha arrancado y se le acerca (lo vio el arnés en
+   * la estrecha larga de El resbalón).
+   */
+  const posado = a.posado || b.posado;
+  a.posado = b.posado = false;
+  if (!empiezan || posado || a.estado !== 'carril' || b.estado !== 'carril') return;
   const acercandose = (b.coche.vx - a.coche.vx) * dx + (b.coche.vy - a.coche.vy) * dy < 0;
   if (!acercandose) return;
   carrera.eventos.push({ tipo: 'choque', coche: 0, x: (a.coche.x + b.coche.x) / 2, y: (a.coche.y + b.coche.y) / 2 });
@@ -262,6 +271,8 @@ function comprobarChoque(carrera) {
     carrera.eventos.push({ tipo: 'sale', coche: i });
   });
 }
+
+const ANCHAS = { derrape: CURVA_DERRAPE, deslizante: CURVA_DESLIZANTE };
 
 /** Un paso de un coche. Devuelve 'sale' o 'clac' si se ha salido o ha vuelto al carril. */
 function pasoSlot(slot, circuito, acelerar, dt) {
@@ -280,14 +291,15 @@ function pasoSlot(slot, circuito, acelerar, dt) {
   const lateral = lateralEn(circuito, slot.lateral, slot.s);
   const radio = radioAgarre(p, lateral);
   slot.exigencia = radio === Infinity ? 0 : slot.v * slot.v / radio / AGARRE_SLOT;
-  // En la curva de derrape se aguanta más pasado.
-  const ancha = p.efecto === 'derrape' ? CURVA_DERRAPE : null;
-  // Pasado el agarre, derrapa: pierde velocidad y el derrape se acumula. Sin
-  // pasarse, se recupera.
+  // En las curvas de derrape y deslizante se aguanta más pasado.
+  const ancha = ANCHAS[p.efecto] || null;
+  // Pasado el agarre, derrapa: pierde velocidad y el derrape se acumula (en
+  // la deslizante, solo pasado lo que tolera). Sin pasarse, se recupera.
   const exceso = slot.exigencia - 1;
-  if (exceso > 0) {
-    slot.v *= Math.exp(-FRENO_DERRAPE_SLOT * (ancha ? ancha.freno : 1) * exceso * dt);
-    slot.derrape = Math.min(1, slot.derrape + ACUMULA_DERRAPE * (ancha ? ancha.acumula : 1) * exceso * dt);
+  const acumula = exceso - (ancha ? ancha.tolera : 0);
+  if (exceso > 0) slot.v *= Math.exp(-FRENO_DERRAPE_SLOT * (ancha ? ancha.freno : 1) * exceso * dt);
+  if (acumula > 0) {
+    slot.derrape = Math.min(1, slot.derrape + ACUMULA_DERRAPE * (ancha ? ancha.acumula : 1) * acumula * dt);
   } else {
     slot.derrape = Math.max(0, slot.derrape - RECUPERA_DERRAPE * dt);
   }
@@ -392,6 +404,7 @@ function pasoMano(slot, circuito, dt) {
   if (f < 1) return null;
   slot.estado = 'carril';
   slot.altura = 0;
+  slot.posado = true;
   colocarEnCarril(slot, circuito);
   return 'clac';
 }

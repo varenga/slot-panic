@@ -534,3 +534,73 @@ app en la consola de Play.
   `eliminar_circuito`. En la prosa de las páginas y en `llms.txt`, una frase sobre el
   constructor (`page.how7`).
 - Arnés: 473/473 en verde, con 117 claves en cada idioma.
+
+## Chicanes y campeonato (09/10/2026, rama `13-chicanes-y-campeonato`, v0.7.0)
+
+> Las piezas del juguete que faltaban, a partir de fotos de piezas de verdad (la curva
+> deslizante y varias chicanes), un cuarto circuito con ellas y el modo campeonato.
+
+- **La estrecha**: en ella los carriles se juntan. Es lo mismo que la X: el factor del
+  carril en cada punto del eje (`punto.carril`) baja con un coseno de 1 a `ESTRECHA`
+  (0,4) y vuelve a subir. Dos coches a la par quedan a 12 px, menos que `CHOQUE`, y
+  chocan. Hay dos: la **corta**, que se junta y se separa en la misma pieza, y la
+  **larga**, con un tramo en que van juntos (`juntos`, la fracción del largo).
+  `factorCarril` cuenta también la diagonal de la estrecha, como la de la X.
+- **La curva deslizante**: una curva amplia y resbaladiza, con los carriles juntos (una
+  recta de entrada que los acerca y otra de salida que los separa) y franjas ámbar a los
+  dos lados. Por fuera tiene la escapatoria de la de derrape. `CURVA_DESLIZANTE`:
+  - **Una meseta**: hasta ×1,25 del agarre (`tolera`), el derrape no se acumula. El coche
+    resbala, la cola sale mucho (`coleteo` 2,2) y frena poco (`freno` 0,1). Por encima,
+    el derrape se acumula deprisa (`acumula` 2) y, a fondo, se sale.
+  - **Cómo se llegó a esos valores**: con el freno de la curva de derrape (0,4–0,25),
+    entrar a tope frenaba el coche hasta quedar en equilibrio justo en la tolerancia, y
+    la curva se pasaba entera sin salirse. Con menos freno, a tope se sale en ~100 px
+    por los dos carriles.
+  - **Playtest en el móvil**: «está bien, no necesita más castigo».
+- **El resbalón**: el cuarto circuito oficial.
+  - **Las piezas**: la estrecha corta en la recta de meta, una chicane en S en la
+    bajada de la derecha, la estrecha larga arriba (360 px, 25 % juntos) y la
+    deslizante de 180° y radio 130 a la izquierda.
+  - **Cómo se calibró**: la primera versión (curvas de radio 100) era corta y abierta, con
+    una vuelta de 8,6 s, y a fondo apenas se salía. La que queda tiene curvas de 70 y 80
+    y la deslizante que expulsa a fondo.
+  - **Medidas** (arnés, 5 vueltas):
+    - Prudente: vuelta de 9,4 s.
+    - Entrar derrapando ahorra un 14 %.
+    - A fondo se sale 10-14 veces y pierde un 47 %.
+    - La CPU deja 0,8 s por vuelta al mejor piloto y choca con él una vez por carrera,
+      en las estrechas.
+    - Ninguna curva se pasa a tope.
+    - En las tres estrechas, los coches chocan en 3-8 de 21 desfases.
+- **La mano ya no provoca choques**: en la estrecha larga podía posar un coche a la par
+  del otro, que ya había arrancado, y eso contaba como «empezar a tocarse
+  acercándose». El paso en que la mano posa un coche (`posado`) ya no cuenta.
+- **El campeonato** (`nucleo/campeonato.js`):
+  - **Las reglas**: los cuatro oficiales en orden. Gana quien gane más carreras y, con
+    las mismas, el menor tiempo sumado. Al que no ha acabado se le pone el tiempo que
+    habría hecho a su ritmo.
+  - **Cómo se juega**: tecla T o CAMPEONATO en la portada (también en la lupa). Un
+    rótulo en la cuenta atrás. El cartel de fin lleva la tabla (tiempos por circuito, el
+    del ganador de su color, victorias y tiempo sumado) y SIGUIENTE. ESC lo abandona y R
+    no repite una carrera a medias. Al acabar, el confeti es para el campeón si es
+    humano.
+- **En el constructor**, al final de las listas de variantes, para que los códigos ya
+  compartidos sigan valiendo:
+  - `estrecha` y `estrechaLarga`, en las rectas. La larga se lleva la recta siguiente,
+    como la chicane, pero no necesita libre ningún lado.
+  - `deslizante`, en las curvas. Ocupa el bloque de 2 × 2 de la amplia: 40 px de
+    entrada y radio 125.
+  - Dos motivos nuevos de error: `estrecha` y `deslizante`.
+- **El arnés**:
+  - **Las estrechas son encuentros**, como las X y los cruces: sin X, cruces ni
+    estrechas, dos coches iguales no chocan nunca.
+  - **Los coches se lanzan más despacio si hace falta**: el que haya antes del
+    encuentro tiene que aguantarlo. En un dibujado, una estrecha puede seguir a una
+    curva de media casilla, y a 250 px/s se salían antes de llegar.
+  - **El desfase llega a ±80 px**: tras esa curva, el coche de dentro llega ~50 px de
+    `s` por delante.
+  - **«Chocar dos veces» es en el mismo sitio**: dos estrechas seguidas son dos
+    encuentros.
+  - **Lo nuevo**: un trazado a mano con las piezas nuevas (`juguete`), dos prohibidos más
+    y la sección 6, el campeonato (incluido el desempate). 598/598 en verde, en ~7 s.
+- Los mejores momentos quedan planteados en `IDEAS.md` §5.

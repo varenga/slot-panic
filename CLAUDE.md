@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Prototipo jugable (v0.6.0): carreras de slot en tres circuitos (*La horquilla*, y *El
-ocho* y *El nudo*, de piezas), dos coches enganchados a carriles que se cambian en cada
+Prototipo jugable (v0.7.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
+ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
-dosifica a toques), derrape antes de salirse, choques en las X y los cruces y una mano que devuelve el
+dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma). Un constructor: el circuito
+contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos). Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo y se
 comparte con un enlace (`?c=`). Con el móvil en vertical, el modo
 lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cuatro escenarios de día, al
@@ -110,9 +110,9 @@ node arnes.mjs
 ```
 
 Importa los módulos reales del núcleo (no tocan el DOM) y corre carreras enteras con
-pilotos automáticos en unos segundos (hoy, ~3 s). Si las piezas de un circuito no
+pilotos automáticos en unos segundos (hoy, ~7 s). Si las piezas de un circuito no
 cierran, ni arranca: lo dice `construirDePiezas` al importarlo. Sale con código 1 si algo falla. No admite
-argumentos: siempre corre las cuatro secciones enteras. Es `.mjs` a propósito: el
+argumentos: siempre corre todas las secciones enteras. Es `.mjs` a propósito: el
 `.htaccess` deniega `*.mjs` (y `*.md`, `pnyk.json`), así que no se publica; por lo
 mismo, un módulo que cargue el navegador tiene que ser `.js`. **Pásalo tras
 cualquier cambio en la física, la pista o las reglas.** Las secciones 1 a 3 corren en
@@ -140,10 +140,15 @@ demás, en `BITACORA.md`). Mide y comprueba:
    el progreso no retrocede, los carriles se separan < 8 % con el mismo piloto (hoy
    1,7 %; con una X, < 2 %) y con el turno cambiado los coches se cambian de carril.
    Las medidas del piloto se toman con **cada coche solo** en la pista. Juntos, dos
-   coches iguales sin X ni cruces no chocan nunca; en cada X y cada cruce, lanzados con
-   21 desfases, chocan en alguno y nunca dos veces seguidas. Las curvas a tope incluyen
-   el peralte, la de derrape y los baches.
+   coches iguales sin X, cruces ni estrechas no chocan nunca; en cada X, cada cruce y
+   cada estrecha, lanzados con 21 desfases, chocan en alguno y nunca dos veces seguidas.
+   Las curvas a tope incluyen el peralte, la de derrape, la deslizante y los baches.
 4. **Idiomas**: los siete catálogos tienen las mismas claves.
+5. **La cuadrícula del constructor**: lo que deja pasar `validarTrazado` se puede correr
+   (trazados a mano y al azar pasan las secciones 1 a 3, sin las cifras de calibrado).
+6. **El campeonato**: corre los circuitos oficiales en orden, las victorias suman las
+   carreras, al que no acaba se le pone más tiempo que al ganador y, con las mismas
+   victorias, gana el menor tiempo sumado.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).
@@ -184,11 +189,13 @@ nucleo/circuito.js     de vértices a pista, y completarCircuito(): eje denso co
                        proyectar(p, índice), puntoEn(s), los cruces, y el borde y el
                        muro de cada lado (para dibujar la pista y medir el decorado)
 nucleo/piezas.js       construirDePiezas(): de la lista de piezas al eje, con su
-                       efecto y el factor del carril (la X) en cada punto
+                       efecto y el factor del carril (la X, la estrecha) en cada punto
 nucleo/slot.js         el núcleo: carriles (lateralEn), el coche enganchado (s y
                        velocidad), efectos de pieza, derrape, salirse, el choque, la
                        mano, la carrera y formatearTiempo. Sin DOM
 nucleo/piloto.js       la CPU, la exhibición y el instrumento del arnés: decidirSlot()
+nucleo/campeonato.js   el campeonato: los oficiales en orden, victorias, tiempos (el
+                       del que no acaba, a su ritmo) y el desempate
 nucleo/cuadricula.js   el constructor, en enteros: el trazado (meta + un paso por
                        casilla), validarTrazado(), el código (?c=) y aPiezas()
 nucleo/trazo.js        lo que el dedo dibuja: pisar(), cerrar, cambiarVariante()
@@ -201,6 +208,8 @@ circuitos/indice.js    CIRCUITOS: la lista, en el orden de la portada (tecla C)
 circuitos/primero.js   «La horquilla», por vértices (heredada de Race Panic)
 circuitos/ocho.js      «El ocho», de piezas: cruce, peralte, chicane, derrape
 circuitos/nudo.js      «El nudo», de piezas: X, baches, horquilla, derrape, chicane
+circuitos/resbalon.js  «El resbalón», de piezas: las estrechas (corta y larga), la
+                       curva deslizante y una chicane
 dibujo.js              el mundo: suelo, decorado y pista (en una capa que se pinta
                        una vez), carriles y coches
 coches.js              la forma de cada modelo, vista desde arriba: silueta, ruedas
@@ -257,9 +266,11 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   declara: se encuentra.
 - **El carril lo da la pieza**: el desplazamiento real es `lateralEn(circuito, lateral,
   s)`, nunca `slot.lateral` a secas (en la X cambia de lado, y con un número impar de
-  X, cada vuelta). Lo que agarra cada punto, `radioAgarre(punto, lateral)`.
+  X, cada vuelta; en la estrecha se acerca al eje, a `ESTRECHA`). Lo que agarra cada
+  punto, `radioAgarre(punto, lateral)`.
 - **Chocar es empezar a tocarse acercándose**: así la mano puede dejar dos coches uno
-  encima del otro sin que vuelvan a chocar en bucle.
+  encima del otro sin que vuelvan a chocar en bucle. El paso en que la mano posa un
+  coche (`posado`) no cuenta como empezar a tocarse.
 - **Lo que publica un push no puede romper con la caché vieja.** Los módulos ES no
   llevan `?v=`: con service worker, cada versión tiene su caché (la huella de todo lo que
   precarga) y no se mezclan; sin él, el `.htaccess` hace revalidar HTML, JS y CSS

@@ -23,7 +23,8 @@ import {
 import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import {
-  barraPotencia, boton, ETIQUETA_BOTON, nombreCircuito, nombreSlot, panel, semaforo
+  barraPotencia, boton, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, panel, pintarCabeceraCampeonato,
+  pintarTablaCampeonato, semaforo
 } from './pantalla.js';
 import { dibujarConfeti } from './particulas.js';
 import { idiomaActual, t } from './i18n.js';
@@ -212,7 +213,7 @@ export function dibujarMapa(circuito, coches) {
  * vuelta; en el centro, la cuenta atrás o el tiempo. Debajo del J1, su
  * potencia.
  */
-export function dibujarMarcadorLupa(carrera, humanos) {
+export function dibujarMarcadorLupa(carrera, humanos, rotulo = null) {
   ctx.fillStyle = COLOR.banda;
   ctx.fillRect(0, 0, ANCHO_LUPA, BARRA);
   carrera.coches.forEach((slot, i) => {
@@ -239,6 +240,10 @@ export function dibujarMarcadorLupa(carrera, humanos) {
     const y = (BAJO_MAPA + altoLienzo) / 2 - 60;
     panel(ANCHO_LUPA / 2, y - 26, 360, 52);
     texto(t('slot.mantener'), ANCHO_LUPA / 2, y, { tam: 20, color: COLOR.hud, peso: 700 });
+    if (rotulo) {
+      panel(ANCHO_LUPA / 2, y + 36, 440, 36);
+      texto(rotulo, ANCHO_LUPA / 2, y + 55, { tam: 16, color: COLOR.ambar, peso: 700 });
+    }
   }
 }
 
@@ -256,7 +261,7 @@ export function dibujarAvisosLupa(avisos) {
 // --- Portada ---------------------------------------------------------------------
 
 /* Las opciones, en dos columnas abajo. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'construir'];
+const OPCIONES = ['circuito', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'campeonato', 'construir'];
 
 export function opcionesPortadaLupa() {
   const columnas = 2, alto = 44, hueco = 12;
@@ -298,16 +303,28 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
 
 // --- Fin -------------------------------------------------------------------------
 
-export function botonesFinLupa() {
+export function botonesFinLupa(ids = ['repetir', 'menu'], y = altoLienzo / 2 + 150) {
   const ancho = 220, alto = 56, hueco = 20;
   const x0 = ANCHO_LUPA / 2 - ancho - hueco / 2;
-  return ['repetir', 'menu'].map((id, i) => ({ id, x: x0 + i * (ancho + hueco), y: altoLienzo / 2 + 150, ancho, alto }));
+  return ids.map((id, i) => ({ id, x: x0 + i * (ancho + hueco), y, ancho, alto }));
 }
 
-export function dibujarFinLupa(carrera, humanos, particulas) {
+/** Los del campeonato van más abajo: encima va la tabla. */
+export function botonesFinCampeonatoLupa(campeonato) {
+  return botonesFinLupa(idsFinCampeonato(campeonato), altoLienzo / 2 + 230);
+}
+
+export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null) {
   ctx.fillStyle = COLOR.velo;
   ctx.fillRect(0, 0, ANCHO_LUPA, altoLienzo);
   const x = ANCHO_LUPA / 2, y = altoLienzo / 2;
+  if (campeonato) {
+    pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y - 230, 40);
+    pintarTablaCampeonato(campeonato, carrera, humanos, { x, y: y - 150, mitad: 230, tam: 18, fila: 40 });
+    for (const caja of botonesFinCampeonatoLupa(campeonato)) boton(caja, t(ETIQUETA_BOTON[caja.id]), caja.id !== 'menu', 20);
+    confeti(particulas);
+    return;
+  }
   const ganador = carrera.coches[carrera.ganador];
   texto(t('slot.gana', { quien: nombreSlot(carrera.ganador, humanos) }), x, y - 130, { tam: 44, color: ganador.coche.color, peso: 800 });
   texto(t('fin.tiempo', { tiempo: formatearTiempo(ganador.terminado) }), x, y - 70, { tam: 28, color: COLOR.hud, peso: 700 });
@@ -319,7 +336,11 @@ export function dibujarFinLupa(carrera, humanos, particulas) {
     texto(t('slot.resumen', { tiempo: formatearTiempo(mejorVueltaSlot(slot)), n: slot.salidas }), x, fila + 26, { tam: 16, color: COLOR.texto });
   });
   for (const caja of botonesFinLupa()) boton(caja, t(ETIQUETA_BOTON[caja.id]), caja.id === 'repetir', 20);
-  // El confeti cae en coordenadas de la mesa (1280 × 720): se estira al lienzo.
+  confeti(particulas);
+}
+
+/** El confeti cae en coordenadas de la mesa (1280 × 720): se estira al lienzo. */
+function confeti(particulas) {
   ctx.save();
   ctx.scale(ANCHO_LUPA / ANCHO, altoLienzo / ALTO);
   dibujarConfeti(particulas);
