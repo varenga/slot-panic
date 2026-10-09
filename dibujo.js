@@ -9,7 +9,7 @@
  * fotograma a fotograma sería tirar el tiempo.
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, COLOR, JUGUETE } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, COLOR } from './config.js';
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
@@ -41,25 +41,24 @@ const JUNTA = 96;        // px de eje entre dos juntas de las piezas
 export function dibujarFondo(circuito, decorado, luz = 0) {
   const clave = circuito.clave + '/' + decorado.nombre;
   if (clave !== claveCapa) {
+    const juguete = decorado.escenario.juguete;
     capaSuelo = crearCapa(ANCHO, ALTO);
     dibujarEn(capaSuelo, () => {
-      if (JUGUETE) {
+      if (juguete) {
         pintarMesa(decorado);
         pintarBordes(circuito, decorado);
       } else {
         pintarSuelo(decorado);
         pintarEscapatoria(circuito, decorado);
       }
-      decorado.neumaticos.forEach(JUGUETE ? pintarNeumaticoJuguete : pintarNeumatico);
-      pintarPista(circuito);
+      decorado.neumaticos.forEach(juguete ? pintarNeumaticoJuguete : pintarNeumatico);
+      pintarPista(circuito, juguete);
     });
     capaDecorado = crearCapa(ANCHO, ALTO);
     dibujarEn(capaDecorado, () => {
-      decorado.gradas.forEach((g) => (JUGUETE ? pintarGradaJuguete : pintarGrada)(g, decorado.semilla));
+      decorado.gradas.forEach((g) => (juguete ? pintarGradaJuguete : pintarGrada)(g, decorado.semilla));
       const color = decorado.escenario.color;
-      // MAQUETA: en la mesa, uno de cada tres; con todos parece un cajón vaciado.
-      if (JUGUETE) decorado.piezas.filter((p, i) => i % 3 === 0).forEach(pintarObjeto);
-      else decorado.piezas.forEach((p) => PINTAR[p.tipo](p, color));
+      decorado.piezas.forEach((p) => PINTAR[p.tipo](p, color));
     });
     claveCapa = clave;
   }
@@ -85,7 +84,7 @@ function pintarSuelo({ escenario, semilla }) {
   }
 }
 
-// --- MAQUETA: la estética de juguete (?juguete) --------------------------------
+// --- El escenario juguete: la mesa y el plástico --------------------------------
 
 const PLASTICO = {
   pista: '#1c1e23',
@@ -217,7 +216,7 @@ function pintarEscapatoria(circuito, { escenario, semilla }) {
   }
 }
 
-function pintarPista(circuito) {
+function pintarPista(circuito, juguete) {
   // La calzada es el eje trazado con el ancho de la pista: con uniones
   // redondeadas, lo que se ve coincide con lo que `proyectar` da por pista.
   ctx.lineJoin = 'round';
@@ -225,20 +224,20 @@ function pintarPista(circuito) {
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.18)';   // una sombra suave que la despega de la grava
   ctx.lineWidth = circuito.ancho + 8;
   polilinea(circuito.eje);
-  ctx.strokeStyle = JUGUETE ? PLASTICO.canto : COLOR.borde;
+  ctx.strokeStyle = juguete ? PLASTICO.canto : COLOR.borde;
   ctx.lineWidth = circuito.ancho + 4;
   polilinea(circuito.eje);
-  ctx.strokeStyle = JUGUETE ? PLASTICO.pista : COLOR.calzada;
+  ctx.strokeStyle = juguete ? PLASTICO.pista : COLOR.calzada;
   ctx.lineWidth = circuito.ancho;
   polilinea(circuito.eje);
-  if (JUGUETE) {
+  if (juguete) {
     // El brillo del plástico: una banda algo más clara por el centro.
     ctx.strokeStyle = PLASTICO.brillo;
     ctx.lineWidth = circuito.ancho * 0.45;
     polilinea(circuito.eje);
   }
-  pintarPianos(circuito);
-  if (JUGUETE) pintarFiloPianos(circuito);
+  pintarPianos(circuito, juguete);
+  if (juguete) pintarFiloPianos(circuito);
   pintarPiezas(circuito);
   pintarSectores(circuito);
   pintarMeta(circuito);
@@ -303,14 +302,14 @@ function pintarSectores(circuito) {
 }
 
 /** Pianos rojos y blancos por fuera de los dos bordes de cada curva: se pisan gratis. */
-function pintarPianos(circuito) {
+function pintarPianos(circuito, juguete) {
   const { eje } = circuito;
   ctx.lineCap = 'butt';
   for (let i = 0; i < eje.length; i += PASO_PIANO) {
     const a = eje[i], b = eje[(i + PASO_PIANO) % eje.length];
     if (!a.piano || !b.piano) continue;
     const par = (i / PASO_PIANO) % 2 === 0;
-    const [rojo, blanco] = JUGUETE ? [PLASTICO.piano, PLASTICO.pianoClaro] : [COLOR.piano, COLOR.pianoClaro];
+    const [rojo, blanco] = juguete ? [PLASTICO.piano, PLASTICO.pianoClaro] : [COLOR.piano, COLOR.pianoClaro];
     ctx.strokeStyle = par ? rojo : blanco;
     for (const [k, lado] of [[0, -1], [1, 1]]) {
       // Por dentro de una curva cerrada el piano es más estrecho: lo que cabe.
@@ -356,7 +355,11 @@ function pintarMeta(circuito) {
  * Lo alto de cada pieza, en radios (lo que estira su sombra), y el de las
  * gradas, en px. Un pino es más alto que ancho; una roca, casi plana.
  */
-const ALTO_PIEZA = { arbol: 1, pino: 1.5, arbusto: 0.5, roca: 0.35, cactus: 1.2 };
+const ALTO_PIEZA = {
+  arbol: 1, pino: 1.5, arbusto: 0.5, roca: 0.35, cactus: 1.2,
+  // Los de la mesa: una lata es más alta que una taza; una moneda, nada.
+  taza: 1.3, lata: 1.9, lapiz: 0.12, moneda: 0.04, chapa: 0.12, dado: 1, ladrillo: 0.45
+};
 const ALTO_GRADA = 7;
 
 /*
@@ -365,6 +368,16 @@ const ALTO_GRADA = 7;
  * en un solo trazado y un relleno por tipo, para que lo semitransparente no se
  * acumule donde se pisan.
  */
+function rectanguloGirado(x, y, w, h, giro) {
+  const cos = Math.cos(giro), sin = Math.sin(giro);
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([i, j], n) => {
+    const a = i * w / 2, b = j * h / 2;
+    if (n === 0) ctx.moveTo(x + a * cos - b * sin, y + a * sin + b * cos);
+    else ctx.lineTo(x + a * cos - b * sin, y + a * sin + b * cos);
+  });
+  ctx.closePath();
+}
+
 function pintarSombras(decorado, luz) {
   const sol = sombraSol(luz, 1);   // la de 1 px de alto: se escala
   if (sol.fuerza <= 0.005) return;
@@ -390,19 +403,24 @@ function pintarSombras(decorado, luz) {
   }
   ctx.fill('nonzero');
 
-  if (JUGUETE) return;   // MAQUETA: cada objeto de la mesa lleva su sombra
   ctx.fillStyle = `rgba(0, 0, 0, ${0.22 * sol.fuerza})`;
   ctx.beginPath();
   for (const p of decorado.piezas) {
     const alto = ALTO_PIEZA[p.tipo] * p.r;
     const largo = Math.min(sol.largo * alto, 6 * p.r);
-    const radio = p.r * 0.9;
-    const pasos = Math.max(1, Math.ceil(largo / (radio * 0.5)));
+    // Lo alargado (un lápiz, una pieza de construcción, un dado) barre su
+    // rectángulo; lo demás, su círculo.
+    const caja = CAJA_SOMBRA[p.tipo]?.(p);
+    const radio = p.r * (RADIO_SOMBRA[p.tipo] ?? 0.9);
+    const pasos = Math.max(1, Math.ceil(largo / ((caja ? Math.min(...caja) : radio) * 0.5)));
     for (let k = 0; k <= pasos; k++) {
       const d = 0.1 * p.r + (largo - 0.1 * p.r) * k / pasos;
       const x = p.x + dx / sol.largo * d, y = p.y + dy / sol.largo * d;
-      ctx.moveTo(x + radio, y);
-      ctx.arc(x, y, radio, 0, Math.PI * 2);
+      if (caja) rectanguloGirado(x, y, caja[0], caja[1], p.giro);
+      else {
+        ctx.moveTo(x + radio, y);
+        ctx.arc(x, y, radio, 0, Math.PI * 2);
+      }
     }
   }
   ctx.fill('nonzero');
@@ -481,7 +499,7 @@ const PINTAR = {
 };
 
 /*
- * MAQUETA: el piano de juguete va impreso en el borde de plástico: colores
+ * El piano de juguete va impreso en el borde de plástico: colores
  * planos y vivos, y un filo oscuro por fuera que lo despega del gris.
  */
 function pintarFiloPianos(circuito) {
@@ -506,38 +524,30 @@ function pintarFiloPianos(circuito) {
 }
 
 /*
- * MAQUETA: lo que hay en la mesa, en el sitio de los árboles, las rocas y los
- * cactus (el mismo círculo: no pisa nada). Por tamaño: tazas, latas y lápices
- * donde iban los árboles y los pinos; monedas y chapas donde los arbustos;
- * dados y piezas de construcción donde las rocas y los cactus.
+ * Lo que hay en la mesa del escenario juguete: tazas, latas, lápices, monedas,
+ * chapas, dados y piezas de construcción. Son piezas del decorado como los
+ * árboles (su círculo `r` no pisa nada) y su sombra va con el sol.
  */
-const SOMBRA_MESA = { x: 2.5, y: 3.5, color: 'rgba(40, 20, 5, 0.32)' };
-const OBJETO = { arbol: 'grande', pino: 'grande', arbusto: 'plano', roca: 'pequeno', cactus: 'pequeno' };
 const PLASTICOS = ['#d93a3a', '#f2c230', '#2f6fd0', '#3aa055', '#f0f0ea'];
 
-function pintarObjeto(p) {
-  const v = p.variante;
-  const clase = OBJETO[p.tipo];
-  if (clase === 'grande') (v < 0.4 ? taza : v < 0.7 ? lapiz : lata)(p);
-  else if (clase === 'plano') (v < 0.5 ? moneda : chapa)(p);
-  else (v < 0.5 ? dado : ladrillo)(p);
+/** Lo que mide cada cosa, en función de su `r`: lo usan el dibujo y la sombra. */
+const medidaLapiz = (p) => [p.r * 1.9, Math.max(3.5, p.r * 0.3)];
+const ladoDado = (p) => p.r * 1.25;
+function medidaLadrillo(p) {
+  const largos = p.variante < 0.75 ? 4 : 2;
+  const t = p.r * 1.7 / Math.hypot(largos, 2);   // lo que mide un tetón: cabe en el círculo
+  return { largos, t, w: largos * t, h: 2 * t };
 }
-
-/** Rellena `forma` (un trazado alrededor del origen) desplazada, como sombra. */
-function sombraObjeto(p, alto, forma) {
-  ctx.save();
-  ctx.translate(p.x + SOMBRA_MESA.x * alto, p.y + SOMBRA_MESA.y * alto);
-  ctx.rotate(p.giro);
-  ctx.fillStyle = SOMBRA_MESA.color;
-  forma();
-  ctx.fill();
-  ctx.restore();
-}
+const CAJA_SOMBRA = {
+  lapiz: medidaLapiz,
+  dado: (p) => [ladoDado(p) * 0.9, ladoDado(p) * 0.9],
+  ladrillo: (p) => { const m = medidaLadrillo(p); return [m.w, m.h]; }
+};
+const RADIO_SOMBRA = { taza: 0.78, lata: 0.72, moneda: 0.75, chapa: 0.8 };
 
 function taza(p) {
   const r = p.r * 0.78;
   const asa = { x: Math.cos(p.giro) * r * 1.05, y: Math.sin(p.giro) * r * 1.05 };
-  sombraObjeto(p, 1.6, () => { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); });
   const loza = ['#ece7dc', '#c9483d', '#3f6fb0', '#e9b93a'][Math.floor(p.variante * 10) % 4];
   ctx.strokeStyle = loza;
   ctx.lineWidth = Math.max(2, p.r * 0.16);
@@ -556,7 +566,6 @@ function taza(p) {
 
 function lata(p) {
   const r = p.r * 0.72;
-  sombraObjeto(p, 1.8, () => { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); });
   ctx.fillStyle = ['#c8202c', '#2a5fb8', '#1f8f4c'][Math.floor(p.variante * 10) % 3];
   circulo(p.x, p.y, r);
   ctx.fillStyle = '#c9cdd4';
@@ -578,8 +587,7 @@ function lata(p) {
 }
 
 function lapiz(p) {
-  const largo = p.r * 1.9, ancho = Math.max(3.5, p.r * 0.3);
-  sombraObjeto(p, 0.5, () => { ctx.beginPath(); ctx.rect(-largo / 2, -ancho / 2, largo, ancho); });
+  const [largo, ancho] = medidaLapiz(p);
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.giro);
@@ -603,7 +611,6 @@ function lapiz(p) {
 
 function moneda(p) {
   const r = p.r * 0.75;
-  sombraObjeto(p, 0.3, () => { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); });
   const oro = p.variante < 0.25;
   ctx.fillStyle = oro ? '#c9a443' : '#b9bdc5';
   circulo(p.x, p.y, r);
@@ -624,7 +631,6 @@ function chapa(p) {
     }
     ctx.closePath();
   };
-  sombraObjeto(p, 0.4, dientes);
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.giro);
@@ -645,9 +651,8 @@ const PUNTOS_DADO = {
 };
 
 function dado(p) {
-  const l = p.r * 1.25;
+  const l = ladoDado(p);
   const cara = () => { ctx.beginPath(); ctx.roundRect(-l / 2, -l / 2, l, l, l * 0.2); };
-  sombraObjeto(p, 0.8, cara);
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.giro);
@@ -666,11 +671,8 @@ function dado(p) {
 
 /** Una pieza de construcción de 2 × 4 (o de 2 × 2), con sus tetones. */
 function ladrillo(p) {
-  const largos = p.variante < 0.75 ? 4 : 2;
-  const t = p.r * 1.7 / Math.hypot(largos, 2);   // lo que mide un tetón: cabe en el círculo
-  const w = largos * t, h = 2 * t;
+  const { largos, t, w, h } = medidaLadrillo(p);
   const caja = () => { ctx.beginPath(); ctx.rect(-w / 2, -h / 2, w, h); };
-  sombraObjeto(p, 0.7, caja);
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.giro);
@@ -695,10 +697,10 @@ function ladrillo(p) {
   ctx.restore();
 }
 
-/** MAQUETA: el neumático de juguete, de goma brillante con la llanta de color. */
+Object.assign(PINTAR, { taza, lata, lapiz, moneda, chapa, dado, ladrillo });
+
+/** El neumático de juguete, de goma brillante con la llanta de color. */
 function pintarNeumaticoJuguete(n, i) {
-  ctx.fillStyle = SOMBRA_MESA.color;
-  circulo(n.x + 1.5, n.y + 2, n.r);
   ctx.fillStyle = '#17181c';
   circulo(n.x, n.y, n.r);
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
@@ -713,7 +715,7 @@ function pintarNeumaticoJuguete(n, i) {
 }
 
 /*
- * MAQUETA: la grada de juguete, de plástico: una base blanca con su reborde,
+ * La grada de juguete, de plástico: una base blanca con su reborde,
  * escalones azules con el público impreso en filas, y la marquesina roja y
  * blanca por detrás.
  */
@@ -775,7 +777,7 @@ export function dibujarTorres(decorado, luz) {
     ctx.stroke();
     ctx.restore();
   }
-  decorado.torres.forEach(pintarTorre);
+  decorado.torres.forEach((t) => pintarTorre(t, decorado.escenario.juguete));
 }
 
 /*
@@ -783,13 +785,13 @@ export function dibujarTorres(decorado, luz) {
  * atravesada y mirando a la pista. De día son postes; de noche, `luz.js`
  * enciende los focos.
  */
-function pintarTorre(t) {
+function pintarTorre(t, juguete) {
   ctx.save();
   ctx.translate(t.x, t.y);
-  ctx.fillStyle = '#3a3e48';
+  ctx.fillStyle = juguete ? '#ecebe6' : '#3a3e48';   // en la mesa, una farola de plástico
   ctx.fillRect(-2.5, -2.5, 5, 5);
   ctx.rotate(t.angulo);
-  ctx.fillStyle = '#20232b';
+  ctx.fillStyle = juguete ? '#e0262f' : '#20232b';
   ctx.fillRect(1, -6, 3, 12);
   ctx.fillStyle = '#c9ccd6';
   for (const v of [-4.5, -1, 2.5]) ctx.fillRect(3.2, v, 1.3, 2);
@@ -827,11 +829,13 @@ function pintarGrada(g, semilla) {
  * piezas, de lado a lado de la pista. Encima de la pista de siempre, en su
  * propia capa: es un prototipo, todavía sin estética de juguete.
  */
-export function dibujarCarriles(circuito) {
-  if (claveCarriles !== circuito.clave) {
+export function dibujarCarriles(circuito, decorado) {
+  const juguete = decorado.escenario.juguete;
+  const clave = circuito.clave + (juguete ? '/juguete' : '');
+  if (claveCarriles !== clave) {
     capaCarriles = crearCapa(ANCHO, ALTO);
     dibujarEn(capaCarriles, () => {
-      if (JUGUETE) pintarJuntasJuguete(circuito);
+      if (juguete) pintarJuntasJuguete(circuito);
       else {
         ctx.strokeStyle = 'rgba(11, 12, 16, 0.6)';
         ctx.lineWidth = 1.5;
@@ -850,9 +854,9 @@ export function dibujarCarriles(circuito) {
       const impar = circuito.cambiosCarril % 2 === 1;
       const trazados = CARRILES.map((lateral) =>
         [...trazadoCarril(circuito, lateral), trazadoCarril(circuito, impar ? -lateral : lateral)[0]]);
-      // En la maqueta, las trencillas trenzadas: un gris de metal con un
+      // En el escenario juguete, las trencillas trenzadas: un gris de metal con un
       // punteado claro encima.
-      const capas = JUGUETE
+      const capas = juguete
         ? [['#80868f', 8, null], ['#d6dae2', 7, [1.5, 1.5]], [COLOR.ranura, 3, null]]
         : [[COLOR.carril, 7, null], [COLOR.ranura, 3, null]];
       for (const [color, grosor, raya] of capas) {
@@ -863,13 +867,13 @@ export function dibujarCarriles(circuito) {
       }
       ctx.setLineDash([]);
     });
-    claveCarriles = circuito.clave;
+    claveCarriles = clave;
   }
   ctx.drawImage(capaCarriles, 0, 0);
 }
 
 /*
- * MAQUETA: las juntas de juguete, de muro a muro (los bordes también son
+ * Las juntas de juguete, de muro a muro (los bordes también son
  * piezas): una ranura oscura y, al lado, el filo claro de la pieza siguiente.
  */
 function pintarJuntasJuguete(circuito) {

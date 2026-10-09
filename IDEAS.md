@@ -28,27 +28,7 @@ Cada idea pasa por el mismo filtro:
   circuito, correrlo. Y a compartirlo (un código corto, como el fantasma de Race Panic).
 - **Cruces** (las piezas en X): vuelve la idea del ocho, sin puente.
 
-# 2. Un escenario «juguete»
-
-La estética de juguete como estética de todo el juego se probó y se descartó
-(`BITACORA.md`): la de hoy, mezcla de slot y maqueta realista, va mejor con el día, el
-atardecer, la noche y los escenarios. Pero la maqueta está hecha y guardada en la rama
-`25-maqueta-juguete` (con `?juguete` en local), y podría volver como **un escenario más**,
-al lado de verde, tierra, desierto y nieve:
-
-- Una mesa de madera; bordes de plástico gris en vez de grava; pista negra con brillo,
-  trencillas trenzadas y juntas marcadas; pianos impresos; gradas y neumáticos de
-  plástico; en vez de árboles, tazas, latas, lápices, monedas, chapas, dados y piezas
-  de construcción.
-- Para que sea un escenario, lo que hoy decide el `JUGUETE` de `config.js` pasaría a
-  decidirlo el escenario (`ESCENARIOS.juguete` en `escenarios.js`): sus colores de
-  pista y piano, y qué pinta cada pieza del decorado.
-- Lo que falta: las torres de iluminación como farolas de juguete; ver la noche (los
-  faros y los halos sobre la madera); el aclarado de objetos (uno de cada tres) llevarlo
-  al decorado, con sus propios pesos y tamaños, para que el arnés lo mida; y quizá otros
-  suelos (alfombra, baldosa).
-
-# 3. Coches y jugadores
+# 2. Coches y jugadores
 
 - **Cambio de carril**, como los slot digitales: un toque doble cambia de carril en las
   zonas marcadas. Y cambio de carril de la CPU.
@@ -57,7 +37,7 @@ al lado de verde, tierra, desierto y nieve:
   seguiría con el de toques.
 - **Récords y fantasma** por circuito y carril.
 
-# 4. Plataforma
+# 3. Plataforma
 
 Lo que comparte con Race Panic es casi todo **plataforma**, no juego: `i18n.js` (el
 mecanismo), `audio.js` (`tone`, `noiseBurst`), la tabla de récords (`marcas.js` +
@@ -68,7 +48,7 @@ Se comparte **copiando como plantilla** (los hermanos se leen, nunca se importan
 una misma corrección hay que portarla más de un par de veces, pasar a una carpeta común
 sincronizada con un script y una prueba en cada arnés que compare su huella.
 
-# 5. Los mejores momentos de cada carrera
+# 4. Los mejores momentos de cada carrera
 
 Al acabar, repetir lo mejor de la carrera: el choque en la X, el adelantamiento en la
 estrecha, la deslizante tomada al límite, la llegada al foto-finish. Hoy solo está

@@ -226,7 +226,7 @@ export function botonesConstructor() {
 export function dibujarConstructor(edicion, { tiempo, tactil, nombre }) {
   if (edicion.circuito) {
     dibujarFondo(edicion.circuito, edicion.decorado);
-    dibujarCarriles(edicion.circuito);
+    dibujarCarriles(edicion.circuito, edicion.decorado);
     dibujarTorres(edicion.decorado, 0);   // el constructor es siempre de día
     // Sobre el suelo del escenario (la nieve es clara), la cuadrícula va en oscuro.
     pintarCuadricula('rgba(18, 20, 26, 0.14)');

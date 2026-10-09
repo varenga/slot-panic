@@ -13,7 +13,7 @@ Hermano de **Race Panic** (`race.pnyk.es`), del que nació como modo de juego.
 Prototipo publicado en **https://slot.pnyk.es**: tres circuitos (La horquilla, y El ocho y
 El nudo, de piezas: X, cruce, chicane, peralte, curva de derrape y baches) con dos
 carriles, carreras de tres, cinco o diez vueltas, uno contra una CPU que falla o dos en la misma pantalla,
-instalable como PWA y con la app de Android preparada para Google Play (`APP.md`), cuatro escenarios de día, al atardecer o
+instalable como PWA y con la app de Android preparada para Google Play (`APP.md`), cinco escenarios (uno, una mesa de juguete) de día, al atardecer o
 de noche, siete idiomas, sonido, teclado y táctil.
 
 - `TODO.md` — lo pendiente y el alcance de la fase en curso.

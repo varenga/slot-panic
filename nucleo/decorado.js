@@ -27,7 +27,10 @@ const TORRE_BUSCA = 60;            // px de eje, antes o después, donde buscarl
 const TORRE_SEPARA = 80;           // px como mínimo entre dos torres: si no, parecen puestas al azar
 
 const TAMANO = {
-  arbol: [10, 17], pino: [9, 14], arbusto: [5, 8], roca: [4, 9], cactus: [5, 8]
+  arbol: [10, 17], pino: [9, 14], arbusto: [5, 8], roca: [4, 9], cactus: [5, 8],
+  // Los de la mesa del escenario juguete: más grandes que lo que crece.
+  taza: [20, 25], lata: [16, 20], lapiz: [26, 34], moneda: [10, 13], chapa: [11, 13],
+  dado: [12, 15], ladrillo: [16, 21]
 };
 
 /** mulberry32: un PRNG de 32 bits, sembrado, que no toca `Math.random()`. */
@@ -81,8 +84,9 @@ export function cabe(circuito, pieza, puestas = []) {
   const { x, y, r } = pieza;
   if (x - r < 0 || y - r < 0 || x + r > ANCHO || y + r > ALTO) return false;
   if (zonasVetadas(circuito).some((z) => enZona(x, y, r, z))) return false;
-  if (distanciaAPista(circuito, pieza) < r + HOLGURA_PISTA) return false;
-  return puestas.every((o) => Math.hypot(o.x - x, o.y - y) > o.r + r + 3);
+  // Lo barato antes: medir la distancia a la pista es lo que cuesta.
+  if (!puestas.every((o) => Math.hypot(o.x - x, o.y - y) > o.r + r + 3)) return false;
+  return distanciaAPista(circuito, pieza) >= r + HOLGURA_PISTA;
 }
 
 export function generarDecorado(circuito, nombreEscenario) {
@@ -102,7 +106,10 @@ export function generarDecorado(circuito, nombreEscenario) {
 
   const tipos = Object.entries(escenario.piezas);
   const piezas = [];
-  for (let intento = 0; intento < INTENTOS && piezas.length < PIEZAS; intento++) {
+  // Lo grande (la mesa del juguete) necesita más intentos, y con menos ya se llena.
+  const intentos = escenario.intentos ?? INTENTOS;
+  const cuantas = escenario.cuantas ?? PIEZAS;
+  for (let intento = 0; intento < intentos && piezas.length < cuantas; intento++) {
     let dado = tirar(), tipo = tipos[0][0];
     for (const [nombre, peso] of tipos) {
       if (dado < peso) { tipo = nombre; break; }
@@ -118,7 +125,7 @@ export function generarDecorado(circuito, nombreEscenario) {
       variante: tirar()
     };
     // Las gradas son rectángulos; para ellas basta con no acercarse a su círculo.
-    if (cabe(circuito, pieza, piezas) && ocupado.every((o) => Math.hypot(o.x - pieza.x, o.y - pieza.y) > o.r + pieza.r)) {
+    if (ocupado.every((o) => Math.hypot(o.x - pieza.x, o.y - pieza.y) > o.r + pieza.r) && cabe(circuito, pieza, piezas)) {
       piezas.push(pieza);
     }
   }

@@ -54,13 +54,6 @@ export const DEPURACION = typeof location !== 'undefined' &&
   /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) && !enApp();
 
 /*
- * MAQUETA: la estética de juguete (la mesa de madera, los bordes de plástico,
- * la pista negra con trencillas), con `?juguete` y solo sirviendo en local,
- * para decidir si sigue. Cosmética: no toca nada que mida el arnés.
- */
-export const JUGUETE = DEPURACION && new URLSearchParams(location.search).has('juguete');
-
-/*
  * ¿Dentro de la app de las tiendas? Capacitor deja `window.Capacitor` antes de
  * que corra la página. Es el único sitio del juego que sabe que Capacitor
  * existe (APP.md §5): el resto pregunta enApp(). En el navegador y en Node,

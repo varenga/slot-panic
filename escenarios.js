@@ -3,15 +3,16 @@
  *
  * Son cosméticos: no cambian el agarre ni nada que el arnés mida. La calzada,
  * los bordes y los pianos son los mismos en todos (el playtest los dio por
- * buenos); cambia lo de fuera. Datos puros: este módulo no importa nada.
+ * buenos) menos en el juguete, que es de plástico; cambia lo de fuera. Datos
+ * puros: este módulo no importa nada.
  *
  * `piezas` son pesos: qué proporción del decorado es de cada tipo. `polvo` es
  * el color (sin el alfa final) de lo que levanta el coche al derrapar o al
  * pisar la grava. `grava` y `gravaMotas`, el de la escapatoria: tiene que
- * leerse distinta del suelo y del asfalto en los cuatro.
+ * leerse distinta del suelo y del asfalto en todos.
  */
 
-export const ORDEN_ESCENARIOS = ['verde', 'tierra', 'desierto', 'nieve'];
+export const ORDEN_ESCENARIOS = ['verde', 'tierra', 'desierto', 'nieve', 'juguete'];
 
 export const ESCENARIOS = {
   verde: {
@@ -53,5 +54,24 @@ export const ESCENARIOS = {
     gravaMotas: ['#96a0ab', '#bec6ce', '#8a95a1'],
     piezas: { pino: 0.75, roca: 0.25 },
     color: { pino: '#244e3f', pinoLuz: '#2f6150', nieve: '#f4f8fb', roca: '#7b8696', rocaLuz: '#98a2b0' }
+  },
+  /*
+   * El juguete: una mesa de madera con la pista de plástico encima. Es el único
+   * que cambia también la pista (`juguete`: bordes de plástico en vez de grava,
+   * plástico negro, trencillas, pianos, gradas, neumáticos y torres); sus
+   * colores los pinta `dibujo.js`. Lo que crece son cosas de la mesa.
+   */
+  juguete: {
+    juguete: true,
+    suelo: '#a77a4c',
+    franja: null,
+    motas: [],
+    polvo: 'rgba(214, 216, 222, ',
+    grava: '#9a9ea7',
+    gravaMotas: ['#8e929b', '#a6aab2', '#878b94'],
+    piezas: { taza: 0.14, lata: 0.1, lapiz: 0.16, moneda: 0.16, chapa: 0.12, dado: 0.14, ladrillo: 0.18 },
+    intentos: 20000,             // son más grandes que lo que crece: cuesta más que quepan
+    cuantas: 45,                 // y con más, la mesa parece un cajón vaciado
+    color: {}
   }
 };
