@@ -40,15 +40,6 @@ Lo que queda:
 - [ ] Ver en la base que con 3 denuncias de IP distintas un circuito se oculta (desde un
       solo ordenador no se puede probar), y revisar los ocultos de vez en cuando.
 
-# Fase 2d — Coches con características
-
-Hecho: cada modelo con su largo y su carácter (`BITACORA.md`). Lo que queda:
-
-- [ ] Playtest de los coches: ¿se nota el carácter de cada uno?, ¿el Cinquecenti (el que
-      sale disparado) compensa en carrera lo que el piloto automático le mide de menos
-      (hasta un 1,7 % por vuelta)?, ¿los nerviosos (los que aceleran o corren más para su
-      agarre) son difíciles o injugables?, ¿se leen las barras en el móvil?
-
 # Fase 3 — La app de Google Play
 
 El camino entero, con lo hecho marcado, en `APP.md` §8. Lo que queda:
