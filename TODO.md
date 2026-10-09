@@ -40,29 +40,6 @@ Lo que queda:
 - [ ] Ver en la base que con 3 denuncias de IP distintas un circuito se oculta (desde un
       solo ordenador no se puede probar), y revisar los ocultos de vez en cuando.
 
-# Fase 2c — El menú por grupos y el coche de cada uno
-
-La barra de la portada tiene diez opciones y en un portátil la letra baja a 9-11 px. Se
-agrupan en cuatro botones que abren un panel sobre la pista:
-
-| Botón | Qué tiene |
-|---|---|
-| **CARRERA** | circuito, vueltas (3, 5 y 10, también en el móvil), CPU, suelta o campeonato, jugadores |
-| **COCHE** | modelo y color, uno por jugador; las características (Fase 2d) |
-| **CIRCUITOS** | la galería y, un nivel más abajo, el constructor |
-| **AJUSTES** | escenario, hora, sonido, idioma |
-
-Dos contextos, no cuatro: **ordenador** (teclado) y **móvil** (táctil: la PWA y la app,
-con las mismas decisiones). Se decide por cómo se juega, no por la orientación: girar el
-móvil no esconde opciones; la lupa solo quita lo que no cabe en vertical (jugar dos).
-
-Hecho: los cuatro grupos, quién juega, el coche y el color de cada uno (`BITACORA.md`).
-Lo que queda:
-
-- [ ] Playtest en el móvil (horizontal y lupa): ¿se encuentra todo a la primera?, ¿los
-      paneles se tocan bien con el dedo?
-- [ ] ¿El constructor en la app? Decidir antes de subirla a Play.
-
 # Fase 2d — Coches con características
 
 Deja de ser cosmético: cada modelo, su tamaño y su carácter. Va detrás de la 2c.

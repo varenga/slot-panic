@@ -941,3 +941,11 @@ app en la consola de Play.
   coche) y ocho colores (`COLORES_COCHE`, los dos primeros los de siempre). El modelo
   puede repetirse; el color no: coger el del otro es cambiárselo. Se recuerdan.
 - Arnés: 685/685 en verde (no toca la física); 7 idiomas con las mismas claves.
+- **Probado en el móvil** (horizontal y lupa): bien. **El constructor se queda en la
+  app**: quitarlo no ahorraba nada para publicarla (lo que pide trámite en Play es la
+  galería, y está contestado en `app/store/play-console.md`).
+
+## Slot Panic 1.2.0 (09/10/2026)
+
+- El menú por grupos, quién juega con teclado y el coche y el color de cada uno.
+  `pnyk.json`: 1.2.0.
