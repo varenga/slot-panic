@@ -9,7 +9,7 @@
  * fotograma a fotograma sería tirar el tiempo.
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, COLOR } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, COLOR, JUGUETE } from './config.js';
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
@@ -43,8 +43,13 @@ export function dibujarFondo(circuito, decorado, luz = 0) {
   if (clave !== claveCapa) {
     capaSuelo = crearCapa(ANCHO, ALTO);
     dibujarEn(capaSuelo, () => {
-      pintarSuelo(decorado);
-      pintarEscapatoria(circuito, decorado);
+      if (JUGUETE) {
+        pintarMesa(decorado);
+        pintarBordes(circuito, decorado);
+      } else {
+        pintarSuelo(decorado);
+        pintarEscapatoria(circuito, decorado);
+      }
       decorado.neumaticos.forEach(pintarNeumatico);
       pintarPista(circuito);
     });
@@ -78,6 +83,88 @@ function pintarSuelo({ escenario, semilla }) {
   }
 }
 
+// --- MAQUETA: la estética de juguete (?juguete) --------------------------------
+
+const PLASTICO = {
+  pista: '#1c1e23',
+  brillo: 'rgba(255, 255, 255, 0.025)',
+  canto: '#3b3f48',
+  borde: '#9a9ea7',
+  bordeMotas: ['#8e929b', '#a6aab2', '#878b94'],
+  reborde: '#e3e5ea',
+  junta: 'rgba(0, 0, 0, 0.55)',
+  juntaLuz: 'rgba(255, 255, 255, 0.10)'
+};
+const TABLA = 72;   // px de alto de cada tabla de la mesa
+
+/** La mesa: tablas de madera, cada una de su tono, con su veta y sus juntas. */
+function pintarMesa({ semilla }) {
+  const tirar = azar(semilla + 7);
+  const tonos = ['#a77a4c', '#9d7145', '#b08452', '#a2764a', '#986c41'];
+  for (let y = 0, fila = 0; y < ALTO; y += TABLA, fila++) {
+    // Cada fila, tablas de largo distinto: las juntas de los extremos, al tresbolillo.
+    let x = -tirar() * 400;
+    while (x < ANCHO) {
+      const largo = 380 + tirar() * 420;
+      ctx.fillStyle = tonos[Math.floor(tirar() * tonos.length)];
+      ctx.fillRect(x, y, largo, TABLA);
+      // La veta: líneas largas y onduladas, un poco más oscuras o más claras.
+      for (let v = 0; v < 9; v++) {
+        const vy = y + 4 + tirar() * (TABLA - 8);
+        const fase = tirar() * 6, onda = 1 + tirar() * 2.5;
+        ctx.strokeStyle = tirar() < 0.7 ? 'rgba(70, 40, 15, 0.16)' : 'rgba(255, 230, 190, 0.10)';
+        ctx.lineWidth = 0.6 + tirar() * 1.2;
+        ctx.beginPath();
+        for (let px = x; px <= x + largo; px += 12) {
+          const py = vy + Math.sin(fase + px / (60 + v * 13)) * onda;
+          if (px === x) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      // Algún nudo.
+      if (tirar() < 0.35) {
+        const nx = x + 40 + tirar() * (largo - 80), ny = y + 12 + tirar() * (TABLA - 24);
+        ctx.fillStyle = 'rgba(80, 45, 18, 0.35)';
+        ctx.beginPath();
+        ctx.ellipse(nx, ny, 7 + tirar() * 5, 3 + tirar() * 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(40, 22, 8, 0.55)';
+      ctx.fillRect(x + largo - 1, y, 2, TABLA);
+      x += largo;
+    }
+    ctx.fillStyle = 'rgba(40, 22, 8, 0.6)';
+    ctx.fillRect(0, y + TABLA - 1.5, ANCHO, 2);
+    ctx.fillStyle = 'rgba(255, 235, 200, 0.10)';
+    ctx.fillRect(0, y, ANCHO, 1);
+  }
+}
+
+/*
+ * Los bordes de plástico gris donde hoy está la grava: la misma zona, que es
+ * la que usa la física, con un reborde claro y la sombra sobre la mesa.
+ */
+function pintarBordes(circuito, { semilla }) {
+  ctx.save();
+  ctx.translate(2, 3);
+  ctx.fillStyle = 'rgba(30, 15, 5, 0.45)';
+  rellenarZona(circuito, 3);
+  ctx.restore();
+  ctx.fillStyle = PLASTICO.reborde;
+  rellenarZona(circuito, 3);
+  ctx.fillStyle = PLASTICO.borde;
+  rellenarZona(circuito, 0);
+  const tirar = azar(semilla + 1);
+  const { eje } = circuito;
+  for (let i = 0; i < MOTAS_GRAVA; i++) {
+    const p = eje[Math.floor(tirar() * eje.length)];
+    const k = tirar() < 0.5 ? 0 : 1, lado = k ? 1 : -1;
+    const d = circuito.ancho / 2 + tirar() * (p.muro[k] - circuito.ancho / 2 - 1.5);
+    ctx.fillStyle = PLASTICO.bordeMotas[Math.floor(tirar() * PLASTICO.bordeMotas.length)];
+    ctx.fillRect(p.x - Math.sin(p.angulo) * lado * d - 0.5, p.y + Math.cos(p.angulo) * lado * d - 0.5, 1, 1);
+  }
+}
+
 // --- Pista ---------------------------------------------------------------------
 
 /*
@@ -88,6 +175,11 @@ function pintarSuelo({ escenario, semilla }) {
  * no se acumule donde los semicírculos se solapan.
  */
 function rellenarZona(circuito, extra) {
+  trazarZona(circuito, extra);
+  ctx.fill('nonzero');
+}
+
+function trazarZona(circuito, extra) {
   ctx.beginPath();
   for (const p of circuito.eje) {
     [-1, 1].forEach((lado, k) => {
@@ -97,7 +189,6 @@ function rellenarZona(circuito, extra) {
       ctx.closePath();
     });
   }
-  ctx.fill('nonzero');
 }
 
 /** La grava de muro a muro, con su textura, y el muro: una línea clara con sombra. */
@@ -130,12 +221,18 @@ function pintarPista(circuito) {
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.18)';   // una sombra suave que la despega de la grava
   ctx.lineWidth = circuito.ancho + 8;
   polilinea(circuito.eje);
-  ctx.strokeStyle = COLOR.borde;
+  ctx.strokeStyle = JUGUETE ? PLASTICO.canto : COLOR.borde;
   ctx.lineWidth = circuito.ancho + 4;
   polilinea(circuito.eje);
-  ctx.strokeStyle = COLOR.calzada;
+  ctx.strokeStyle = JUGUETE ? PLASTICO.pista : COLOR.calzada;
   ctx.lineWidth = circuito.ancho;
   polilinea(circuito.eje);
+  if (JUGUETE) {
+    // El brillo del plástico: una banda algo más clara por el centro.
+    ctx.strokeStyle = PLASTICO.brillo;
+    ctx.lineWidth = circuito.ancho * 0.45;
+    polilinea(circuito.eje);
+  }
   pintarPianos(circuito);
   pintarPiezas(circuito);
   pintarSectores(circuito);
@@ -461,15 +558,18 @@ export function dibujarCarriles(circuito) {
   if (claveCarriles !== circuito.clave) {
     capaCarriles = crearCapa(ANCHO, ALTO);
     dibujarEn(capaCarriles, () => {
-      ctx.strokeStyle = 'rgba(11, 12, 16, 0.6)';
-      ctx.lineWidth = 1.5;
-      for (const s of juntas(circuito)) {
-        const p = circuito.puntoEn(s);
-        const nx = -Math.sin(p.angulo) * circuito.ancho / 2, ny = Math.cos(p.angulo) * circuito.ancho / 2;
-        ctx.beginPath();
-        ctx.moveTo(p.x - nx, p.y - ny);
-        ctx.lineTo(p.x + nx, p.y + ny);
-        ctx.stroke();
+      if (JUGUETE) pintarJuntasJuguete(circuito);
+      else {
+        ctx.strokeStyle = 'rgba(11, 12, 16, 0.6)';
+        ctx.lineWidth = 1.5;
+        for (const s of juntas(circuito)) {
+          const p = circuito.puntoEn(s);
+          const nx = -Math.sin(p.angulo) * circuito.ancho / 2, ny = Math.cos(p.angulo) * circuito.ancho / 2;
+          ctx.beginPath();
+          ctx.moveTo(p.x - nx, p.y - ny);
+          ctx.lineTo(p.x + nx, p.y + ny);
+          ctx.stroke();
+        }
       }
       ctx.lineJoin = 'round';
       // Con un número impar de X, el carril que sale por un lado vuelve por el
@@ -477,15 +577,52 @@ export function dibujarCarriles(circuito) {
       const impar = circuito.cambiosCarril % 2 === 1;
       const trazados = CARRILES.map((lateral) =>
         [...trazadoCarril(circuito, lateral), trazadoCarril(circuito, impar ? -lateral : lateral)[0]]);
-      for (const [color, grosor] of [[COLOR.carril, 7], [COLOR.ranura, 3]]) {
+      // En la maqueta, las trencillas trenzadas: un gris de metal con un
+      // punteado claro encima.
+      const capas = JUGUETE
+        ? [['#80868f', 8, null], ['#d6dae2', 7, [1.5, 1.5]], [COLOR.ranura, 3, null]]
+        : [[COLOR.carril, 7, null], [COLOR.ranura, 3, null]];
+      for (const [color, grosor, raya] of capas) {
         ctx.strokeStyle = color;
         ctx.lineWidth = grosor;
+        ctx.setLineDash(raya ?? []);
         for (const trazado of trazados) polilinea(trazado, false);
       }
+      ctx.setLineDash([]);
     });
     claveCarriles = circuito.clave;
   }
   ctx.drawImage(capaCarriles, 0, 0);
+}
+
+/*
+ * MAQUETA: las juntas de juguete, de muro a muro (los bordes también son
+ * piezas): una ranura oscura y, al lado, el filo claro de la pieza siguiente.
+ */
+function pintarJuntasJuguete(circuito) {
+  // Recortadas a la zona: en las chicanes, el muro de un punto no es el de al lado.
+  ctx.save();
+  trazarZona(circuito, 0);
+  ctx.clip('nonzero');
+  ctx.lineCap = 'butt';
+  for (const s of juntas(circuito)) {
+    const p = circuito.puntoEn(s);
+    const q = circuito.eje.reduce((m, e) => (Math.abs(e.s - s) < Math.abs(m.s - s) ? e : m));
+    const sx = -Math.sin(p.angulo), sy = Math.cos(p.angulo);
+    const ux = Math.cos(p.angulo), uy = Math.sin(p.angulo);
+    // En la chicane el borde de un lado es el de la curva siguiente: solo la pista.
+    const tope = q.efecto === 'chicane' ? circuito.ancho / 2 + 2 : circuito.ancho / 2 + 40;
+    const [m0, m1] = q.muro.map((m) => Math.min(m, tope));
+    for (const [color, grosor, d] of [[PLASTICO.junta, 1.5, 0], [PLASTICO.juntaLuz, 1, 1.5]]) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = grosor;
+      ctx.beginPath();
+      ctx.moveTo(p.x - sx * m0 + ux * d, p.y - sy * m0 + uy * d);
+      ctx.lineTo(p.x + sx * m1 + ux * d, p.y + sy * m1 + uy * d);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 /*
