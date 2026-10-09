@@ -40,6 +40,22 @@ Lo que queda:
 - [ ] Ver en la base que con 3 denuncias de IP distintas un circuito se oculta (desde un
       solo ordenador no se puede probar), y revisar los ocultos de vez en cuando.
 
+# Fase 2d — Coches con características
+
+Deja de ser cosmético: cada modelo, su tamaño y su carácter. Va detrás de la 2c.
+
+- [ ] Largo por modelo (≈ 27-35 px), el ancho casi fijo: dos coches en paralelo no
+      pueden tocarse en recta (sección 3 del arnés).
+- [ ] Aceleración (`SUBE_POTENCIA`), agarre (`AGARRE_SLOT`) y punta (`VELOCIDAD_SLOT`)
+      como multiplicadores con un presupuesto fijo; el carácter, acorde a la forma.
+- [ ] Arnés: con cada modelo, el piloto prudente en ±3 % del de hoy y ninguno gana en
+      los cuatro oficiales; la CPU conoce el agarre de su coche y `NIVELES_CPU` se mide
+      con cada modelo.
+- [ ] Récords: **una tabla con todos los coches**, cada vuelta con su modelo (el fantasma
+      lo pinta). Un modelo se queda con la física de hoy, para que los récords que hay
+      sigan valiendo; el mínimo de `servidor/records.php`, con el más rápido.
+- [ ] COCHE enseña las características: barras en el móvil, la tabla en el ordenador.
+
 # Fase 3 — La app de Google Play
 
 El camino entero, con lo hecho marcado, en `APP.md` §8. Lo que queda:

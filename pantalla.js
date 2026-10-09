@@ -20,8 +20,10 @@ import { circulo, ctx, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { BANDA_TEXTO } from './nucleo/decorado.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { clasificacion } from './nucleo/campeonato.js';
-import { idiomaActual, nombreCompuesto, t } from './i18n.js';
-import { silenciado } from './audio.js';
+import { CIRCUITOS } from './circuitos/indice.js';
+import { nombreCompuesto, t } from './i18n.js';
+
+const CIRCUITOS_CAMPEONATO = CIRCUITOS.length;
 
 /** Dónde van la portada y los carteles: el interior del circuito, o el centro. */
 function centro(circuito) {
@@ -103,33 +105,19 @@ export function dibujarAvisos(avisos) {
 // --- Portada -------------------------------------------------------------------
 
 /*
- * Las opciones de la portada, en la banda de arriba. Dibujo y pulsación: las
- * dos con las mismas etiquetas (etiquetasPortada). Con diez no caben iguales:
- * cada botón mide lo que su etiqueta, y lo que sobra se reparte a partes iguales
- * (si no caben, encogen todas a la vez).
+ * Las opciones van en el menú (menu.js): cuatro grupos en la banda de arriba,
+ * y el panel del abierto en el sitio del de la portada (`marcoMenu`). Abajo,
+ * con teclado, quién lleva cada coche y con qué teclas; tocando, cómo se toca.
  */
-const OPCIONES = ['circuito', 'duracion', 'nivel', 'campeonato', 'circuitos', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
-
-export function opcionesPortada(etiquetas) {
-  const alto = 30, hueco = 8, relleno = 18;
-  const disponible = ANCHO - 24 - hueco * (OPCIONES.length - 1);
-  ctx.font = `600 13px ${FUENTE}`;
-  const natural = OPCIONES.map((id) => ctx.measureText(etiquetas[id]).width + relleno);
-  const suma = natural.reduce((a, b) => a + b, 0);
-  const sobra = Math.max(0, disponible - suma) / OPCIONES.length;
-  const escala = Math.min(1, disponible / suma);
-  let x = 12;
-  return OPCIONES.map((id, i) => {
-    const ancho = Math.floor(natural[i] * escala + sobra);
-    const caja = { id, x, y: (BANDA_TEXTO - alto) / 2, ancho, alto };
-    x += ancho + hueco;
-    return caja;
-  });
+export function marcoMenu() {
+  return { x: ANCHO / 2 - 350, y: BANDA_TEXTO + 16, ancho: 700, alto: ALTO - 2 * BANDA_TEXTO - 32 };
 }
 
-const TECLA_OPCION = { circuito: 'C', duracion: 'V', nivel: 'D', campeonato: 'T', circuitos: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
-
-export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo, duracion, nivel, marca = null) {
+export function dibujarPortada({ circuito, tiempo, tactil, duracion, modo, marca, menu, jugadores, modelos, colores }) {
+  bandas();
+  if (tactil) texto(t('slot.controlesTactil'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
+  else resumenJugadores(jugadores, modelos, colores);
+  if (menu) return;
   const { x, y } = centro(circuito);
   panel(x, y - 120, 470, 252);
   texto('SLOT PANIC', x, y - 70, { tam: 64, color: COLOR.hud, peso: 800 });
@@ -139,30 +127,35 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo
   if (Math.floor(tiempo * 1.6) % 2 === 0) {
     texto(t(tactil ? 'portada.jugarTactil' : 'portada.jugar'), x, y + 34, { tam: 24, color: COLOR.ambar, peso: 700 });
   }
-  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: vueltasDe(duracion) }), x, y + 80, { tam: 14, color: COLOR.texto });
-  // En un oficial, el botón de los récords (con el récord y tu mejor vuelta); si no, cómo se juega contra la CPU.
-  if (marca) boton(cajaRecordsPortada(circuito), marca + '  ›', false, 14);
-  else texto(t('slot.cpuLibre'), x, y + 104, { tam: 14, color: COLOR.texto });
-
-  bandas();
-  const etiquetas = etiquetasPortada({ circuito, escenario, tactil, hora, modelo, duracion, nivel });
-  for (const opcion of opcionesPortada(etiquetas)) boton(opcion, etiquetas[opcion.id]);
-  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
+  texto(tituloPortada(circuito, duracion, modo), x, y + 80, { tam: 14, color: COLOR.texto });
+  // En un oficial, el botón de los récords (con el récord y tu mejor vuelta); si no, tocando, cómo se juega contra la CPU.
+  if (marca && modo !== 'campeonato') boton(cajaRecordsPortada(circuito), marca + '  ›', false, 14);
+  else if (tactil) texto(t('slot.cpuLibre'), x, y + 104, { tam: 14, color: COLOR.texto });
 }
 
-/** Lo que pone en cada opción de la portada, con su tecla si no es táctil. */
-export function etiquetasPortada({ circuito, escenario, tactil, hora, modelo, duracion, nivel }) {
-  const valores = {
-    circuito: nombreCircuito(circuito),
-    coche: t('coche.' + modelo),
-    sonido: t(silenciado() ? 'sonido.no' : 'sonido.si'),
-    idioma: idiomaActual().nombre.toUpperCase(),
-    escenario: t('escenario.' + escenario),
-    hora: t('hora.' + hora),
-    duracion: t('duracion.' + duracion),
-    nivel: t('nivel.' + nivel)
-  };
-  return Object.fromEntries(OPCIONES.map((id) => [id, (tactil ? '' : TECLA_OPCION[id] + '  ·  ') + t('opcion.' + id, { v: valores[id] })]));
+/** Lo que se va a correr: el circuito y las vueltas, o el campeonato entero. */
+export function tituloPortada(circuito, duracion, modo) {
+  if (modo === 'campeonato') return t('portada.campeonato', { n: CIRCUITOS_CAMPEONATO, vueltas: vueltasDe(duracion) });
+  return t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: vueltasDe(duracion) });
+}
+
+/*
+ * Con teclado, en la banda de abajo: cada jugador en su mitad (la de sus
+ * teclas), con su color, su coche y sus teclas; o que lo lleva la CPU.
+ */
+function resumenJugadores(jugadores, modelos, colores) {
+  [0, 1].forEach((i) => {
+    const cx = ANCHO / 4 + i * ANCHO / 2, y = ALTO - BANDA_TEXTO / 2;
+    const quien = t('slot.jugador', { n: i + 1 });
+    const linea = jugadores[i] === 'humano'
+      ? `${quien} · ${t('coche.' + modelos[i])} · ${t('slot.teclas' + (i + 1))}`
+      : `${quien} · ${t('slot.cpu')} · ${t('coche.' + modelos[i])}`;
+    ctx.font = `600 14px ${FUENTE}`;
+    const ancho = ctx.measureText(linea).width;
+    ctx.fillStyle = colores[i];
+    rectanguloRedondo(cx - ancho / 2 - 24, y - 8, 16, 16, 4);
+    texto(linea, cx + 4, y + 1, { tam: 14, color: jugadores[i] === 'humano' ? COLOR.hud : COLOR.texto, peso: 600 });
+  });
 }
 
 /** Las vueltas de una carrera de CARRERAS, por su id. */
@@ -272,7 +265,8 @@ export function barraPotencia(slot, x, y, ancho) {
 }
 
 /*
- * Durante la cuenta atrás: qué mitad (o qué teclas) es cada coche. En el
+ * Durante la cuenta atrás: qué mitad (o qué teclas) es cada coche y, encima
+ * de cada uno, en la parrilla, quién es: así se ve de qué carril sale. En el
  * móvil, las dos mitades de la pantalla, cada una del color de su coche.
  */
 function guiaSlot(carrera, humanos, tactil, rotulo) {
@@ -291,12 +285,36 @@ function guiaSlot(carrera, humanos, tactil, rotulo) {
     }
     panel(cx, y - 34, 300, 68);
     texto(nombreSlot(i, humanos), cx, y - 14, { tam: 22, color: slot.coche.color, peso: 800 });
-    texto(t('slot.mantener'), cx, y + 14, { tam: 15, color: COLOR.hud, peso: 700 });
+    // Con teclado, las teclas de cada humano; el de la CPU no lleva nada.
+    const ayuda = tactil ? t('slot.mantener') : humanos[i] ? t('slot.teclas' + (i + 1)) : '';
+    if (ayuda) texto(ayuda, cx, y + 14, { tam: 15, color: COLOR.hud, peso: 700 });
   });
+  etiquetasParrilla(carrera, humanos);
   // La barra de arriba es el marcador: la ayuda va abajo, en dos líneas.
   bandas(false);
-  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - 38, { tam: 13, color: COLOR.hud, peso: 500 });
-  texto(t('slot.cpuLibre'), ANCHO / 2, ALTO - 17, { tam: 12, color: COLOR.texto, peso: 500 });
+  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - (tactil ? 38 : BANDA_TEXTO / 2), { tam: 13, color: COLOR.hud, peso: 500 });
+  if (tactil) texto(t('slot.cpuLibre'), ANCHO / 2, ALTO - 17, { tam: 12, color: COLOR.texto, peso: 500 });
+}
+
+/*
+ * Una etiqueta del color de cada coche, al lado de fuera de su carril (lejos
+ * del otro coche, que va pegado), con quién lo lleva.
+ */
+function etiquetasParrilla(carrera, humanos) {
+  const [a, b] = carrera.coches.map((slot) => slot.coche);
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  carrera.coches.forEach((slot, i) => {
+    const { coche } = slot;
+    const d = Math.hypot(coche.x - mx, coche.y - my) || 1;
+    const ux = (coche.x - mx) / d, uy = (coche.y - my) / d;
+    const x = coche.x + ux * 34, y = coche.y + uy * 34;
+    const nombre = nombreSlot(i, humanos);
+    ctx.font = `800 15px ${FUENTE}`;
+    const ancho = ctx.measureText(nombre).width + 16;
+    ctx.fillStyle = slot.coche.color;
+    rectanguloRedondo(x - ancho / 2, y - 12, ancho, 24, 6);
+    texto(nombre, x, y + 1, { tam: 15, color: COLOR.fondo, peso: 800 });
+  });
 }
 
 export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null, ids = undefined) {

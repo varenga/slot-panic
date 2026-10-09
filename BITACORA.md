@@ -909,3 +909,43 @@ app en la consola de Play.
 
 - Corrección sin funcionalidad nueva: las sombras de los árboles y las gradas siguen al
   sol, como las de las torres. `pnyk.json`: 1.1.2.
+
+## El menú por grupos y el coche de cada uno (09/10/2026, rama `21-menu-y-coches`)
+
+> La barra de la portada tenía diez opciones y en un portátil la letra bajaba a 9-11 px.
+> Se agrupan, y de paso cada jugador elige su coche, su color y (con teclado) si juega.
+
+- **Cuatro grupos** (`menu.js`): CARRERA (modo, circuito, vueltas, CPU y, con teclado,
+  J1 y J2), COCHE, CIRCUITOS (su escena de siempre: galería y, un nivel más abajo, el
+  constructor) y AJUSTES (escenario, hora, sonido, idioma). En la mesa van en la banda
+  de arriba, a 17 px; en la lupa, abajo, de dos en dos. Cada uno abre un panel sobre la
+  pista (más opaco que el de la portada, para que las filas se lean); un toque fuera lo
+  cierra sin arrancar. Con teclado siguen todas las teclas directas sin abrir nada, y
+  cada fila lleva la suya.
+- **Dos contextos, no cuatro**: con teclado o tocando (la PWA del móvil y la app, con
+  las mismas decisiones). Girar el móvil no esconde opciones; la lupa solo quita lo que
+  no cabe (jugar dos, y el coche del J2, que es de la CPU).
+- **El modo** (carrera suelta o campeonato) es una opción que se recuerda: ENTER o el
+  toque arranca lo elegido. La T ya no arranca el campeonato: cambia el modo. En modo
+  campeonato la portada dice «CAMPEONATO · 4 CIRCUITOS · n VUELTAS» y no enseña los
+  récords (no se firma en el campeonato).
+- **Quién juega**, con teclado: J1 y J2, HUMANO o CPU (teclas 1 y 2), recordado; por
+  defecto, el J1 contra la CPU. El carril de la CPU no se toma pulsando, y el humano lo
+  es desde la salida (cuenta para los récords). Tocando, como antes: cada mitad es de la
+  CPU hasta que alguien la toca.
+- **De qué carril sale cada uno**: en la cuenta atrás, una etiqueta del color de cada
+  coche en la parrilla, al lado de fuera de su carril, y las teclas de cada humano en
+  su panel. En la portada, la banda de abajo dice quién lleva cada coche, cuál y con
+  qué teclas. Los carriles se siguen cambiando en cada carrera.
+- **COCHE**: una columna por jugador con el coche en grande, sus flechas (o tocar el
+  coche) y ocho colores (`COLORES_COCHE`, los dos primeros los de siempre). El modelo
+  puede repetirse; el color no: coger el del otro es cambiárselo. Se recuerdan.
+- Arnés: 685/685 en verde (no toca la física); 7 idiomas con las mismas claves.
+- **Probado en el móvil** (horizontal y lupa): bien. **El constructor se queda en la
+  app**: quitarlo no ahorraba nada para publicarla (lo que pide trámite en Play es la
+  galería, y está contestado en `app/store/play-console.md`).
+
+## Slot Panic 1.2.0 (09/10/2026)
+
+- El menú por grupos, quién juega con teclado y el coche y el color de cada uno.
+  `pnyk.json`: 1.2.0.

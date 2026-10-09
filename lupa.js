@@ -24,11 +24,10 @@ import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lien
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import {
   barraPotencia, boton, DESTACADO, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, panel, pintarCabeceraCampeonato,
-  pintarTablaCampeonato, semaforo, vueltasDe
+  pintarTablaCampeonato, semaforo, tituloPortada
 } from './pantalla.js';
 import { dibujarConfeti } from './particulas.js';
-import { idiomaActual, t } from './i18n.js';
-import { silenciado } from './audio.js';
+import { t } from './i18n.js';
 
 const BARRA = 56;                  // px del marcador, arriba
 const ALTO_MAPA = 230;              // px del mapa con el lienzo en 9:16
@@ -263,23 +262,13 @@ export function dibujarAvisosLupa(avisos) {
 
 // --- Portada ---------------------------------------------------------------------
 
-/* Las opciones, en dos columnas abajo. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'duracion', 'nivel', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'circuitos', 'campeonato'];
-
-export function opcionesPortadaLupa() {
-  const columnas = 2, alto = 44, hueco = 12;
-  const ancho = (ANCHO_LUPA - 2 * 16 - hueco) / columnas;
-  const filas = Math.ceil(OPCIONES.length / columnas);
-  const y0 = altoLienzo - 52 - filas * alto - (filas - 1) * hueco;
-  // Si la última fila se queda con una sola, va a todo lo ancho.
-  const sola = (i) => i === OPCIONES.length - 1 && i % columnas === 0;
-  return OPCIONES.map((id, i) => ({
-    id,
-    x: 16 + (i % columnas) * (ancho + hueco),
-    y: y0 + Math.floor(i / columnas) * (alto + hueco),
-    ancho: sola(i) ? ANCHO_LUPA - 2 * 16 : ancho,
-    alto
-  }));
+/*
+ * Las opciones van en el menú (menu.js): los cuatro grupos, abajo, y el panel
+ * del abierto entre el mapa y ellos.
+ */
+export function marcoMenuLupa() {
+  const y = BAJO_MAPA + 16;
+  return { x: 16, y, ancho: ANCHO_LUPA - 32, alto: altoLienzo - 40 - 2 * 52 - 12 - 16 - y };
 }
 
 /** El botón de los récords, en el panel de la portada de la lupa. Dibujo y pulsación. */
@@ -287,8 +276,9 @@ export function cajaRecordsPortadaLupa() {
   return { id: 'records', x: ANCHO_LUPA / 2 - 210, y: BAJO_MAPA + 30 + 168, ancho: 420, alto: 28 };
 }
 
-export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo, duracion, nivel, marca }) {
+export function dibujarPortadaLupa({ circuito, carrera, tiempo, duracion, modo, marca, menu }) {
   dibujarMapa(circuito, carrera.coches);
+  if (menu) return;
   const x = ANCHO_LUPA / 2, y = BAJO_MAPA + 30;
   panel(x, y, 440, 200);
   texto('SLOT PANIC', x, y + 50, { tam: 54, color: COLOR.hud, peso: 800 });
@@ -296,20 +286,9 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
   if (Math.floor(tiempo * 1.6) % 2 === 0) {
     texto(t('portada.jugarTactil'), x, y + 138, { tam: 26, color: COLOR.ambar, peso: 700 });
   }
-  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: vueltasDe(duracion) }), x, y + (marca ? 158 : 174), { tam: 15, color: COLOR.texto });
-  if (marca) boton(cajaRecordsPortadaLupa(), marca + '  ›', false, 15);
-
-  const valores = {
-    circuito: nombreCircuito(circuito),
-    coche: t('coche.' + modelo),
-    sonido: t(silenciado() ? 'sonido.no' : 'sonido.si'),
-    idioma: idiomaActual().nombre.toUpperCase(),
-    escenario: t('escenario.' + escenario),
-    hora: t('hora.' + hora),
-    duracion: t('duracion.' + duracion),
-    nivel: t('nivel.' + nivel)
-  };
-  for (const opcion of opcionesPortadaLupa()) boton(opcion, t('opcion.' + opcion.id, { v: valores[opcion.id] }), false, 17);
+  const conMarca = marca && modo !== 'campeonato';
+  texto(tituloPortada(circuito, duracion, modo), x, y + (conMarca ? 158 : 174), { tam: 15, color: COLOR.texto });
+  if (conMarca) boton(cajaRecordsPortadaLupa(), marca + '  ›', false, 15);
 }
 
 // --- Fin -------------------------------------------------------------------------

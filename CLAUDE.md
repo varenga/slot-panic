@@ -235,8 +235,10 @@ luz.js                 la hora: día, atardecer (un velo) o noche (la pista a me
                        luz, las torres del decorado, faros y halos). Cosmética, y se
                        recuerda
 pantalla.js            lo que va encima: marcador, avisos, portada, cartel de fin.
-                       opcionesPortada() y botonesFin() sirven al dibujo Y a la
-                       pulsación
+                       botonesFin() sirve al dibujo Y a la pulsación
+menu.js                el menú de la portada: los cuatro grupos (CARRERA, COCHE,
+                       CIRCUITOS, AJUSTES) y el panel de cada uno, en la mesa y en
+                       la lupa; cajasGrupos() y cajasMenu() dibujan Y se pulsan
 lupa.js                el modo lupa (móvil en vertical): la cámara que sigue al J1,
                        el mapa y su marcador, portada y fin. Presentación, como
                        pantalla.js
