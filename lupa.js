@@ -264,7 +264,7 @@ export function dibujarAvisosLupa(avisos) {
 // --- Portada ---------------------------------------------------------------------
 
 /* Las opciones, en dos columnas abajo. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'duracion', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'circuitos', 'campeonato'];
+const OPCIONES = ['circuito', 'duracion', 'nivel', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'circuitos', 'campeonato'];
 
 export function opcionesPortadaLupa() {
   const columnas = 2, alto = 44, hueco = 12;
@@ -287,7 +287,7 @@ export function cajaRecordsPortadaLupa() {
   return { id: 'records', x: ANCHO_LUPA / 2 - 210, y: BAJO_MAPA + 30 + 168, ancho: 420, alto: 28 };
 }
 
-export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo, duracion, marca }) {
+export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo, duracion, nivel, marca }) {
   dibujarMapa(circuito, carrera.coches);
   const x = ANCHO_LUPA / 2, y = BAJO_MAPA + 30;
   panel(x, y, 440, 200);
@@ -306,7 +306,8 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
     idioma: idiomaActual().nombre.toUpperCase(),
     escenario: t('escenario.' + escenario),
     hora: t('hora.' + hora),
-    duracion: t('duracion.' + duracion)
+    duracion: t('duracion.' + duracion),
+    nivel: t('nivel.' + nivel)
   };
   for (const opcion of opcionesPortadaLupa()) boton(opcion, t('opcion.' + opcion.id, { v: valores[opcion.id] }), false, 17);
 }

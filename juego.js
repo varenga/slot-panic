@@ -6,13 +6,13 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
+  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE, NIVELES_CPU,
   SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT
 } from './config.js';
 import {
-  aceptarNormas, estado, guardarAlias, guardarDuracion, guardarMejorVuelta, guardarTipoFantasma, leerFantasmaPropio, leerMejorVuelta,
+  aceptarNormas, estado, guardarAlias, guardarDuracion, guardarNivel, guardarMejorVuelta, guardarTipoFantasma, leerFantasmaPropio, leerMejorVuelta,
   leerTipoFantasma, TIPOS_FANTASMA, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
-  leerAlias, leerCircuito, leerDuracion, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
+  leerAlias, leerCircuito, leerDuracion, leerNivel, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { CIRCUITOS } from './circuitos/indice.js';
@@ -119,7 +119,7 @@ function circuitoDeCodigo(codigo, mio = null) {
 
 /*
  * Los dos pilotos de la exhibición de la portada (la CPU de la carrera es
- * `CPU_SLOT`, en config.js). La semilla cambia en cada carrera.
+ * la del nivel elegido, NIVELES_CPU en config.js). La semilla cambia en cada carrera.
  */
 const EXHIBICION = [{ prudencia: 1.6, variacion: 0.25, fallo: 0.04 }, { prudencia: 1.3, variacion: 0.25, fallo: 0.04 }];
 const semilla = () => Math.floor(Math.random() * 2 ** 32);
@@ -136,6 +136,13 @@ function cambiarDuracion() {
   const i = CARRERAS.findIndex((c) => c.id === estado.duracion);
   estado.duracion = CARRERAS[(i + 1) % CARRERAS.length].id;
   guardarDuracion(estado.duracion);
+}
+
+/** La CPU de la carrera: fácil, normal o difícil. */
+function cambiarNivel() {
+  const i = NIVELES_CPU.findIndex((n) => n.id === estado.nivel);
+  estado.nivel = NIVELES_CPU[(i + 1) % NIVELES_CPU.length].id;
+  guardarNivel(estado.nivel);
 }
 
 function cambiarHora() {
@@ -184,7 +191,7 @@ function cambiarCircuito() {
  */
 function empezarCampeonato() {
   estado.campeonato = crearCampeonato(CIRCUITOS);
-  evento('empezar_campeonato', { vueltas: vueltasElegidas(), tactil: estado.tactil, lupa: estado.lupa });
+  evento('empezar_campeonato', { vueltas: vueltasElegidas(), cpu: estado.nivel, tactil: estado.tactil, lupa: estado.lupa });
   correrSiguiente();
 }
 
@@ -560,7 +567,8 @@ function empezarCarrera() {
   estado.turno = 1 - estado.turno;
   estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno, { vueltas: vueltasElegidas(), grabar: conRecords() });
   vestir(estado.carrera);
-  estado.pilotos = [0, 1].map(() => crearPiloto({ ...CPU_SLOT, semilla: semilla() }));
+  const { piloto } = NIVELES_CPU.find((n) => n.id === estado.nivel);
+  estado.pilotos = [0, 1].map(() => crearPiloto({ ...piloto, semilla: semilla() }));
   estado.humanos = [false, false];
   estado.fantasma = fantasmaElegido();
   if (conRecords()) cargarRecords(estado.circuito.clave);
@@ -751,6 +759,7 @@ function datosCarrera() {
     escenario: estado.escenario,
     hora: estado.hora,
     vueltas: vueltasElegidas(),
+    cpu: estado.nivel,
     coche: estado.modelo,
     tactil: estado.tactil
   };
@@ -840,6 +849,7 @@ function opcionPulsada(id) {
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
   else if (id === 'duracion') cambiarDuracion();
+  else if (id === 'nivel') cambiarNivel();
   else if (id === 'coche') cambiarCoche();
   else if (id === 'circuitos') abrirCircuitos();
   else if (id === 'campeonato') empezarCampeonato();
@@ -1123,7 +1133,7 @@ const ESCENAS = {
         dibujarPortadaLupa({ ...estado, tiempo: reloj, marca: marcaPortada() });
         return;
       }
-      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo, estado.duracion, marcaPortada());
+      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo, estado.duracion, estado.nivel, marcaPortada());
     },
     teclear(codigo) {
       if (empezar(codigo)) empezarCarrera();
@@ -1132,6 +1142,7 @@ const ESCENAS = {
       else if (codigo === 'KeyC') cambiarCircuito();
       else if (codigo === 'KeyH') cambiarHora();
       else if (codigo === 'KeyV') cambiarDuracion();
+      else if (codigo === 'KeyD') cambiarNivel();
       else if (codigo === 'KeyK') cambiarCoche();
       else if (codigo === 'KeyB') abrirConstructor();
       else if (codigo === 'KeyG') abrirCircuitos();
@@ -1331,6 +1342,7 @@ estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coars
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
 estado.duracion = leerDuracion();
+estado.nivel = leerNivel();
 estado.modelo = leerModelo(MODELOS.map((m) => m.id));
 estado.tipoFantasma = leerTipoFantasma();
 const elegido = leerCircuito([...CIRCUITOS, ...MIOS].map((c) => c.clave));

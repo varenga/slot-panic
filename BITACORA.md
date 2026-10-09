@@ -798,3 +798,28 @@ app en la consola de Play.
 - Arnés: las tres carreras acaban en sus vueltas (La horquilla: 0:37,9, 1:02,5 y 2:04,1)
   y el que va a medias cuando llega el ganador se lleva el doble con sus vueltas, no con
   las de serie. 665/665 en verde.
+
+## Niveles de CPU: fácil, normal y difícil (09/10/2026, rama `17-vueltas`)
+
+> La otra dificultad, la de `TODO.md`: una sola CPU (~1,2 s por vuelta del mejor piloto
+> en La horquilla) era mucho para quien empieza y poco para quien ya la gana.
+
+- **`NIVELES_CPU`** (`config.js`): la normal es `CPU_SLOT`, tal cual. Las otras dos, de un
+  barrido de prudencia, variación y fallos en los cuatro oficiales (seis semillas por
+  los dos carriles), con lo que deja por vuelta al mejor piloto automático:
+
+  | nivel | piloto | Horquilla | Ocho | Nudo | Resbalón |
+  |---|---|---|---|---|---|
+  | fácil | ×0,9 ± 25 %, 8 % de fallos | 2,31 s | 1,73 s | 1,79 s | 1,63 s |
+  | normal | ×1,2 ± 25 %, 5 % | 1,18 s | 0,76 s | 0,77 s | 0,81 s |
+  | difícil | ×1,35 ± 15 %, 3 % | 0,68 s | 0,44 s | 0,37 s | 0,48 s |
+
+  La fácil, en torno a los 2 s del «ahora es fácil» de los playtests de Race Panic; la
+  difícil, por debajo de los 0,7 s de la CPU perfecta que «no había quien le ganara», pero
+  aún falla alguna vez. ×1,45 ± 12 % bajaba a 0,26-0,54 s: se descartó por imbatible.
+- **En la portada**, la opción **CPU** (tecla D), que se recuerda (`slotpanic.cpu`) y vale
+  para la carrera, el campeonato y la prueba del constructor; la exhibición no cambia.
+  Diez botones en la banda; en francés encogen un poco. En la lupa, cinco filas de dos.
+- GA4: `empezar_carrera` y `empezar_campeonato` llevan `cpu`.
+- Arnés: en cada oficial, la fácil deja 1,3-3 s, la difícil 0,25-0,8 s y van en orden.
+  677/677 en verde, en ~28 s (antes ~20).

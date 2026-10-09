@@ -104,11 +104,11 @@ export function dibujarAvisos(avisos) {
 
 /*
  * Las opciones de la portada, en la banda de arriba. Dibujo y pulsación: las
- * dos con las mismas etiquetas (etiquetasPortada). Con nueve no caben iguales:
+ * dos con las mismas etiquetas (etiquetasPortada). Con diez no caben iguales:
  * cada botón mide lo que su etiqueta, y lo que sobra se reparte a partes iguales
  * (si no caben, encogen todas a la vez).
  */
-const OPCIONES = ['circuito', 'duracion', 'campeonato', 'circuitos', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
+const OPCIONES = ['circuito', 'duracion', 'nivel', 'campeonato', 'circuitos', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
 
 export function opcionesPortada(etiquetas) {
   const alto = 30, hueco = 8, relleno = 18;
@@ -127,9 +127,9 @@ export function opcionesPortada(etiquetas) {
   });
 }
 
-const TECLA_OPCION = { circuito: 'C', duracion: 'V', campeonato: 'T', circuitos: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
+const TECLA_OPCION = { circuito: 'C', duracion: 'V', nivel: 'D', campeonato: 'T', circuitos: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
 
-export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo, duracion, marca = null) {
+export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo, duracion, nivel, marca = null) {
   const { x, y } = centro(circuito);
   panel(x, y - 120, 470, 252);
   texto('SLOT PANIC', x, y - 70, { tam: 64, color: COLOR.hud, peso: 800 });
@@ -145,13 +145,13 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo
   else texto(t('slot.cpuLibre'), x, y + 104, { tam: 14, color: COLOR.texto });
 
   bandas();
-  const etiquetas = etiquetasPortada({ circuito, escenario, tactil, hora, modelo, duracion });
+  const etiquetas = etiquetasPortada({ circuito, escenario, tactil, hora, modelo, duracion, nivel });
   for (const opcion of opcionesPortada(etiquetas)) boton(opcion, etiquetas[opcion.id]);
   texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
 }
 
 /** Lo que pone en cada opción de la portada, con su tecla si no es táctil. */
-export function etiquetasPortada({ circuito, escenario, tactil, hora, modelo, duracion }) {
+export function etiquetasPortada({ circuito, escenario, tactil, hora, modelo, duracion, nivel }) {
   const valores = {
     circuito: nombreCircuito(circuito),
     coche: t('coche.' + modelo),
@@ -159,7 +159,8 @@ export function etiquetasPortada({ circuito, escenario, tactil, hora, modelo, du
     idioma: idiomaActual().nombre.toUpperCase(),
     escenario: t('escenario.' + escenario),
     hora: t('hora.' + hora),
-    duracion: t('duracion.' + duracion)
+    duracion: t('duracion.' + duracion),
+    nivel: t('nivel.' + nivel)
   };
   return Object.fromEntries(OPCIONES.map((id) => [id, (tactil ? '' : TECLA_OPCION[id] + '  ·  ') + t('opcion.' + id, { v: valores[id] })]));
 }

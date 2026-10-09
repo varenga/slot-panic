@@ -200,6 +200,18 @@ export const CHOQUE = 20;               // px entre los centros de los dos coche
  */
 export const CPU_SLOT = { prudencia: 1.2, variacion: 0.25, fallo: 0.05 };
 /*
+ * Los niveles de la CPU, que se eligen en la portada (tecla D). La normal es
+ * CPU_SLOT. Lo que deja por vuelta al mejor piloto automático en los cuatro
+ * oficiales: la fácil, 1,6-2,3 s («a 2 s, ahora es fácil»); la normal,
+ * 0,7-1,1 s; la difícil, 0,4-0,7 s, y se equivoca menos (la perfecta, a 0,7 s
+ * con la física de entonces, «no había quien le ganara»).
+ */
+export const NIVELES_CPU = [
+  { id: 'facil', piloto: { prudencia: 0.9, variacion: 0.25, fallo: 0.08 } },
+  { id: 'normal', piloto: CPU_SLOT },
+  { id: 'dificil', piloto: { prudencia: 1.35, variacion: 0.15, fallo: 0.03 } }
+];
+/*
  * J1 a la izquierda del teclado y J2 a la derecha; en el móvil, cada mitad de
  * la pantalla.
  */

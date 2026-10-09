@@ -13,7 +13,7 @@
  */
 
 import {
-  AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRERAS, CARRIL, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
+  AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRERAS, CARRIL, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, NIVELES_CPU, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -340,6 +340,25 @@ function seccionSlot(circuito, oficial) {
     calibrar(margen < 1.4, `la CPU deja ${margen.toFixed(2)} s por vuelta al mejor piloto: es fácil`);
     calibrar(salidas.some((n) => n > 0), 'la CPU no se equivoca nunca');
     comprobar(otra === repetida, 'la CPU con la misma semilla no repite la carrera');
+
+    /*
+     * Los niveles (NIVELES_CPU): la normal es la de arriba; la fácil deja
+     * 1,3-3 s por vuelta al mejor piloto y la difícil, 0,25-0,8 s (ganable,
+     * pero poco). En orden en cada oficial.
+     */
+    if (oficial) {
+      const margenes = NIVELES_CPU.map(({ id, piloto }) => {
+        if (piloto === CPU_SLOT) return margen;
+        const tiempos = [1, 2, 3, 4, 5, 6].flatMap((semilla) =>
+          correrSlot(circuito, [{ ...piloto, semilla }, { ...piloto, semilla }]).carrera.coches.map((c) => c.terminado / VUELTAS_SLOT));
+        return tiempos.reduce((a, b) => a + b, 0) / tiempos.length - fino.mejor / VUELTAS_SLOT;
+      });
+      const [facil, , dificil] = margenes;
+      console.log(`  los niveles de la CPU dejan ${NIVELES_CPU.map(({ id }, i) => `${id} ${margenes[i].toFixed(2)}`).join(', ')} s por vuelta`);
+      calibrar(facil > 1.3 && facil < 3, `la CPU fácil deja ${facil.toFixed(2)} s por vuelta`);
+      calibrar(dificil > 0.25 && dificil < 0.8, `la CPU difícil deja ${dificil.toFixed(2)} s por vuelta`);
+      comprobar(margenes.every((m, i) => i === 0 || m < margenes[i - 1]), 'los niveles de la CPU no van de fácil a difícil');
+    }
 
     // Y juntos en la pista, la CPU contra el mejor piloto: cuántas veces chocan.
     if (oficial) {

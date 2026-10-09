@@ -6,7 +6,7 @@
  * nunca se reasigna la variable `estado`.
  */
 
-import { CARRERAS, GAME_SLUG } from './config.js';
+import { CARRERAS, GAME_SLUG, NIVELES_CPU } from './config.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { codificar, decodificar } from './nucleo/fantasma.js';
 
@@ -36,6 +36,20 @@ export function leerDuracion() {
 
 export function guardarDuracion(id) {
   try { localStorage.setItem(`${GAME_SLUG}.carrera`, id); } catch (error) { /* modo privado */ }
+}
+
+/** El nivel de la CPU (NIVELES_CPU): también se recuerda. */
+export function leerNivel() {
+  try {
+    const guardado = localStorage.getItem(`${GAME_SLUG}.cpu`);
+    return NIVELES_CPU.some((n) => n.id === guardado) ? guardado : 'normal';
+  } catch (error) {
+    return 'normal';
+  }
+}
+
+export function guardarNivel(id) {
+  try { localStorage.setItem(`${GAME_SLUG}.cpu`, id); } catch (error) { /* modo privado */ }
 }
 
 /** El circuito elegido, por su clave: también se recuerda. */
@@ -193,6 +207,7 @@ export const estado = {
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario
   hora: 'dia',         // 'dia' | 'atardecer' | 'noche': cosmética, combinable con el escenario
+  nivel: 'normal',     // la CPU: 'facil' | 'normal' | 'dificil' (NIVELES_CPU)
   duracion: 'normal',  // la carrera: 'rapida' | 'normal' | 'resistencia' (CARRERAS, con sus vueltas)
   modelo: null,        // el coche del J1 (coches.js); el otro lleva el siguiente. Cosmético
   tactil: false,       // se activa con el primer toque

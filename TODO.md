@@ -23,7 +23,8 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
       cruce divierten o frustran?, ¿el peralte y los baches se leen antes de llegar?
 - [ ] Más circuitos oficiales (hoy cuatro).
 - [ ] Estética de juguete: piezas con juntas, trencillas, la mesa.
-- [ ] Niveles de CPU (hoy una, `CPU_SLOT`, ~1,2 s por vuelta del mejor piloto).
+- [ ] Playtest de los niveles de CPU y de las vueltas: ¿la difícil se puede ganar?,
+      ¿la fácil aburre?, ¿alguien juega a 10 vueltas?
 - [ ] Playtest de los récords: ¿el fantasma ayuda o estorba (hoy al 0,3)?, ¿se entiende
       firmar?, ¿el mínimo de vuelta del servidor (el 80 % del mejor piloto automático)
       deja pasar a los buenos?
