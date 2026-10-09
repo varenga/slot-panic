@@ -40,6 +40,51 @@ Lo que queda:
 - [ ] Ver en la base que con 3 denuncias de IP distintas un circuito se oculta (desde un
       solo ordenador no se puede probar), y revisar los ocultos de vez en cuando.
 
+# Fase 2c — El menú por grupos y el coche de cada uno
+
+La barra de la portada tiene diez opciones y en un portátil la letra baja a 9-11 px. Se
+agrupan en cuatro botones que abren un panel sobre la pista:
+
+| Botón | Qué tiene |
+|---|---|
+| **CARRERA** | circuito, vueltas (3, 5 y 10, también en el móvil), CPU, suelta o campeonato, jugadores |
+| **COCHE** | modelo y color, uno por jugador; las características (Fase 2d) |
+| **CIRCUITOS** | la galería y, un nivel más abajo, el constructor |
+| **AJUSTES** | escenario, hora, sonido, idioma |
+
+Dos contextos, no cuatro: **ordenador** (teclado) y **móvil** (táctil: la PWA y la app,
+con las mismas decisiones). Se decide por cómo se juega, no por la orientación: girar el
+móvil no esconde opciones; la lupa solo quita lo que no cabe en vertical (jugar dos).
+
+- [ ] Los cuatro grupos, en la mesa y en la lupa; en el ordenador siguen todas las
+      teclas directas (C, V, D, T, K, G, E, H, M, L) sin abrir el panel.
+- [ ] Jugadores, en el ordenador: **J1 Humano/CPU · J2 CPU/Humano** (CPU contra CPU, la
+      exhibición). En el móvil horizontal, el segundo entra tocando, como hoy; en la
+      lupa, siempre contra la CPU.
+- [ ] Cada jugador ve de qué carril sale y con qué teclas va su coche (con su color),
+      en la portada y en la cuenta atrás; los carriles se siguen cambiando en cada carrera.
+- [ ] COCHE: elegir modelo y color (paleta cerrada de 6-8 que se lean de noche y en los
+      cuatro escenarios); si J2 coge el color de J1, pasa al siguiente. Se recuerda.
+- [ ] El panel central de la portada resume lo que se va a correr: circuito, vueltas,
+      quién juega y con qué coche.
+- [ ] ¿El constructor en la app? Decidir antes de subirla a Play.
+
+# Fase 2d — Coches con características
+
+Deja de ser cosmético: cada modelo, su tamaño y su carácter. Va detrás de la 2c.
+
+- [ ] Largo por modelo (≈ 27-35 px), el ancho casi fijo: dos coches en paralelo no
+      pueden tocarse en recta (sección 3 del arnés).
+- [ ] Aceleración (`SUBE_POTENCIA`), agarre (`AGARRE_SLOT`) y punta (`VELOCIDAD_SLOT`)
+      como multiplicadores con un presupuesto fijo; el carácter, acorde a la forma.
+- [ ] Arnés: con cada modelo, el piloto prudente en ±3 % del de hoy y ninguno gana en
+      los cuatro oficiales; la CPU conoce el agarre de su coche y `NIVELES_CPU` se mide
+      con cada modelo.
+- [ ] Récords: **una tabla con todos los coches**, cada vuelta con su modelo (el fantasma
+      lo pinta). Un modelo se queda con la física de hoy, para que los récords que hay
+      sigan valiendo; el mínimo de `servidor/records.php`, con el más rápido.
+- [ ] COCHE enseña las características: barras en el móvil, la tabla en el ordenador.
+
 # Fase 3 — La app de Google Play
 
 El camino entero, con lo hecho marcado, en `APP.md` §8. Lo que queda:
