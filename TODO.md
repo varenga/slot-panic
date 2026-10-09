@@ -44,7 +44,7 @@ Lo que queda:
 
 Hecho: cada modelo con su largo y su carácter (`BITACORA.md`). Lo que queda:
 
-- [ ] Playtest de los coches: ¿se nota el carácter de cada uno?, ¿el bambino (el que
+- [ ] Playtest de los coches: ¿se nota el carácter de cada uno?, ¿el Cinquecenti (el que
       sale disparado) compensa en carrera lo que el piloto automático le mide de menos
       (hasta un 1,7 % por vuelta)?, ¿los nerviosos (los que aceleran o corren más para su
       agarre) son difíciles o injugables?, ¿se leen las barras en el móvil?

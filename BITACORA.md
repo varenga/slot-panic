@@ -1000,3 +1000,15 @@ app en la consola de Play.
   se reescribió con ayudantes por modelo).
 - **La base, ya con la columna**: `ALTER TABLE records ADD COLUMN coche…` (el final de
   `schema.sql`) ejecutado en Plesk antes de publicar el `api.php` nuevo.
+
+## Multiplo y Cinquecenti (09/10/2026, rama `23-coches-con-caracter`)
+
+> «Escalón → Multiplo, Bambino → Cinquecenti. Y en el Multiplo, los faros pegados al
+> parabrisas, algo más pequeños y orientados hacia la carretera.»
+
+- **Solo cambian los nombres** (`coche.escalon` y `coche.bambino` en `i18n.js`, iguales en
+  los siete idiomas: son apodos, no traducciones). Los id siguen siendo `escalon` y
+  `bambino`: con ellos se guardan los récords (columna `coche`) y lo que eligió cada uno.
+- **Los faros de arriba del Multiplo**: de un óvalo de 2 × 1,5 en x = 6, separado del
+  parabrisas, a una cuenca de 1,8 × 1,4 pegada a su borde (x = 5,8) con la lente solo en
+  la mitad de delante (0,8 × 1,1): miran a la carretera. Visto a 12 y a 4 aumentos.

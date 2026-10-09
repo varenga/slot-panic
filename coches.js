@@ -90,10 +90,12 @@ function aclarar(color, t) {
 
 export const MODELOS = [
   {
-    // El monovolumen del escalón (el de 1998): chato, ancho de punta a punta y
-    // con el morro redondo. El capó es un escalón corto delante del parabrisas,
-    // y encima, en sus esquinas, la segunda fila de faros, saltones; los otros,
-    // abajo, en el parachoques: cuatro luces en trapecio.
+    // El Multiplo, el monovolumen del escalón (el de 1998): chato, ancho de
+    // punta a punta y con el morro redondo. El capó es un escalón corto delante
+    // del parabrisas, y encima, en sus esquinas y pegados al cristal, la
+    // segunda fila de faros, pequeños y mirando a la carretera; los otros,
+    // abajo, en el parachoques: cuatro luces en trapecio. El id sigue siendo
+    // `escalon` (los récords y lo elegido se guardan con él).
     id: 'escalon',
     mide: 20.6,
     ejes: [6, -6.5],
@@ -112,8 +114,16 @@ export const MODELOS = [
       rellenar(techo, () => caja(-8.6, 1, -4.5, 4.5, 1.4));
       rayas(CRISTAL, -8.4, 0.8, [-4.85, 4.85], 0.6);   // y las ventanillas, que abomban
       rellenar(CRISTAL, () => caja(-9.7, -8.6, -4.1, 4.1, 0.5));
-      luces('rgba(0, 0, 0, 0.45)', 6, 3.7, 1.35, 1.05);   // los faros del escalón, en su cuenca
-      luces(FARO, 6, 3.7, 1, 0.75);
+      // Los faros del escalón, pequeños y pegados al parabrisas, en su cuenca;
+      // la lente, en la mitad de delante: miran a la carretera.
+      luces('rgba(0, 0, 0, 0.45)', 5.8, 3.4, 0.9, 0.72);
+      rellenar(FARO, () => {
+        for (const lado of [-1, 1]) {
+          ctx.moveTo(5.7, lado * 3.4 - 0.56);
+          ctx.ellipse(5.7, lado * 3.4, 0.78, 0.56, 0, -Math.PI / 2, Math.PI / 2);
+          ctx.closePath();
+        }
+      });
       luces(FARO, 9.3, 3.5, 0.5, 0.65);    // y los del parachoques
       rellenar('rgba(0, 0, 0, 0.4)', () => caja(10.1, 10.5, -1.6, 1.6, 0.2));   // la boca
       luces(PILOTO, -9.8, 4.5, 0.35, 0.8); // los pilotos, altos y estrechos
@@ -197,8 +207,8 @@ export const MODELOS = [
     }
   },
   {
-    // El bambino: el más corto y redondo, con la lona en el techo y la rejilla
-    // del motor detrás.
+    // El Cinquecenti (id `bambino`): el más corto y redondo, con la lona en el
+    // techo y la rejilla del motor detrás.
     id: 'bambino',
     mide: 17.2,
     ejes: [5.2, -5],
