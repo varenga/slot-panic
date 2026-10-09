@@ -84,6 +84,10 @@ corra la página.
 * **El botón atrás** cierra la app desde cualquier pantalla, como en Orbit Panic: no hay
   historial. Se decide probando si molesta.
 * **Audio**: Web Audio arranca en el primer gesto, igual que en la web.
+* **El mismo juego que la PWA del móvil** (v1.2.0): el menú, quién juega y qué se
+  puede hacer se deciden por cómo se juega (tocando o con teclado), no por si es la app.
+  El constructor y la galería también van en la app: quitarlos no simplificaba
+  publicarla.
 
 ## 6. Lo que exigen las tiendas
 
@@ -126,8 +130,8 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
 ### Fase B — `/app` con Capacitor y la de Android en local
 
 * [x] `/app` con Capacitor 7, `appId` `es.pnyk.slot`, fondo `#12141a`, y `sync.sh`.
-* [x] Proyecto Android: `compileSdk` y `targetSdk` 36, horizontal, pantalla completa,
-  compilado con `gradlew assembleDebug`.
+* [x] Proyecto Android: `compileSdk` y `targetSdk` 36, cualquier orientación (`fullUser`,
+  la lupa en vertical; §5), pantalla completa, compilado con `gradlew assembleDebug`.
 * [x] Icono adaptativo y pantalla de arranque desde `favicon.svg`.
 * [ ] Instalado por USB y comprobado en un móvil: jugar sin red, dos dedos a la vez, botón
   atrás, muescas, audio y el conmutador de idioma. (En un Xiaomi con HyperOS hay que
