@@ -9,7 +9,7 @@
  *   POST { accion: 'jugado', id }           una por huella y día
  *
  *   GET  ?records=<circuito>                 los récords de vuelta: los 10 mejores y el fantasma del primero
- *   POST { accion: 'record', circuito, alias, vuelta, carril, fantasma }   una vuelta (servidor/records.php)
+ *   POST { accion: 'record', circuito, alias, vuelta, carril, coche, fantasma }   una vuelta (servidor/records.php)
  *
  * El juego nunca espera a este fichero: sin red se construye y se corre igual.
  * Es el api.php de Race Panic (PDO, errores en JSON, credenciales en
@@ -110,12 +110,12 @@ function entero($valor, $tope) {
 
 // --- Los récords --------------------------------------------------------------
 
-/** Los 10 mejores de un circuito (a igualdad, el más antiguo) y el fantasma del primero. */
+/** Los 10 mejores de un circuito, con todos los coches (a igualdad, el más antiguo), y el fantasma del primero. */
 function tabla_records($pdo, $circuito) {
-  $consulta = $pdo->prepare('SELECT alias, vuelta, carril, fecha FROM records WHERE circuito = ? ORDER BY vuelta ASC, fecha ASC, id ASC LIMIT ' . RECORDS_TABLA);
+  $consulta = $pdo->prepare('SELECT alias, vuelta, carril, coche, fecha FROM records WHERE circuito = ? ORDER BY vuelta ASC, fecha ASC, id ASC LIMIT ' . RECORDS_TABLA);
   $consulta->execute([$circuito]);
   $filas = array_map(function ($f) {
-    return ['alias' => $f['alias'], 'vuelta' => (int) $f['vuelta'], 'carril' => (int) $f['carril'], 'fecha' => $f['fecha']];
+    return ['alias' => $f['alias'], 'vuelta' => (int) $f['vuelta'], 'carril' => (int) $f['carril'], 'coche' => $f['coche'], 'fecha' => $f['fecha']];
   }, $consulta->fetchAll());
   $fantasma = null;
   if ($filas) {
@@ -223,7 +223,8 @@ if ($accion === 'record') {
   $vuelta = $body['vuelta'] ?? null;
   $carril = $body['carril'] ?? null;
   $fantasma = $body['fantasma'] ?? null;
-  $motivo = records_validar($circuito, $vuelta, $carril, $fantasma);
+  $coche = $body['coche'] ?? RECORDS_COCHE_ANTIGUO;
+  $motivo = records_validar($circuito, $vuelta, $carril, $fantasma, $coche);
   if ($motivo !== null) fail(400, 'Récord inválido', $motivo);
   $huella = huella();
   try {
@@ -231,8 +232,8 @@ if ($accion === 'record') {
     $hoy = $pdo->prepare('SELECT COUNT(*) FROM records WHERE huella = ? AND fecha > NOW() - INTERVAL 1 DAY');
     $hoy->execute([$huella]);
     if ((int) $hoy->fetchColumn() >= RECORDS_AL_DIA) fail(429, 'Límite diario');
-    $pdo->prepare('INSERT INTO records (circuito, alias, vuelta, carril, fantasma, huella) VALUES (?, ?, ?, ?, ?, ?)')
-        ->execute([$circuito, $alias, $vuelta, $carril, $fantasma, $huella]);
+    $pdo->prepare('INSERT INTO records (circuito, alias, vuelta, carril, coche, fantasma, huella) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        ->execute([$circuito, $alias, $vuelta, $carril, $coche, $fantasma, $huella]);
     $id = (int) $pdo->lastInsertId();
     // Solo se guardan los 50 mejores de cada circuito.
     $pdo->prepare('DELETE FROM records WHERE circuito = ? AND id NOT IN (SELECT id FROM (SELECT id FROM records WHERE circuito = ? ORDER BY vuelta ASC, fecha ASC, id ASC LIMIT ' . RECORDS_GUARDA . ') AS mejores)')

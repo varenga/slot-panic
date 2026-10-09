@@ -69,11 +69,45 @@ export function enApp() {
 /*
  * 31×15,5 lógicos (en pantalla, unos 22×11 px) sobre una pista de 64: el de
  * Race Panic (22×11) a ×1,4, que en la pista se perdía. Entre los dos coches
- * en paralelo quedan 14 px, y 9 hasta el borde del asfalto. Los modelos
- * (coches.js) se escalan con él; el CHOQUE también.
+ * en paralelo quedan 14 px, y 9 hasta el borde del asfalto. Es el del coche
+ * de siempre (el clásico): cada modelo tiene su largo (COCHES), y el CHOQUE
+ * crece con él.
  */
 export const LARGO_COCHE = 31;
 export const ANCHO_COCHE = 15.5;
+
+/*
+ * Cada modelo (coches.js), con su tamaño y su carácter. El `largo` (px) es lo
+ * que mide de morro a cola; el ancho sale de su forma y apenas cambia (de 13 a
+ * 17 px): dos coches en paralelo, a 2 · CARRIL, no se tocan nunca. Más largo es
+ * más fácil de alcanzar en una X: el CHOQUE crece con el largo de los dos.
+ *
+ * Y tres multiplicadores sobre el coche de siempre: `acelera` (el motor gana
+ * velocidad tantas veces más deprisa: divide INERCIA_MOTOR), `agarre`
+ * (AGARRE_SLOT) y `punta` (VELOCIDAD_SLOT). El presupuesto es fijo: lo que
+ * cada uno se aparta de 1, por lo que vale en la vuelta (PESO_CARACTER),
+ * sumado da 0. Medido con el piloto prudente, un 10 % de agarre baja la vuelta
+ * un 3,5 %, de punta un 2 % y de aceleración un 0,8 %: con una suma sin pesos,
+ * el que agarra ganaba en todas. El gatillo (SUBE_POTENCIA, BAJA_POTENCIA) es
+ * del mando, no del coche: es el mismo para todos, y a toques todos se
+ * dosifican igual.
+ *
+ * El clásico es el coche de siempre (LARGO_COCHE, ×1): los récords de antes
+ * se hicieron con él y siguen valiendo. El carácter va con la forma: el
+ * bambino, corto, sale disparado; el tiburón, largo y afilado, corre mucho y
+ * tarda en coger velocidad; el dos caballos agarra como nadie.
+ */
+export const PESO_CARACTER = { acelera: 0.25, agarre: 1, punta: 0.65 };
+export const COCHE_REFERENCIA = 'clasico';
+export const COCHES = {
+  clasico:     { largo: 31, acelera: 1,    agarre: 1,     punta: 1 },
+  escalon:     { largo: 29, acelera: 1.16, agarre: 0.96,  punta: 1 },
+  patito:      { largo: 29, acelera: 0.8,  agarre: 1.02,  punta: 1.04 },
+  tiburon:     { largo: 35, acelera: 0.69, agarre: 1,     punta: 1.12 },
+  escarabajo:  { largo: 30, acelera: 0.9,  agarre: 1,     punta: 1.04 },
+  bambino:     { largo: 27, acelera: 1.3,  agarre: 0.94,  punta: 0.975 },
+  monovolumen: { largo: 33, acelera: 1,    agarre: 0.975, punta: 1.04 }
+};
 
 // --- Pianos y escapatorias ----------------------------------------------------
 

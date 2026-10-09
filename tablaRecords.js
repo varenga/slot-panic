@@ -1,7 +1,8 @@
 /*
  * Slot Panic — la tabla de récords de un circuito y la firma.
  *
- *   RÉCORDS  los 10 mejores (puesto, alias, vuelta y carril), tu mejor vuelta
+ *   RÉCORDS  los 10 mejores (puesto, alias, vuelta, coche y carril), con todos
+ *            los coches en la misma tabla; tu mejor vuelta
  *            y contra qué fantasma se corre (el tuyo, el del récord o ninguno)
  *   FIRMA    al acabar una carrera con una vuelta que entra en la tabla: el
  *            alias de 3 letras (con ▲▼ o tecleado), FIRMAR o NO, GRACIAS
@@ -62,7 +63,7 @@ export function dibujarRecords(vista, { nombre, tabla, mejor, tipoFantasma, resa
       const color = suyo ? COLOR.ambar : i === 0 ? COLOR.hud : COLOR.texto;
       texto(`${i + 1}.`, x - mitad, y, { tam: 17, color, peso: 700, alinear: 'left' });
       texto(r.alias, x - mitad + 50, y, { tam: 17, color, peso: 800, alinear: 'left' });
-      texto(t('records.carril', { n: r.carril + 1 }), x + mitad * 0.25, y, { tam: 13, color: COLOR.texto, peso: 500 });
+      texto(`${t('coche.' + r.coche)} · ${t('records.carril', { n: r.carril + 1 })}`, x + mitad * 0.22, y, { tam: 12, color: COLOR.texto, peso: 500 });
       texto(formatearTiempo(r.vuelta / 1000), x + mitad, y, { tam: 17, color, peso: 800, alinear: 'right' });
     });
     if (error) texto(t('records.sinRed'), x, y0 + TOP * fila + 4, { tam: 12, color: COLOR.texto, peso: 500 });

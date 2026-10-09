@@ -25,12 +25,12 @@
 
 import {
   ACUMULA_DERRAPE, AGARRE_PERALTE, AGARRE_SLOT, RADIO_GUIA, ALTO, ANCHO, BAJA_POTENCIA, CARRIL, CHOQUE,
-  COLETEO_DERRAPE, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, CURVA_DESLIZANTE, DURACION_MANO, ESPERA_MANO,
+  COCHE_REFERENCIA, COCHES, COLETEO_DERRAPE, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, CURVA_DESLIZANTE, DURACION_MANO, ESPERA_MANO,
   FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, INERCIA_MOTOR, INERCIA_SOLTAR, LARGO_COCHE, LIMITE_SLOT, PASO_FISICA, RECUPERA_DERRAPE,
   SUBE_POTENCIA, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from '../config.js';
 import { normalizarAngulo } from './geometria.js';
-import { cerrar, crearGrabacion, grabar } from './fantasma.js';
+import { cerrar, cocheDe, crearGrabacion, grabar } from './fantasma.js';
 
 const DESPLAZAMIENTO_SALIDA = 0.3;  // fracción de la velocidad que sale hacia fuera al soltarse
 const QUIETO = 12;                  // px/s por debajo de los que el coche se da por parado en la mesa
@@ -159,9 +159,11 @@ export function poseEnCarril(circuito, s, lateral) {
 
 // --- La carrera ----------------------------------------------------------------
 
-function crearSlot(circuito, lateral, color) {
+function crearSlot(circuito, lateral, color, modelo) {
   const slot = {
     lateral,
+    modelo: COCHE_REFERENCIA,
+    ficha: COCHES[COCHE_REFERENCIA],   // su largo y su carácter (COCHES, en config.js)
     estado: 'carril',   // 'carril' | 'fuera' | 'mano'
     s: circuito.largo - ATRAS_SALIDA,
     progreso: -ATRAS_SALIDA, // la s desenrollada: crece vuelta tras vuelta
@@ -188,23 +190,36 @@ function crearSlot(circuito, lateral, color) {
     salidas: 0,         // veces que se ha salido
     terminado: null     // s de carrera al completar la última vuelta
   };
+  ponerModelo(slot, modelo);
   colocarEnCarril(slot, circuito);
   slot.carrilVuelta = carrilEn(circuito, lateral, slot.s + ATRAS_SALIDA);
   return slot;
 }
 
 /*
+ * El coche de un carril: su modelo decide su largo y su carácter. La portada
+ * lo cambia con la exhibición en marcha; un modelo que no existe es el de
+ * siempre.
+ */
+export function ponerModelo(slot, id) {
+  slot.modelo = cocheDe(id);
+  slot.ficha = COCHES[slot.modelo];
+  slot.coche.modelo = slot.modelo;
+}
+
+/*
  * `vueltas`: las de la carrera (CARRERAS, en config.js).
+ * `modelos`: el de cada coche (COCHES); por defecto, el de siempre.
  * `grabar`: grabar las vueltas (los fantasmas). Lo pide el juego en sus
  * carreras; el arnés, solo donde lo mide (en miles de carreras triplicaba su tiempo).
  */
-export function crearCarreraSlot(circuito, colores, turno = 0, { vueltas = VUELTAS_SLOT, grabar: grabarVueltas = false } = {}) {
+export function crearCarreraSlot(circuito, colores, turno = 0, { vueltas = VUELTAS_SLOT, grabar: grabarVueltas = false, modelos = [] } = {}) {
   const carrera = {
     circuito,
     vueltas,
     grabar: grabarVueltas,
     // El coche i va por el carril (i + turno) % 2.
-    coches: colores.map((color, i) => crearSlot(circuito, CARRILES[(i + turno) % 2], color)),
+    coches: colores.map((color, i) => crearSlot(circuito, CARRILES[(i + turno) % 2], color, modelos[i])),
     fase: 'cuenta',     // 'cuenta' | 'carrera' | 'fin'
     cuenta: CUENTA_ATRAS,
     tiempo: 0,
@@ -264,19 +279,27 @@ function pasoCarreraSlot(carrera, mandos, dt) {
  * al empezar a tocarse y si se acercan: la mano puede dejar uno encima del
  * otro, parados, y no vuelven a chocar al arrancar.
  */
+export function distanciaChoque(a, b) {
+  return CHOQUE * (a.ficha.largo + b.ficha.largo) / (2 * LARGO_COCHE);
+}
+
 function comprobarChoque(carrera) {
   const [a, b] = carrera.coches;
   const dx = b.coche.x - a.coche.x, dy = b.coche.y - a.coche.y;
   const distancia = Math.hypot(dx, dy);
-  const solapados = distancia < CHOQUE;
+  const choque = distanciaChoque(a, b);
+  const solapados = distancia < choque;
   const empiezan = solapados && !carrera.solapados;
   /*
    * Dejan de tocarse al separarse algo más de lo que hace falta para chocar:
    * la mano puede dejarlos a poco más de CHOQUE en una X, y al arrancar los
    * carriles los juntaban y volvían a chocar (lo vio el arnés en una X corta
-   * del constructor). Menos que los 2 · CARRIL de dos coches en paralelo.
+   * del constructor). Menos que los 2 · CARRIL de dos coches en paralelo: si
+   * no, dos coches largos que salen juntos de una X seguirían «tocándose» en
+   * paralelo y no chocarían en la siguiente.
    */
-  carrera.solapados = solapados || (carrera.solapados && distancia < CHOQUE + HOLGURA_CHOQUE);
+  const holgura = Math.min(HOLGURA_CHOQUE, 2 * CARRIL - 2 - choque);
+  carrera.solapados = solapados || (carrera.solapados && distancia < choque + holgura);
   /*
    * Lo que la mano acaba de posar ya estaba ahí: en una estrecha puede dejarlo
    * a la par del otro, que ya ha arrancado y se le acerca (lo vio el arnés en
@@ -306,16 +329,18 @@ function pasoSlot(slot, circuito, acelerar, dt) {
 
   // La potencia sigue al dedo con retraso. El motor lleva el coche hacia la
   // velocidad que pide, con inercia; por encima, rueda y se frena poco a poco.
+  // Cuánto corre, cuánto tarda y cuánto agarra, los de su modelo.
+  const { ficha } = slot;
   slot.potencia += ((acelerar ? 1 : 0) - slot.potencia) * dt / (acelerar ? SUBE_POTENCIA : BAJA_POTENCIA);
-  const pide = slot.potencia * VELOCIDAD_SLOT;
-  slot.v += (pide - slot.v) * dt / (pide > slot.v ? INERCIA_MOTOR : INERCIA_SOLTAR);
+  const pide = slot.potencia * VELOCIDAD_SLOT * ficha.punta;
+  slot.v += (pide - slot.v) * dt / (pide > slot.v ? INERCIA_MOTOR / ficha.acelera : INERCIA_SOLTAR);
   slot.coche.frenando = pide < slot.v - 40;
 
   const { indice } = buscar(circuito, slot.s);
   const p = circuito.eje[indice];
   const lateral = lateralEn(circuito, slot.lateral, slot.s);
   const radio = radioAgarre(p, lateral);
-  slot.exigencia = radio === Infinity ? 0 : slot.v * slot.v / radio / AGARRE_SLOT;
+  slot.exigencia = radio === Infinity ? 0 : slot.v * slot.v / radio / (AGARRE_SLOT * ficha.agarre);
   // En las curvas de derrape y deslizante se aguanta más pasado.
   const ancha = ANCHAS[p.efecto] || null;
   // Pasado el agarre, derrapa: pierde velocidad y el derrape se acumula (en
@@ -394,7 +419,7 @@ function pasoFuera(slot, dt) {
   slot.giro *= Math.exp(-AMORTIGUA_TROMPO * dt);
 
   // El borde de la mesa: rebota hacia dentro.
-  const margen = LARGO_COCHE / 2;
+  const margen = slot.ficha.largo / 2;
   if (coche.x < margen || coche.x > ANCHO - margen) {
     coche.x = Math.max(margen, Math.min(ANCHO - margen, coche.x));
     coche.vx = -coche.vx * REBOTE_MESA;
@@ -442,7 +467,7 @@ function contarVueltas(carrera, slot, i) {
   const tiempo = carrera.tiempo - slot.inicioVuelta;
   slot.vueltas.push(tiempo);
   if (carrera.grabar) {
-    slot.grabadas.push({ ...cerrar(slot.grabacion, tiempo), inicio: slot.inicioVuelta, carril: slot.carrilVuelta });
+    slot.grabadas.push({ ...cerrar(slot.grabacion, tiempo), inicio: slot.inicioVuelta, carril: slot.carrilVuelta, coche: slot.modelo });
     // La siguiente empieza aquí, a 0 s: sin esta pose, su primera muestra
     // sería la del paso siguiente, 1/120 s tarde (~3 px, lo midió el arnés).
     slot.grabacion = crearGrabacion();

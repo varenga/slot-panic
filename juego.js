@@ -6,7 +6,7 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE, NIVELES_CPU,
+  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, NIVELES_CPU,
   SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT
 } from './config.js';
 import {
@@ -18,7 +18,7 @@ import {
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { CIRCUITOS } from './circuitos/indice.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
-import { avanzarSlot, crearCarreraSlot } from './nucleo/slot.js';
+import { avanzarSlot, crearCarreraSlot, ponerModelo } from './nucleo/slot.js';
 import { generarDecorado } from './nucleo/decorado.js';
 import { aPiezas, deCodigo, validarTrazado } from './nucleo/cuadricula.js';
 import {
@@ -154,8 +154,9 @@ function cambiarHora() {
 
 /*
  * Cada jugador elige su coche y su color (el menú COCHE); la exhibición de la
- * portada lo enseña ya. El modelo puede repetirse; el color, no: coger el del
- * otro es cambiárselo.
+ * portada lo enseña ya, y corre con él: el modelo es su largo y su carácter
+ * (COCHES). El modelo puede repetirse; el color, no: coger el del otro es
+ * cambiárselo.
  */
 function cambiarModelo(i, paso) {
   const n = MODELOS.length;
@@ -175,7 +176,7 @@ function cambiarColor(i, color) {
 
 function vestir(carrera) {
   carrera.coches.forEach((slot, i) => {
-    slot.coche.modelo = estado.modelos[i];
+    ponerModelo(slot, estado.modelos[i]);
     slot.coche.color = estado.colores[i];
   });
 }
@@ -585,7 +586,7 @@ function limpiarPista() {
 function irAPortada() {
   estado.fase = 'portada';
   if (conRecords()) cargarRecords(estado.circuito.clave);
-  estado.carrera = crearCarreraSlot(estado.circuito, estado.colores);
+  estado.carrera = crearCarreraSlot(estado.circuito, estado.colores, 0, { modelos: estado.modelos });
   vestir(estado.carrera);
   estado.pilotos = EXHIBICION.map((opciones) => crearPiloto({ ...opciones, semilla: semilla() }));
   estado.humanos = [false, false];
@@ -605,7 +606,9 @@ function empezarCarrera() {
   estado.fase = 'carrera';
   // Cada carrera, los coches se cambian de carril: no son iguales.
   estado.turno = 1 - estado.turno;
-  estado.carrera = crearCarreraSlot(estado.circuito, estado.colores, estado.turno, { vueltas: vueltasElegidas(), grabar: conRecords() });
+  estado.carrera = crearCarreraSlot(estado.circuito, estado.colores, estado.turno, {
+    vueltas: vueltasElegidas(), grabar: conRecords(), modelos: estado.modelos
+  });
   vestir(estado.carrera);
   estado.carrera.anochece = !!CARRERAS.find((c) => c.id === estado.duracion).anochece;
   const { piloto } = NIVELES_CPU.find((n) => n.id === estado.nivel);
@@ -975,7 +978,8 @@ function avanzarMundo(mandosCoches, dt) {
     const { coche } = slot;
     // Derrapando, la trencilla chisporrotea, más cuanto más cerca de salirse.
     if (slot.estado === 'carril' && slot.derrape > 0.2 && Math.random() < slot.derrape) {
-      const morro = { x: coche.x + Math.cos(coche.angulo) * LARGO_COCHE / 2, y: coche.y + Math.sin(coche.angulo) * LARGO_COCHE / 2 };
+      const largo = slot.ficha.largo;
+      const morro = { x: coche.x + Math.cos(coche.angulo) * largo / 2, y: coche.y + Math.sin(coche.angulo) * largo / 2 };
       emitirChispas(estado.particulas, { ...morro, nx: Math.cos(coche.angulo), ny: Math.sin(coche.angulo) }, coche.vx * 0.2, coche.vy * 0.2, 1);
     }
     if (slot.estado === 'fuera' && Math.hypot(coche.vx, coche.vy) > 30 && Math.random() < 0.6) {
@@ -995,8 +999,9 @@ function dibujarMundo() {
 
 /*
  * El fantasma del J1, con el reloj de su vuelta: debajo de los coches y
- * translúcido. En la cuenta atrás ya está en la parrilla; luego, mientras el
- * J1 lo conduzca alguien.
+ * translúcido, con la forma del coche con que se hizo y el color del J1. En
+ * la cuenta atrás ya está en la parrilla; luego, mientras el J1 lo conduzca
+ * alguien.
  */
 function pintarFantasma() {
   const { carrera } = estado;
@@ -1005,7 +1010,7 @@ function pintarFantasma() {
   if (carrera.fase !== 'cuenta' && !estado.humanos[0]) return;
   const slot = carrera.coches[0];
   const pose = posar(fantasma, carrera.tiempo - slot.inicioVuelta);
-  if (pose) dibujarFantasma(pose, slot.coche);
+  if (pose) dibujarFantasma(pose, { ...slot.coche, modelo: fantasma.coche });
 }
 
 function pintarMundo() {

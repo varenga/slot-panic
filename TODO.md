@@ -42,19 +42,14 @@ Lo que queda:
 
 # Fase 2d — Coches con características
 
-Deja de ser cosmético: cada modelo, su tamaño y su carácter. Va detrás de la 2c.
+Hecho: cada modelo con su largo y su carácter (`BITACORA.md`). Lo que queda:
 
-- [ ] Largo por modelo (≈ 27-35 px), el ancho casi fijo: dos coches en paralelo no
-      pueden tocarse en recta (sección 3 del arnés).
-- [ ] Aceleración (`SUBE_POTENCIA`), agarre (`AGARRE_SLOT`) y punta (`VELOCIDAD_SLOT`)
-      como multiplicadores con un presupuesto fijo; el carácter, acorde a la forma.
-- [ ] Arnés: con cada modelo, el piloto prudente en ±3 % del de hoy y ninguno gana en
-      los cuatro oficiales; la CPU conoce el agarre de su coche y `NIVELES_CPU` se mide
-      con cada modelo.
-- [ ] Récords: **una tabla con todos los coches**, cada vuelta con su modelo (el fantasma
-      lo pinta). Un modelo se queda con la física de hoy, para que los récords que hay
-      sigan valiendo; el mínimo de `servidor/records.php`, con el más rápido.
-- [ ] COCHE enseña las características: barras en el móvil, la tabla en el ordenador.
+- [ ] Playtest de los coches: ¿se nota el carácter de cada uno?, ¿el bambino (el que
+      sale disparado) compensa en carrera lo que el piloto automático le mide de menos
+      (hasta un 1,7 % por vuelta)?, ¿los nerviosos (los que aceleran o corren más para su
+      agarre) son difíciles o injugables?, ¿se leen las barras en el móvil?
+- [ ] Antes de publicar: `ALTER TABLE records ADD COLUMN coche…` (final de
+      `schema.sql`) en la base de Plesk, **antes** del push que sube el `api.php` nuevo.
 
 # Fase 3 — La app de Google Play
 

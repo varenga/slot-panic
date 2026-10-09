@@ -9,11 +9,15 @@
  * ángulo lleva el coleteo, así que el fantasma derrapa como derrapó, y si se
  * salió, también se sale (y la mano lo devuelve).
  *
+ * Cada vuelta dice con qué coche se hizo (`coche`, de COCHES): el fantasma se
+ * pinta con su forma. Las guardadas antes de que los coches tuvieran carácter
+ * no lo dicen: son del clásico, el de siempre.
+ *
  * Sin DOM: lo prueba el arnés, lo guarda `estado.js` y viaja a `api.php` con
  * `codificar()` / `decodificar()`.
  */
 
-import { PASO_FANTASMA } from '../config.js';
+import { COCHE_REFERENCIA, COCHES, PASO_FANTASMA } from '../config.js';
 import { normalizarAngulo } from './geometria.js';
 
 const VERSION = 1;
@@ -77,15 +81,22 @@ export function posar(fantasma, t) {
 
 /*
  * Para guardar y enviar: enteros en décimas de píxel y centésimas de radián,
- * en una lista plana. Una vuelta de 9 s son unas 280 muestras: ~4 KB.
+ * en una lista plana, y el coche (`c`). Una vuelta de 9 s son unas 280
+ * muestras: ~4 KB.
  */
 export function codificar(fantasma) {
   return JSON.stringify({
     v: VERSION,
     tiempo: Math.round(fantasma.tiempo * 1000) / 1000,
     paso: PASO_FANTASMA,
+    c: cocheDe(fantasma.coche),
     d: fantasma.muestras.flatMap(([x, y, a]) => [Math.round(x * 10), Math.round(y * 10), Math.round(a * 100)])
   });
+}
+
+/** El coche de una vuelta: si no lo dice (o no existe), el de siempre. */
+export function cocheDe(id) {
+  return typeof id === 'string' && Object.hasOwn(COCHES, id) ? id : COCHE_REFERENCIA;
 }
 
 /** El inverso de `codificar`. Cualquier cosa rara (otra versión, otro paso) es null. */
@@ -100,7 +111,7 @@ export function decodificar(texto) {
       if (![x, y, a].every(Number.isFinite)) return null;
       muestras.push([x, y, a]);
     }
-    return { tiempo: datos.tiempo, muestras };
+    return { tiempo: datos.tiempo, muestras, coche: cocheDe(datos.c) };
   } catch (error) {
     return null;
   }

@@ -1,9 +1,11 @@
 /*
  * Slot Panic — los coches: la forma de cada modelo, vista desde arriba.
  *
- * Presentación, como luz.js: la física y los choques no saben de modelos, y
- * cada uno cabe en la caja de LARGO_COCHE × ANCHO_COCHE (el morro, a +x). Son
- * caricaturas de juguete sacadas de los planos de _desarrollo/. En escritorio
+ * Presentación, como luz.js: la física sabe de cada modelo su largo y su
+ * carácter (COCHES, en config.js), no su forma, y los choques siguen con la
+ * distancia entre centros. Cada uno se pinta con su largo (el morro, a +x), y
+ * el ancho sale de su forma. Son caricaturas de juguete sacadas de los planos
+ * de _desarrollo/. En escritorio
  * miden unos 22 px y solo se lee lo exagerado (el techo de lona, el morro en
  * punta, las dos filas de faros): cada uno tiene un rasgo que lo delata. En la
  * lupa llegan a 75 px, y ahí cuentan el volumen (el techo, más claro, y un
@@ -18,16 +20,18 @@
  * es el color del coche, aclarado.
  */
 
-import { COLOR, LARGO_COCHE } from './config.js';
+import { COCHES, COLOR } from './config.js';
 import { ctx } from './nucleo/lienzo.js';
 
 /*
- * Los modelos se dibujan en la caja de Race Panic, 22×11, y se escalan a la
- * del juego (LARGO_COCHE × ANCHO_COCHE, con la misma proporción): así crecen
- * todos a la vez sin tocar sus cifras.
+ * Los modelos se dibujan en la caja de Race Panic, 22×11, cada uno con lo que
+ * mide de cola a morro ahí (`mide`), y se escalan a su largo (COCHES): con la
+ * misma escala a lo largo y a lo ancho, para no deformarlos. Así el bambino,
+ * el más corto, es también algo más ancho, y el tiburón, el más largo, el más
+ * estrecho.
  */
 const L = 11, A = 5.5;
-const ESCALA = LARGO_COCHE / (2 * L);
+const escala = (m) => COCHES[m.id].largo / m.mide;
 const CRISTAL = COLOR.cocheCabina;
 const FARO = '#fff3c4';
 const PILOTO = '#7a2a30';
@@ -91,6 +95,7 @@ export const MODELOS = [
     // y encima, en sus esquinas, la segunda fila de faros, saltones; los otros,
     // abajo, en el parachoques: cuatro luces en trapecio.
     id: 'escalon',
+    mide: 20.6,
     ejes: [6, -6.5],
     silueta() {
       ctx.moveTo(-10, -A + 2);
@@ -118,6 +123,7 @@ export const MODELOS = [
     // El de los dos caballos: cuerpo estrecho, aletas sueltas, el capó
     // acanalado y el techo de lona, enrollable, hasta la cola.
     id: 'patito',
+    mide: 20.2,
     ejes: [6, -6],
     via: 4.4,
     silueta() {
@@ -144,6 +150,7 @@ export const MODELOS = [
     // esquinas; la cola se afila, las ruedas de atrás van tapadas, y el techo
     // es claro, con los intermitentes en las esquinas de atrás.
     id: 'tiburon',
+    mide: 2 * L,
     ejes: [6.5, -6.5],
     via: 3.5,
     silueta() {
@@ -162,6 +169,7 @@ export const MODELOS = [
   {
     // El escarabajo: una burbuja con cuatro aletas redondas a los lados.
     id: 'escarabajo',
+    mide: 20.6,
     ejes: [6.3, -6.3],
     via: 4.3,
     silueta() {
@@ -192,6 +200,7 @@ export const MODELOS = [
     // El bambino: el más corto y redondo, con la lona en el techo y la rejilla
     // del motor detrás.
     id: 'bambino',
+    mide: 17.2,
     ejes: [5.2, -5],
     via: 4.4,
     silueta() {
@@ -214,6 +223,7 @@ export const MODELOS = [
     // el morro, redondo y corto, con los faros rasgados en las esquinas. Los
     // retrovisores, las barras del techo y la cola recta.
     id: 'monovolumen',
+    mide: 2 * L,
     ejes: [6.8, -6.8],
     silueta() {
       ctx.moveTo(-L, -A + 1);
@@ -253,6 +263,7 @@ export const MODELOS = [
   {
     // El de Race Panic: la caja entera, el de siempre.
     id: 'clasico',
+    mide: 2 * L,
     ejes: [L - 4.5, -L + 4.5],
     silueta() {
       caja(-L, L, -A, A, 3);
@@ -285,7 +296,7 @@ export function siguienteModelo(id) {
  */
 export function pintarModelo(m, color) {
   ctx.save();
-  ctx.scale(ESCALA, ESCALA);
+  ctx.scale(escala(m), escala(m));
   const via = m.via ?? A - 0.5;
   rellenar('#0d0f14', () => {
     for (const u of m.ejes) {
@@ -309,7 +320,7 @@ export function pintarModelo(m, color) {
 /** La sombra: la silueta, rellena. */
 export function sombraModelo(m, color) {
   ctx.save();
-  ctx.scale(ESCALA, ESCALA);
+  ctx.scale(escala(m), escala(m));
   rellenar(color, () => m.silueta());
   ctx.restore();
 }

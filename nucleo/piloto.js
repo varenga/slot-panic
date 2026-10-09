@@ -31,7 +31,8 @@ export function crearPiloto({
 
 /*
  * Los mandos del piloto: suelta si alguna curva por delante no admite la
- * velocidad que llevaría al llegar soltando desde ya. La velocidad máxima en el carril es √(AGARRE_SLOT · radioAgarre).
+ * velocidad que llevaría al llegar soltando desde ya. La velocidad máxima en el carril es √(agarre · radioAgarre),
+ * con el agarre de su coche: el piloto conoce el que lleva.
  * Soltando, el coche pierde 1 px/s por cada INERCIA_SOLTAR px que rueda, así
  * que lo que se pierde en `d` px es d / INERCIA_SOLTAR. Antes de eso la
  * potencia tarda en bajar: cuenta con reaccionar ese rato tarde, y con
@@ -50,7 +51,7 @@ export function decidirSlot(piloto, slot, circuito) {
     // Con el carril que llevará ahí (en una X cambia) y lo que la pieza agarre.
     const radio = radioAgarre(p, lateralEn(circuito, slot.lateral, slot.s + d));
     if (radio === Infinity) continue;
-    const agarre = AGARRE_SLOT * prudenciaCurva(piloto, circuito, indice, Math.floor((slot.progreso + d) / circuito.largo));
+    const agarre = AGARRE_SLOT * slot.ficha.agarre * prudenciaCurva(piloto, circuito, indice, Math.floor((slot.progreso + d) / circuito.largo));
     const permitida = Math.sqrt(agarre * radio);
     const llegaria = v - PERDIDA_PREVISTA * Math.max(0, d - v * REACCION);
     if (llegaria > permitida) return { acelerar: false, frenar: false, giro: 0 };

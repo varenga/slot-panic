@@ -949,3 +949,52 @@ app en la consola de Play.
 
 - El menú por grupos, quién juega con teclado y el coche y el color de cada uno.
   `pnyk.json`: 1.2.0.
+
+## Coches con características (09/10/2026, rama `23-coches-con-caracter`)
+
+> Fase 2d: «los coches ahora tienen forma distinta, más o menos ancho, más o menos largo.
+> Y su física cambia».
+
+- **`COCHES`** (`config.js`): cada modelo, su `largo` y tres multiplicadores sobre el
+  coche de siempre: `acelera` (divide `INERCIA_MOTOR`), `agarre` (`AGARRE_SLOT`) y
+  `punta` (`VELOCIDAD_SLOT`). El **clásico** es ×1 y 31 px: el de siempre, y con él
+  siguen valiendo los récords de antes. `slot.ficha` lo lleva al núcleo; `ponerModelo`
+  lo cambia (también con la exhibición de la portada en marcha). El piloto automático
+  conoce el agarre del suyo.
+- **La aceleración es del motor, no del gatillo**: `SUBE_POTENCIA` es del mando (a
+  toques todos se dosifican igual); lo que cambia es `INERCIA_MOTOR`.
+- **El presupuesto, pesado por lo que vale cada cosa**: medido con el prudente, un 10 %
+  de agarre baja la vuelta un 3,5 %, de punta un 2 % (con el fino, 2,7 %) y de
+  aceleración un 0,8 % (1,4 %). Con una suma sin pesos el que agarraba ganaba en todas
+  (−3 a −4,5 %) y el bambino perdía un 6-8 %. `PESO_CARACTER` = 0,25 / 1 / 0,65.
+- **El margen es estrecho**: el clásico está en el filo de dos reglas a la vez. A fondo
+  se sale justo 2 veces por vuelta en tres oficiales, y el humano que reacciona tarde
+  aguanta justo 0,25 s (en La horquilla y El nudo). Un coche con más velocidad para su
+  agarre (un 4 % más de punta, o un 40 % más de aceleración) hacía salirse al humano
+  tardío en la misma curva todas las vueltas; con menos (el que agarra y tarda en
+  coger velocidad), a fondo pasaba curvas sin salirse. Por eso las reglas, para los
+  demás modelos: a fondo ≥ 1 salida por vuelta y > 20 % de pérdida, y el humano
+  tardío a 0,2 s. Ninguna curva se pasa a su punta, sin excepción.
+- **Los siete** (largo, acelera, agarre, punta): clásico 31, ×1; escalón 29, 1,16 /
+  0,96 / 1; dos caballos 29, 0,8 / 1,02 / 1,04; tiburón 35, 0,69 / 1 / 1,12; escarabajo
+  30, 0,9 / 1 / 1,04; bambino 27, 1,3 / 0,94 / 0,975; monovolumen 33, 1 / 0,975 / 1,04.
+- Medido: el prudente, de −1,2 a +1,7 % del clásico; el más rápido con el mejor piloto
+  automático, el monovolumen en La horquilla y El ocho y el escarabajo en El nudo y El
+  resbalón; el más lento, el bambino en los cuatro (0,6-1 %), que sale de la mano
+  antes que nadie: el playtest dirá si compensa. La CPU, en sus márgenes con todos.
+- **El largo juega**: el `CHOQUE` crece con la media de los dos largos (de 18 a 22,6
+  px); la holgura para dejar de tocarse se recorta para que no pase de `2 · CARRIL − 2`
+  (dos largos que salen juntos de una X seguían «tocándose» en paralelo y no chocaban en
+  la siguiente). Cada modelo se dibuja a su largo con la misma escala a lo largo y a lo
+  ancho (`mide` en `coches.js`): de 13,4 px de ancho (tiburón) a 16,5 (monovolumen).
+- **Récords: una tabla con todos los coches**. Cada vuelta guarda su coche (`c` en el
+  fantasma, columna `coche` en `records`); el fantasma se pinta con su forma y el color
+  del J1; la tabla dice el coche de cada vuelta. Sin coche (una caché vieja, o una marca
+  de antes) es el clásico, que es justo la física que tenían. El mínimo del servidor no
+  cambia: con el más rápido de cada oficial queda en el 75-77 % de su vuelta.
+- **COCHE enseña lo que tiene**: con teclado, una tabla (+16 %, −4 %, 29 PX); tocando,
+  barras con una marca en el clásico. En la lupa, la ficha va al lado del coche: debajo
+  se salía 96 px del marco.
+- Arnés: la sección 3b (cada modelo en cada oficial) y la 7 con el coche más rápido.
+  993/993 en verde, ~33 s (antes ~9: la 3b corre cada modelo en cada oficial; la sección 3
+  se reescribió con ayudantes por modelo).
