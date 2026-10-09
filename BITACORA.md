@@ -1019,3 +1019,10 @@ app en la consola de Play.
   su punta; récords con todos los coches en la misma tabla; COCHE enseña lo que tiene
   cada uno. Multiplo y Cinquecenti. La columna `coche` ya estaba en la base antes del
   push. `pnyk.json`: 1.3.0.
+
+## Playtest de los coches (09/10/2026)
+
+> «Todo correcto en el playtest (ordenador y móvil).»
+
+- El carácter de cada coche, los nerviosos, el Cinquecenti y las barras del móvil: sin
+  nada que cambiar. La fase 2d queda cerrada.
