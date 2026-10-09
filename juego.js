@@ -1016,7 +1016,7 @@ function pintarFantasma() {
 function pintarMundo() {
   const luz = luzAhora();
   dibujarFondo(estado.circuito, estado.decorado, luz);
-  dibujarCarriles(estado.circuito);
+  dibujarCarriles(estado.circuito, estado.decorado);
   dibujarTorres(estado.decorado, luz);
   dibujarHumo(estado.particulas);
   pintarFantasma();

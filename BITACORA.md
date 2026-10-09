@@ -1026,3 +1026,57 @@ app en la consola de Play.
 
 - El carácter de cada coche, los nerviosos, el Cinquecenti y las barras del móvil: sin
   nada que cambiar. La fase 2d queda cerrada.
+
+## La estética de juguete, descartada (09/10/2026, rama `25-maqueta-juguete`)
+
+> «Me quedo con la estética tal cual la teníamos. La mezcla actual entre real y juguete me
+> convence más: en ella entran mejor el día, el atardecer y la noche, la iluminación y los
+> escenarios.»
+
+- **La prueba**: una maqueta tras `?juguete` (solo en local), sin tocar nada que mida el
+  arnés (993/993 en verde): mesa de madera, bordes de plástico gris en la zona de la
+  grava, pista negra con trencillas trenzadas y juntas de muro a muro (en la chicane,
+  solo la pista: si no, se cruzaban con el borde de la curva de al lado), pianos de
+  colores planos, gradas y neumáticos de plástico, y objetos de mesa en el sitio de los
+  árboles (con todos, la mesa parecía un cajón vaciado: uno de cada tres).
+- **Por qué no**: la luz realista (atardecer, noche, torres, faros) no tiene tanto
+  sentido sobre una mesa, y los cuatro escenarios se pierden. A escala de un coche de
+  slot, los objetos de mesa quedan pequeños o se comen la pista.
+- **Guardada**: la rama `25-maqueta-juguete` no se fusiona. Volvió enseguida como un
+  escenario más (la entrada siguiente).
+
+## El escenario juguete (09/10/2026, rama `27-escenario-juguete`)
+
+> «Vamos a crear el quinto escenario basándonos en la maqueta. Que sea un escenario como
+> los otros, donde la iluminación funcione igual. La mesa está perfecta; los elementos
+> sobre ella, más grandes.»
+
+- **Un escenario, no una bandera**: `ESCENARIOS.juguete` (el quinto, tecla E y AJUSTES),
+  con `juguete: true`. Es el único que cambia también la pista: lo leen `dibujarFondo`,
+  `dibujarCarriles` (que ahora recibe el decorado, y su capa se rehace al cambiar a o
+  desde el juguete) y las torres. `?juguete` y el `JUGUETE` de `config.js` desaparecen.
+  Nombre en los siete idiomas (JUGUETE, TOY, BRINQUEDO, XOGUETE, JOGUINA, GIOCATTOLO,
+  JOUET).
+- **Las cosas de la mesa, piezas del decorado**: siete tipos propios (`taza`, `lata`,
+  `lapiz`, `moneda`, `chapa`, `dado`, `ladrillo`) con sus pesos y tamaños en
+  `decorado.js`, en vez de pintar otra cosa encima de los árboles. Así el arnés mide que
+  no pisan nada, y su sombra es la del sol (`pintarSombras`, con su `ALTO_PIEZA`): se
+  alarga al atardecer y se va de noche, como la de los árboles. Lo alargado (lápiz,
+  pieza de construcción, dado) barre su rectángulo, no un círculo.
+- **Más grandes y menos**: de r 4-17 (los árboles) a 10-34 (una taza ~40 px, un lápiz
+  ~55: algo más que un coche). Con 90 la mesa era un cajón vaciado: `cuantas: 45`. Para
+  que quepan 45 de ese tamaño hacen falta más intentos (`intentos: 20000`; en La
+  horquilla, con 6000, solo 35). Generarlo cuesta ≤ 60 ms en los oficiales.
+- **`cabe()` mira antes lo barato** (lo ya puesto) que la distancia a la pista: el mismo
+  resultado (los otros escenarios dan las mismas piezas), menos trabajo.
+- **Torres**: farolas de plástico, base blanca y cabeza roja; de noche, la misma luz.
+  Neumáticos, gradas y pianos, los de la maqueta; los neumáticos sin sombra propia,
+  como en los demás.
+- Visto de día, al atardecer y de noche en El ocho. Arnés: 1041/1041 en verde (48 más:
+  el decorado del juguete en cada circuito, oficial o de la cuadrícula). Hoy tarda ~3 min
+  con o sin el juguete: la máquina va más lenta que el día de los coches.
+
+## Slot Panic 1.4.0 (09/10/2026)
+
+- El quinto escenario: juguete, una mesa de madera con la pista de plástico.
+  `pnyk.json`: 1.4.0. Con esto, la estética de juguete queda cerrada.

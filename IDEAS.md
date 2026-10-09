@@ -28,14 +28,7 @@ Cada idea pasa por el mismo filtro:
   circuito, correrlo. Y a compartirlo (un código corto, como el fantasma de Race Panic).
 - **Cruces** (las piezas en X): vuelve la idea del ocho, sin puente.
 
-# 2. La estética de juguete
-
-- La pista es de piezas negras con sus juntas, el carril plateado; el escenario, una
-  **mesa** o el suelo de un salón (alfombra, patas de sillas, un gato que cruza…).
-- Hoy la pista es la de Race Panic (asfalto, pianos, grava, gradas) con los carriles
-  encima: es un prototipo.
-
-# 3. Coches y jugadores
+# 2. Coches y jugadores
 
 - **Cambio de carril**, como los slot digitales: un toque doble cambia de carril en las
   zonas marcadas. Y cambio de carril de la CPU.
@@ -44,7 +37,7 @@ Cada idea pasa por el mismo filtro:
   seguiría con el de toques.
 - **Récords y fantasma** por circuito y carril.
 
-# 4. Plataforma
+# 3. Plataforma
 
 Lo que comparte con Race Panic es casi todo **plataforma**, no juego: `i18n.js` (el
 mecanismo), `audio.js` (`tone`, `noiseBurst`), la tabla de récords (`marcas.js` +
@@ -55,7 +48,7 @@ Se comparte **copiando como plantilla** (los hermanos se leen, nunca se importan
 una misma corrección hay que portarla más de un par de veces, pasar a una carpeta común
 sincronizada con un script y una prueba en cada arnés que compare su huella.
 
-# 5. Los mejores momentos de cada carrera
+# 4. Los mejores momentos de cada carrera
 
 Al acabar, repetir lo mejor de la carrera: el choque en la X, el adelantamiento en la
 estrecha, la deslizante tomada al límite, la llegada al foto-finish. Hoy solo está

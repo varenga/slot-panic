@@ -13,7 +13,8 @@ contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla,
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
-lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cuatro escenarios de día, al
+lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cinco escenarios (uno, *juguete*:
+una mesa de madera con la pista de plástico) de día, al
 atardecer o de noche, siete idiomas (una página por idioma, con SEO), sonido, teclado y
 táctil; instalable como PWA y sin red. La app de Android (Capacitor, `es.pnyk.slot`) está
 en `/app`, con el bundle firmado listo para Play: el camino, en `APP.md`. Publicado en https://slot.pnyk.es. Lo
@@ -129,7 +130,8 @@ demás, en `BITACORA.md`). Mide y comprueba:
    tramo ni fuera del lienzo, y en todas partes hay al menos 14 px de grava más allá del
    piano (hoy 15). Ni la barra del marcador (arriba) ni el hueco de la portada pisan el asfalto ni el piano. Los dos tramos
    de un cruce (`enCruce`, ±128 px de `s`) quedan exentos.
-2. **Decorado**, en los cuatro escenarios: es determinista, caben al menos 40 piezas y
+2. **Decorado**, en los cinco escenarios: es determinista, caben al menos 40 piezas (en el
+   juguete, cosas de la mesa más grandes: hasta 45) y
    ninguna pieza, neumático, grada ni torre de iluminación pisa la pista, el marcador ni
    las bandas de texto; hay al menos 8 torres (hoy 20).
 3b. **Los coches** (`COCHES`): cada uno gasta 0 de presupuesto (`PESO_CARACTER`) y mide
@@ -197,7 +199,8 @@ de la interfaz (`pantalla.js`).
 ```
 config.js              constantes, paleta, controles, GAME_SLUG y SITE_ORIGIN (no
                        importa nada)
-escenarios.js          los cuatro escenarios: colores del suelo y pesos del decorado
+escenarios.js          los cinco escenarios: colores del suelo y pesos del decorado;
+                       el juguete (`juguete: true`) cambia también la pista
                        (datos, no importa nada)
 i18n.js                catálogos de 7 idiomas, t(), cambiarIdioma()
 estado.js              el objeto `estado` mutable y el escenario guardado

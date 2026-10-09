@@ -22,7 +22,9 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] Playtest de las piezas: ¿se nota la curva de derrape?, ¿los choques en la X y el
       cruce divierten o frustran?, ¿el peralte y los baches se leen antes de llegar?
 - [ ] Más circuitos oficiales (hoy cuatro).
-- [ ] Estética de juguete: piezas con juntas, trencillas, la mesa.
+- [ ] Más detalle en los escenarios y los circuitos, en la estética de hoy: la mezcla de
+      slot y maqueta realista (la de juguete se probó y se descartó, `BITACORA.md`). Qué
+      detalles, por decidir.
 - [ ] Playtest de los récords: ¿el fantasma ayuda o estorba (hoy al 0,3)?, ¿se entiende
       firmar?, ¿el mínimo de vuelta del servidor (el 80 % del mejor piloto automático)
       deja pasar a los buenos?
