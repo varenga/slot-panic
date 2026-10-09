@@ -10,7 +10,8 @@ import {
   SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import {
-  aceptarNormas, estado, guardarAlias, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
+  aceptarNormas, estado, guardarAlias, guardarMejorVuelta, guardarTipoFantasma, leerFantasmaPropio, leerMejorVuelta,
+  leerTipoFantasma, TIPOS_FANTASMA, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
   leerAlias, leerCircuito, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
@@ -26,14 +27,16 @@ import {
 import { construirDePiezas } from './nucleo/piezas.js';
 import { validarCircuito } from './nucleo/validar.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato } from './nucleo/campeonato.js';
+import { posar } from './nucleo/fantasma.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
-import { dibujarCarriles, dibujarCocheSlot, dibujarFondo } from './dibujo.js';
+import { dibujarCarriles, dibujarCocheSlot, dibujarFantasma, dibujarFondo } from './dibujo.js';
+import { formatearTiempo } from './nucleo/slot.js';
 import { MODELOS, siguienteModelo } from './coches.js';
 import {
   actualizarParticulas, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
 } from './particulas.js';
 import {
-  botonesFin, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
+  botonesFin, cajaRecordsPortada, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
   nombreCircuito, opcionesPortada
 } from './pantalla.js';
 import {
@@ -45,9 +48,11 @@ import { cargarAnalitica, evento } from './analitica.js';
 import { apuntarJugado, borrarPublicado, cargarGaleria, denunciar, galeria, publicar } from './publicos.js';
 import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra, LETRAS_ALIAS, otroNombre } from './publicar.js';
 import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from './galeria.js';
+import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js';
+import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
 import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
-  altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
+  altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
 } from './lupa.js';
 
@@ -520,6 +525,7 @@ function limpiarPista() {
 /** La portada hace correr a dos pilotos por el circuito: enseña de qué va el juego. */
 function irAPortada() {
   estado.fase = 'portada';
+  if (conRecords()) cargarRecords(estado.circuito.clave);
   estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot);
   vestir(estado.carrera);
   estado.pilotos = EXHIBICION.map((opciones) => crearPiloto({ ...opciones, semilla: semilla() }));
@@ -540,12 +546,149 @@ function empezarCarrera() {
   estado.fase = 'carrera';
   // Cada carrera, los coches se cambian de carril: no son iguales.
   estado.turno = 1 - estado.turno;
-  estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno);
+  estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno, { grabar: conRecords() });
   vestir(estado.carrera);
   estado.pilotos = [0, 1].map(() => crearPiloto({ ...CPU_SLOT, semilla: semilla() }));
   estado.humanos = [false, false];
+  estado.fantasma = fantasmaElegido();
+  if (conRecords()) cargarRecords(estado.circuito.clave);
   estado.ultimaAvisada = false;
   limpiarPista();
+}
+
+// --- Récords -------------------------------------------------------------------
+
+/** Solo los circuitos oficiales tienen récords (y fantasma). */
+const conRecords = () => CIRCUITOS.includes(estado.circuito);
+
+/*
+ * El fantasma propio del J1 (el que se guarda en el dispositivo). El del
+ * récord no se fija al empezar: la tabla puede llegar con la carrera ya en
+ * marcha, y se mira al pintar (`fantasmaDelJ1`).
+ */
+function fantasmaElegido() {
+  if (!conRecords() || estado.tipoFantasma === 'no') return null;
+  return leerFantasmaPropio(estado.circuito.clave);
+}
+
+/** Contra qué fantasma corre ahora el J1: el del récord si se eligió y ha llegado; si no, el propio. */
+function fantasmaDelJ1() {
+  if (estado.tipoFantasma === 'record' && conRecords()) return tablaDe(estado.circuito.clave).fantasma || estado.fantasma;
+  return estado.fantasma;
+}
+
+/*
+ * Una vuelta acabada: si la ha dado entera una persona (tomó el carril antes
+ * de empezarla) y baja de su mejor vuelta, es récord personal: se guarda con
+ * su fantasma y, si corría contra el propio, la siguiente ya corre contra ella.
+ */
+function apuntarVuelta(i) {
+  if (!conRecords()) return;
+  const slot = estado.carrera.coches[i];
+  const vuelta = slot.grabadas.at(-1);
+  if (!vuelta || slot.humanoDesde === undefined || vuelta.inicio < slot.humanoDesde) return;
+  const { clave } = estado.circuito;
+  const mejor = leerMejorVuelta(clave);
+  if (mejor && vuelta.tiempo >= mejor.tiempo) return;
+  guardarMejorVuelta(clave, vuelta);
+  estado.avisos.push({ texto: t('aviso.recordVuelta', { tiempo: formatearTiempo(vuelta.tiempo) }), vida: 1.8, color: COLOR.verde });
+  if (i === 0 && estado.tipoFantasma === 'tuyo') estado.fantasma = vuelta;
+}
+
+/** Lo que dice la portada de un oficial: tu mejor vuelta, si la tienes. */
+function marcaPortada() {
+  if (!conRecords()) return null;
+  const { clave } = estado.circuito;
+  const primero = tablaDe(clave).lista?.[0];
+  const mejor = leerMejorVuelta(clave);
+  const partes = [
+    primero && t('portada.record', { tiempo: formatearTiempo(primero.vuelta / 1000), alias: primero.alias }),
+    mejor && t('portada.tuMejor', { tiempo: formatearTiempo(mejor.tiempo) })
+  ].filter(Boolean);
+  return partes.length ? partes.join('  ·  ') : t('portada.verRecords');
+}
+
+/*
+ * La mejor vuelta de la carrera que haya dado entera una persona (de los dos
+ * coches, si juegan dos), con su fantasma; o null.
+ */
+function mejorVueltaHumana() {
+  let mejor = null;
+  estado.carrera.coches.forEach((slot, i) => {
+    if (!estado.humanos[i] || slot.humanoDesde === undefined) return;
+    for (const vuelta of slot.grabadas) {
+      if (vuelta.inicio >= slot.humanoDesde && (!mejor || vuelta.tiempo < mejor.tiempo)) mejor = vuelta;
+    }
+  });
+  return mejor;
+}
+
+// --- La tabla de récords y la firma --------------------------------------------
+
+/*
+ * RÉCORDS (tablaRecords.js), desde la portada (botón o R) o tras firmar.
+ * Desde el fin, SEGUIR vuelve al cartel.
+ */
+const recordsUI = { desdeFin: false, resaltado: null };
+
+function abrirRecords(desdeFin = false, resaltado = null) {
+  if (!conRecords()) return;
+  Object.assign(recordsUI, { desdeFin, resaltado });
+  estado.fase = 'records';
+  if (!resaltado) cargarRecords(estado.circuito.clave);
+  punteros.clear();
+}
+
+function salirDeRecords() {
+  if (recordsUI.desdeFin) estado.fase = 'fin';
+  else irAPortada();
+}
+
+function cambiarTipoFantasma() {
+  estado.tipoFantasma = TIPOS_FANTASMA[(TIPOS_FANTASMA.indexOf(estado.tipoFantasma) + 1) % TIPOS_FANTASMA.length];
+  guardarTipoFantasma(estado.tipoFantasma);
+}
+
+/*
+ * Al acabar, si la mejor vuelta humana entra en la tabla, se firma antes del
+ * cartel (como en Race Panic). En el campeonato y en la prueba del
+ * constructor, no: sería parar a mitad.
+ */
+function pedirFirma() {
+  if (!conRecords() || estado.campeonato || estado.probando) return false;
+  const vuelta = mejorVueltaHumana();
+  if (!vuelta || !entraEnTabla(estado.circuito.clave, vuelta.tiempo)) return false;
+  estado.firma = { vuelta, letras: leerAlias().split(''), cursor: 0, enviando: false };
+  estado.fase = 'firma';
+  return true;
+}
+
+const LETRAS_FIRMA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+function cambiarLetraFirma(i, paso) {
+  const { letras } = estado.firma;
+  const n = LETRAS_FIRMA.length;
+  letras[i] = LETRAS_FIRMA[(LETRAS_FIRMA.indexOf(letras[i]) + paso + n) % n];
+}
+
+async function firmar() {
+  const { firma } = estado;
+  if (firma.enviando) return;
+  const alias = firma.letras.join('');
+  guardarAlias(alias);
+  firma.enviando = true;
+  const { clave } = estado.circuito;
+  try {
+    const puesto = await enviarRecord(clave, alias, firma.vuelta);
+    evento('firmar_record', { ...datosCarrera(), puesto, vuelta: Math.round(firma.vuelta.tiempo * 1000) });
+    estado.firma = null;
+    abrirRecords(true, puesto);
+  } catch (error) {
+    estado.firma = null;
+    estado.fase = 'fin';
+    const clave2 = { 429: 'firma.limite', 0: 'firma.sinRed' }[error.estado] || 'firma.error';
+    estado.avisoFin = { texto: t(clave2), vida: 3 };
+  }
 }
 
 function terminarCarrera() {
@@ -565,6 +708,7 @@ function terminarCarrera() {
   }
   sfxFin(gana);
   if (gana) emitirConfeti(estado.particulas);
+  pedirFirma();
 }
 
 /*
@@ -613,7 +757,10 @@ function mandos() {
     // En la lupa se juega solo: el otro carril es siempre de la CPU.
     if (estado.lupa && i === 1) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
     const pulsado = pulsada(CONTROLES_SLOT[i]) || lados.has(i === 0 ? 'izq' : 'der');
-    if (pulsado) estado.humanos[i] = true;
+    if (pulsado && !estado.humanos[i]) {
+      estado.humanos[i] = true;
+      slot.humanoDesde = carrera.fase === 'carrera' ? carrera.tiempo : 0;
+    }
     return estado.humanos[i]
       ? { acelerar: pulsado, frenar: false, giro: 0 }
       : decidirSlot(estado.pilotos[i], slot, carrera.circuito);
@@ -739,10 +886,26 @@ function dibujarMundo() {
   pintarMundo();
 }
 
+/*
+ * El fantasma del J1, con el reloj de su vuelta: debajo de los coches y
+ * translúcido. En la cuenta atrás ya está en la parrilla; luego, mientras el
+ * J1 lo conduzca alguien.
+ */
+function pintarFantasma() {
+  const { carrera } = estado;
+  const fantasma = fantasmaDelJ1();
+  if (!fantasma || estado.fase !== 'carrera') return;
+  if (carrera.fase !== 'cuenta' && !estado.humanos[0]) return;
+  const slot = carrera.coches[0];
+  const pose = posar(fantasma, carrera.tiempo - slot.inicioVuelta);
+  if (pose) dibujarFantasma(pose, slot.coche);
+}
+
 function pintarMundo() {
   dibujarFondo(estado.circuito, estado.decorado);
   dibujarCarriles(estado.circuito);
   dibujarHumo(estado.particulas);
+  pintarFantasma();
   // El que va por el aire, encima.
   const coches = [...estado.carrera.coches].sort((a, b) => a.altura - b.altura);
   coches.forEach(dibujarCocheSlot);
@@ -829,6 +992,67 @@ const ESCENAS = {
     }
   },
 
+  records: {
+    actualizar(dt) {
+      // Detrás, la exhibición (desde la portada) o los coches parándose (desde el fin).
+      if (recordsUI.desdeFin) avanzarMundo([], dt);
+      else ESCENAS.portada.actualizar(dt);
+      if (estado.fase === 'portada') estado.fase = 'records';
+      sonido(false);
+    },
+    dibujar() {
+      dibujarMundo();
+      const { clave } = estado.circuito;
+      dibujarRecords(vistaGaleria(), {
+        nombre: nombreCircuito(estado.circuito), tabla: tablaDe(clave), mejor: leerMejorVuelta(clave),
+        tipoFantasma: estado.tipoFantasma, resaltado: recordsUI.resaltado, desdeFin: recordsUI.desdeFin, tiempo: reloj
+      });
+    },
+    teclear(codigo) {
+      if (codigo === 'Escape' || empezar(codigo)) salirDeRecords();
+      else if (codigo === 'KeyF') cambiarTipoFantasma();
+    },
+    pulsar(p) {
+      punteros.clear();
+      const caja = cajasRecords(vistaGaleria()).find((c) => dentro(p, c));
+      if (caja?.id === 'volver') salirDeRecords();
+      else if (caja?.id === 'fantasma') cambiarTipoFantasma();
+    }
+  },
+
+  firma: {
+    actualizar(dt) {
+      avanzarMundo([], dt);
+      estado.esperaReinicio = Math.max(0, estado.esperaReinicio - dt);
+      sonido(false);
+    },
+    dibujar() {
+      dibujarMundo();
+      dibujarFirma(vistaGaleria(), { ...estado.firma, tactil: estado.tactil });
+    },
+    teclear(codigo) {
+      // Quien cruza la meta lleva una tecla pisada: hasta que pasa la espera, nada.
+      if (estado.esperaReinicio > 0 || estado.firma.enviando) return;
+      const letra = /^Key([A-Z])$/.exec(codigo)?.[1] || /^(?:Digit|Numpad)([0-9])$/.exec(codigo)?.[1];
+      const { firma } = estado;
+      if (codigo === 'Escape') estado.fase = 'fin';
+      else if (empezar(codigo)) firmar();
+      else if (letra) {
+        firma.letras[firma.cursor] = letra;
+        firma.cursor = (firma.cursor + 1) % firma.letras.length;
+      }
+    },
+    pulsar(p) {
+      punteros.clear();
+      if (estado.esperaReinicio > 0 || estado.firma.enviando) return;
+      const caja = cajasFirma(vistaGaleria()).find((c) => dentro(p, c));
+      if (caja?.id === 'arriba') cambiarLetraFirma(caja.i, 1);
+      else if (caja?.id === 'abajo') cambiarLetraFirma(caja.i, -1);
+      else if (caja?.id === 'firmar') firmar();
+      else if (caja?.id === 'saltar') estado.fase = 'fin';
+    }
+  },
+
   circuitos: {
     actualizar() {
       sonido(false);
@@ -882,10 +1106,10 @@ const ESCENAS = {
     dibujar() {
       dibujarMundo();
       if (estado.lupa) {
-        dibujarPortadaLupa({ ...estado, tiempo: reloj });
+        dibujarPortadaLupa({ ...estado, tiempo: reloj, marca: marcaPortada() });
         return;
       }
-      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo);
+      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo, marcaPortada());
     },
     teclear(codigo) {
       if (empezar(codigo)) empezarCarrera();
@@ -897,10 +1121,13 @@ const ESCENAS = {
       else if (codigo === 'KeyB') abrirConstructor();
       else if (codigo === 'KeyG') abrirCircuitos();
       else if (codigo === 'KeyT') empezarCampeonato();
+      else if (codigo === 'KeyR') abrirRecords();
     },
     pulsar(p) {
       const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada()).find((caja) => dentro(p, caja));
-      if (opcion) opcionPulsada(opcion.id);
+      const records = conRecords() && dentro(p, estado.lupa ? cajaRecordsPortadaLupa() : cajaRecordsPortada(estado.circuito));
+      if (records) abrirRecords();
+      else if (opcion) opcionPulsada(opcion.id);
       else empezarCarrera();
       // El toque que arranca no debe tomar ya un carril.
       punteros.clear();
@@ -920,7 +1147,8 @@ const ESCENAS = {
         }
         else if (evento.tipo === 'choque') sfxChoque();
         else if (evento.tipo === 'clac') sfxClac();
-        else if (evento.tipo === 'vuelta') {
+        else if (evento.tipo === 'vuelta' || evento.tipo === 'fin') apuntarVuelta(evento.coche);
+        if (evento.tipo === 'vuelta') {
           sfxVuelta();
           // El primero que entra en la última vuelta la anuncia.
           if (!estado.ultimaAvisada && carrera.coches[evento.coche].completadas === VUELTAS_SLOT - 1) {
@@ -959,15 +1187,18 @@ const ESCENAS = {
       // Los coches frenan hasta pararse, detrás del cartel.
       avanzarMundo([], dt);
       estado.esperaReinicio = Math.max(0, estado.esperaReinicio - dt);
+      if (estado.avisoFin && (estado.avisoFin.vida -= dt) <= 0) estado.avisoFin = null;
       sonido(false);
     },
     dibujar() {
       dibujarMundo();
       if (estado.lupa) {
         dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas, estado.campeonato, idsFin());
+        if (estado.avisoFin) dibujarAvisosLupa([estado.avisoFin]);
         return;
       }
       dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil, estado.campeonato, idsFin());
+      if (estado.avisoFin) dibujarAvisos([estado.avisoFin]);
       dibujarConfeti(estado.particulas);
     },
     teclear(codigo) {
@@ -1085,6 +1316,7 @@ estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coars
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
 estado.modelo = leerModelo(MODELOS.map((m) => m.id));
+estado.tipoFantasma = leerTipoFantasma();
 const elegido = leerCircuito([...CIRCUITOS, ...MIOS].map((c) => c.clave));
 estado.circuito = DIBUJADO || [...CIRCUITOS, ...MIOS].find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);

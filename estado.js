@@ -8,6 +8,7 @@
 
 import { GAME_SLUG } from './config.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
+import { codificar, decodificar } from './nucleo/fantasma.js';
 
 /** El escenario elegido es una preferencia, como el idioma: se recuerda. */
 export function leerEscenario() {
@@ -122,6 +123,47 @@ export function guardarPublicados(lista) {
   try { localStorage.setItem(`${GAME_SLUG}.publicados`, JSON.stringify(lista)); } catch (error) { /* modo privado */ }
 }
 
+/*
+ * El récord personal de cada circuito oficial: la mejor vuelta ({ tiempo,
+ * carril }) y, aparte, su fantasma (nucleo/fantasma.js, ~5 KB). Lo que no se
+ * lea bien no existe.
+ */
+export function leerMejorVuelta(clave) {
+  try {
+    const marca = JSON.parse(localStorage.getItem(`${GAME_SLUG}.vuelta.${clave}`) || 'null');
+    return marca && marca.tiempo > 0 ? marca : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export function leerFantasmaPropio(clave) {
+  try { return decodificar(localStorage.getItem(`${GAME_SLUG}.fantasma.${clave}`) || ''); } catch (error) { return null; }
+}
+
+export function guardarMejorVuelta(clave, { tiempo, carril, muestras }) {
+  try {
+    localStorage.setItem(`${GAME_SLUG}.vuelta.${clave}`, JSON.stringify({ tiempo, carril }));
+    localStorage.setItem(`${GAME_SLUG}.fantasma.${clave}`, codificar({ tiempo, muestras }));
+  } catch (error) { /* modo privado o sin sitio */ }
+}
+
+/** Contra qué fantasma se corre: 'tuyo', 'record' (el primero de la tabla) o 'no'. */
+export const TIPOS_FANTASMA = ['tuyo', 'record', 'no'];
+
+export function leerTipoFantasma() {
+  try {
+    const tipo = localStorage.getItem(`${GAME_SLUG}.tipoFantasma`);
+    return TIPOS_FANTASMA.includes(tipo) ? tipo : 'tuyo';
+  } catch (error) {
+    return 'tuyo';
+  }
+}
+
+export function guardarTipoFantasma(tipo) {
+  try { localStorage.setItem(`${GAME_SLUG}.tipoFantasma`, tipo); } catch (error) { /* modo privado */ }
+}
+
 /** Las normas de publicar se aceptan una vez. */
 export function normasAceptadas() {
   try { return localStorage.getItem(`${GAME_SLUG}.normas`) === '1'; } catch (error) { return false; }
@@ -152,5 +194,9 @@ export const estado = {
   probando: false,     // la carrera es la prueba del constructor: al acabar se vuelve a él
   campeonato: null,    // el campeonato en curso (nucleo/campeonato.js), o null
   denuncia: null,      // en el fin de un público ajeno: null, 'pendiente' (preguntando) o 'hecha'
+  tipoFantasma: 'tuyo', // contra qué fantasma corre el J1 (TIPOS_FANTASMA)
+  fantasma: null,      // la vuelta contra la que corre el J1 ahora (nucleo/fantasma.js), o null
+  firma: null,         // firmando un récord: { vuelta, letras, cursor, enviando }
+  avisoFin: null,      // un aviso en el cartel de fin (la firma que no se pudo enviar)
   fps: 0
 };

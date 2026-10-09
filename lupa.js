@@ -282,7 +282,12 @@ export function opcionesPortadaLupa() {
   }));
 }
 
-export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo }) {
+/** El botón de los récords, en el panel de la portada de la lupa. Dibujo y pulsación. */
+export function cajaRecordsPortadaLupa() {
+  return { id: 'records', x: ANCHO_LUPA / 2 - 210, y: BAJO_MAPA + 30 + 168, ancho: 420, alto: 28 };
+}
+
+export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo, marca }) {
   dibujarMapa(circuito, carrera.coches);
   const x = ANCHO_LUPA / 2, y = BAJO_MAPA + 30;
   panel(x, y, 440, 200);
@@ -291,7 +296,8 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
   if (Math.floor(tiempo * 1.6) % 2 === 0) {
     texto(t('portada.jugarTactil'), x, y + 138, { tam: 26, color: COLOR.ambar, peso: 700 });
   }
-  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: VUELTAS_SLOT }), x, y + 174, { tam: 15, color: COLOR.texto });
+  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: VUELTAS_SLOT }), x, y + (marca ? 158 : 174), { tam: 15, color: COLOR.texto });
+  if (marca) boton(cajaRecordsPortadaLupa(), marca + '  ›', false, 15);
 
   const valores = {
     circuito: nombreCircuito(circuito),

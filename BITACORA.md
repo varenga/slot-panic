@@ -699,3 +699,78 @@ app en la consola de Play.
   «GALERÍA · CONSTRUIR».
 - La pantalla está en `galeria.js` (`cajasCircuitos`, `dibujarCircuitos`); sus cajas
   sirven al dibujo y a la pulsación.
+
+## Récords de vuelta y fantasma (08/10/2026, rama `16-records`, v0.9.0)
+
+> De la Fase 2: «Récords (y fantasma) por circuito y carril». Con el servidor y la
+> base de los circuitos públicos ya en marcha, lo que más cambia el juego en solitario.
+
+- **Decidido**: la marca es la **mejor vuelta** (no depende de la salida ni de chocar con
+  la CPU); **una tabla por circuito**, que apunta el carril de cada marca (los carriles
+  se alternan solos en cada carrera); fantasma **propio y del récord**; solo en los
+  **cuatro oficiales**.
+- **El fantasma** (`nucleo/fantasma.js`), el de Race Panic:
+  - **Grabar**: cada vuelta se graba a 1/30 s, interpolada entre pasos de física, con el
+    ángulo desenrollado y una muestra más al cerrar. Así derrapa como derrapó y, si se
+    salió, la mano también lo devuelve.
+  - **Arrancar**: cada vuelta empieza con la pose de su salida (sin ella, la primera
+    muestra llegaba 1/120 s tarde: ~3 px).
+  - **Solo si se pide**: `slot.js` graba con `crearCarreraSlot(…, { grabar: true })`. El
+    arnés, que corre miles de carreras, solo graba donde lo mide.
+  - **Medidas**: se separa 0,5-0,85 px del coche (el error de unir con rectas las
+    muestras de una curva cerrada) y la mejor vuelta ocupa 4-6 KB.
+- **En el dispositivo**:
+  - **Qué cuenta**: una vuelta que da entera una persona (tomó el carril antes de
+    empezarla) y baja de su mejor vuelta es récord personal.
+  - **Guardado**: se guarda con su fantasma y sale el aviso «¡RÉCORD DE VUELTA!».
+  - **En carrera**: el fantasma del J1 va translúcido (0,3) y debajo de los coches. El
+    del récord se mira al pintar, porque la tabla puede llegar con la carrera en marcha.
+- **El servidor** (`api.php`, `servidor/records.php`, la tabla `records`):
+  - **Llamadas**: `GET ?records=<circuito>` da los 10 mejores y el fantasma del primero;
+    `POST record` guarda la vuelta (las 50 mejores por circuito, 60 envíos al día por
+    huella) y devuelve el puesto.
+  - **Una vuelta inventada tiene que venir con una vuelta entera que la cuadre**: el
+    mínimo de cada circuito (el 80 % del mejor piloto automático: 9,3 / 7,0 / 8,7 /
+    6,5 s); el tiempo del fantasma igual al enviado; las muestras que tocan; todo dentro
+    de la mesa; nunca más de 60 px entre muestras (la mano incluida); y la primera,
+    junto a la meta.
+  - **Comprobado en el arnés**: compara las constantes con el juego y pasa al PHP 4
+    vueltas de verdad y 20 trucadas.
+- **En el juego**:
+  - **Portada**: en un oficial, un botón con el récord y tu mejor vuelta (y la tecla R)
+    abre RÉCORDS (`tablaRecords.js`): los 10 mejores con su carril, tu mejor vuelta y
+    contra qué fantasma se corre (el tuyo, el del récord o ninguno; tecla F).
+  - **Firma**: al acabar, si la mejor vuelta humana entra en la tabla, se firma con el
+    alias de 3 letras antes del cartel, y luego se ve la tabla con la tuya parpadeando.
+    En el campeonato y en la prueba del constructor, no.
+- **Probado contra la base de Plesk**:
+  - **Con `curl`**: se rechazan el tiempo trucado, el fantasma de otro circuito y un
+    circuito inexistente; se acepta la vuelta de verdad (puesto 1, con su fantasma).
+  - **Desde el juego**, con `?api=`: la portada muestra el récord, se corre contra el
+    fantasma descargado, y firmar lleva a la tabla con el puesto resaltado.
+  - Los récords de prueba (alias ZZT) se borraron a mano.
+- **Privacidad**: la ficha de pnyk gana sus `records`, y el párrafo de las tablas de
+  récords, la excepción de la huella cifrada (rama `11-slot-panic-records` de pnyk). Las
+  respuestas de Play cuentan también los récords.
+- Arnés: 659/659 en verde, en ~20 s (la máquina va más lenta que cuando se midieron los
+  7 s; no hay una sección culpable).
+
+## Slot Panic 1.0.0 (08/10/2026)
+
+> «Primera versión publicada y enlazada desde pnyk.es» (`pnyk/comun/CONVENCIONES.md`):
+> el juego ya está en slot.pnyk.es y tiene su ficha en pnyk.es. Con los récords, lo que
+> se quería de un juego completo está dentro: carrera, campeonato, récords, constructor
+> y galería, en siete idiomas, en la web y como PWA.
+
+- **La lista de un proyecto publicado** (`CONVENCIONES.md`), repasada: páginas por idioma
+  con hreflang y canónica, `sitemap.xml`, `robots.txt` y `llms.txt`, JSON-LD, GA4 solo
+  tras consentimiento con su botón «Cookies» y la política común de pnyk.es, pie con
+  `pieRed()`, `pnyk.json` al día y assets con `?v=`. Faltaba la **imagen para compartir**:
+  era el icono de 512 px y ahora es una captura de 1200×630 de una carrera en El
+  resbalón (`og.jpg`, con `tools/gen-og.mjs`, como las de la tienda), con
+  `twitter:card` `summary_large_image`.
+- **`pnyk.json`**: 1.0.0 y etapa «publicado».
+- **pnyk.es**: la ficha cuenta ya el campeonato, los récords con fantasma, el constructor
+  y la galería, con la imagen nueva (rama `11-slot-panic-records` de pnyk).
+- **Lo que queda** sigue en `TODO.md`: los playtests (a dos, la lupa, la galería y los
+  récords) y la app de Google Play.

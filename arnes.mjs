@@ -31,6 +31,7 @@ import { aCodigo, aPiezas, COLUMNAS, deCodigo, FILAS, validarTrazado, VARIANTES 
 import { construirDePiezas } from './nucleo/piezas.js';
 import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucleo/trazo.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato, tiempoFinal } from './nucleo/campeonato.js';
+import { codificar, decodificar, posar } from './nucleo/fantasma.js';
 
 const DT = 1 / 60;
 let aserciones = 0;
@@ -744,6 +745,100 @@ console.log('\nEl campeonato');
   empate.carreras[2].tiempos = [46, 47];
   empate.carreras[1].tiempos = [70, 60];
   comprobar(clasificacion(empate).delante === 1, 'con 2-2 el desempate no cambia con los tiempos');
+}
+
+// --- 7. El fantasma ------------------------------------------------------------
+
+/*
+ * Cada vuelta se graba y se reproduce con su reloj (nucleo/fantasma.js). Una
+ * carrera del piloto fino, apuntando dónde estaba el coche a cada tiempo de
+ * vuelta: el fantasma de cada vuelta tiene que estar ahí (las muestras se
+ * interpolan entre pasos de física), llegar hasta la meta, desaparecer
+ * después y sobrevivir a guardarse. Sin `grabar`, una carrera no graba nada.
+ */
+console.log('\nEl fantasma');
+{
+  const SERVIDOR_RECORDS = readFileSync('servidor/records.php', 'utf8');
+  const pruebasRecord = [];
+  const sinGrabar = crearCarreraSlot(CIRCUITOS[0], ['#f00']);
+  for (const circuito of CIRCUITOS) {
+    const c = crearCarreraSlot(circuito, ['#f00'], 0, { grabar: true });
+    c.fase = 'carrera';
+    const piloto = crearPiloto({ prudencia: 1.4 });
+    const vivas = [[]];   // por vuelta: [t de vuelta, x, y]
+    let completadas = 0;
+    for (let k = 0; c.coches[0].terminado === null && k < 200 / DT; k++) {
+      avanzarSlot(c, [decidirSlot(piloto, c.coches[0], circuito)], DT);
+      const slot = c.coches[0];
+      if (slot.completadas > completadas) { completadas = slot.completadas; vivas.push([]); }
+      vivas.at(-1).push([c.tiempo - slot.inicioVuelta, slot.coche.x, slot.coche.y]);
+    }
+    const { grabadas } = c.coches[0];
+    let error = 0, alFinal = Infinity, despues = true;
+    grabadas.forEach((g, n) => {
+      for (const [t, x, y] of vivas[n]) {
+        const p = posar(g, t);
+        if (p) error = Math.max(error, Math.hypot(p.x - x, p.y - y));
+      }
+      const meta = circuito.eje[0];
+      const final = posar(g, g.tiempo - 1e-6);
+      if (final) alFinal = Math.min(alFinal, Math.hypot(final.x - meta.x, final.y - meta.y));
+      if (posar(g, g.tiempo + 0.05) !== null) despues = false;
+    });
+    const mejor = grabadas.reduce((a, b) => (b.tiempo < a.tiempo ? b : a));
+    const texto = codificar(mejor);
+    const leida = decodificar(texto);
+    let deriva = 0;
+    for (let t = 0; t < mejor.tiempo; t += 0.1) {
+      const a = posar(mejor, t), b = posar(leida, t);
+      if (a && b) deriva = Math.max(deriva, Math.hypot(a.x - b.x, a.y - b.y));
+    }
+    console.log(`  «${circuito.clave}»: ${grabadas.length} vueltas grabadas, se separan ${error.toFixed(2)} px; la mejor (${mejor.tiempo.toFixed(2)} s, carril ${mejor.carril}) ocupa ${texto.length} caracteres y guardada se separa ${deriva.toFixed(2)} px`);
+    comprobar(grabadas.length === VUELTAS_SLOT, `«${circuito.clave}»: ${grabadas.length} vueltas grabadas de ${VUELTAS_SLOT}`);
+    comprobar(error < 1, `«${circuito.clave}»: el fantasma se separa ${error.toFixed(2)} px del coche`);
+    comprobar(alFinal < 40, `«${circuito.clave}»: el fantasma acaba a ${alFinal.toFixed(0)} px de la meta`);
+    comprobar(despues, `«${circuito.clave}»: el fantasma sigue después de acabar su vuelta`);
+    comprobar(deriva < 0.2 && texto.length < 12000, `«${circuito.clave}»: guardado se separa ${deriva.toFixed(2)} px y ocupa ${texto.length}`);
+    comprobar(grabadas.every((g) => g.carril === 0 || g.carril === 1), `«${circuito.clave}»: una vuelta sin carril`);
+
+    /*
+     * El servidor (servidor/records.php): el circuito está, su mínimo queda por
+     * debajo de esta vuelta (la de un piloto fino: un humano tiene que poder
+     * bajarla) sin quedar regalado, y su meta es la del circuito. La vuelta de
+     * verdad pasa; trucada (otro tiempo, un salto, desplazada, sin muestras,
+     * por debajo del mínimo), no.
+     */
+    const registro = new RegExp(`'${circuito.clave}'\\s*=>\\s*\\['minimo'\\s*=>\\s*(\\d+),\\s*'meta'\\s*=>\\s*\\[(\\d+),\\s*(\\d+)\\]`).exec(SERVIDOR_RECORDS);
+    comprobar(registro, `«${circuito.clave}» no está en RECORDS_CIRCUITOS (servidor/records.php)`);
+    if (!registro) continue;
+    const [minimo, mx, my] = registro.slice(1).map(Number);
+    const ms = Math.round(mejor.tiempo * 1000);
+    comprobar(minimo <= 0.85 * ms && minimo >= 0.6 * ms, `«${circuito.clave}»: el mínimo del servidor (${minimo} ms) frente a una vuelta de ${ms} ms`);
+    comprobar(Math.hypot(mx - circuito.eje[0].x, my - circuito.eje[0].y) < 1, `«${circuito.clave}»: la meta del servidor no es la del circuito`);
+    const datos = JSON.parse(texto);
+    const trucar = (cambio) => { const d = structuredClone(datos); cambio(d); return JSON.stringify(d); };
+    const pruebas = [
+      [null, { vuelta: ms, fantasma: texto }],
+      ['tiempo', { vuelta: ms - 500, fantasma: texto }],
+      ['salto', { vuelta: ms, fantasma: trucar((d) => { d.d[30] += 2000; }) }],
+      ['meta', { vuelta: ms, fantasma: trucar((d) => { for (let i = 0; i < d.d.length; i += 3) d.d[i + 1] -= 700; }) }],
+      ['muestras', { vuelta: ms, fantasma: trucar((d) => { d.d.splice(30, 30); }) }],
+      ['vuelta', { vuelta: minimo - 1, fantasma: trucar((d) => { d.tiempo = (minimo - 1) / 1000; }) }]
+    ];
+    pruebasRecord.push(...pruebas.map(([esperado, r]) => ({ esperado, circuito: circuito.clave, r: { circuito: circuito.clave, carril: mejor.carril, ...r } })));
+  }
+  const php = spawnSync('php', ['tools/validar-record.php'], { input: pruebasRecord.map((p) => JSON.stringify(p.r)).join('\n') + '\n', encoding: 'utf8' });
+  if (php.error || php.status !== 0) {
+    console.log(`  sin PHP no se comprueban los récords del servidor (${php.error?.code || php.stderr})`);
+  } else {
+    const respuestas = php.stdout.trim().split('\n').map((l) => JSON.parse(l));
+    const mal = pruebasRecord.filter((p, i) => respuestas[i] !== p.esperado);
+    console.log(`  el servidor acepta las ${CIRCUITOS.length} vueltas de verdad y rechaza las trucadas: ${pruebasRecord.length - mal.length} de ${pruebasRecord.length}`);
+    comprobar(mal.length === 0, `records.php: ${mal.map((p) => `${p.circuito} esperaba ${p.esperado} y dio ${respuestas[pruebasRecord.indexOf(p)]}`).join(', ')}`);
+  }
+  comprobar(sinGrabar.grabar === false && sinGrabar.coches[0].grabadas.length === 0, 'una carrera sin grabar graba');
+  comprobar(['', '{}', '{"v":1}', 'nada', JSON.stringify({ v: 1, paso: 1 / 30, tiempo: 9, d: [1, 2] })].every((t) => decodificar(t) === null),
+    'decodificar acepta un fantasma malformado');
 }
 
 // --- 4. Los idiomas -----------------------------------------------------------

@@ -150,7 +150,7 @@ function pagina(codigo) {
     playMode: ['SinglePlayer', 'MultiPlayer'],
     numberOfPlayers: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 2 },
     isAccessibleForFree: true,
-    image: SITE_ORIGIN + 'iconos/icon-512.png',
+    image: SITE_ORIGIN + 'og.jpg',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR', availability: 'https://schema.org/InStock' },
     workTranslation: IDIOMAS.filter((l) => l.codigo !== codigo).map((l) => ({
       '@type': 'VideoGame', name: NOMBRE, url: urlDe(l.codigo), inLanguage: l.codigo,
@@ -192,12 +192,14 @@ ${ogAlternativas}
   <meta property="og:title" content="${esc(t('seo.title'))}">
   <meta property="og:description" content="${esc(t('seo.ogDesc'))}">
   <meta property="og:url" content="${url}">
-  <meta property="og:image" content="${SITE_ORIGIN}iconos/icon-512.png">
+  <meta property="og:image" content="${SITE_ORIGIN}og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
 
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(t('seo.title'))}">
   <meta name="twitter:description" content="${esc(t('seo.ogDesc'))}">
-  <meta name="twitter:image" content="${SITE_ORIGIN}iconos/icon-512.png">
+  <meta name="twitter:image" content="${SITE_ORIGIN}og.jpg">
 
   <link rel="icon" type="image/svg+xml" href="${versionado('favicon.svg')}">
   <link rel="apple-touch-icon" href="${versionado('iconos/icon-192.png')}">
@@ -230,6 +232,7 @@ ${jsonLd}
       <li>${esc(t('page.how7'))}</li>
       <li>${esc(t('page.how8'))}</li>
       <li>${esc(t('page.how9'))}</li>
+      <li>${esc(t('page.how10'))}</li>
     </ul>
 
     <h2>${esc(t('page.controlsTitle'))}</h2>
@@ -463,6 +466,8 @@ ${circuitos}
   carril donde se salió: salirse cuesta tiempo, no la carrera.
 - En las piezas en X los carriles se cruzan y los coches cambian de carril; en una X
   o un cruce, dos coches que llegan a la vez chocan.
+- Récords de vuelta en los circuitos oficiales (una tabla por circuito, firmada con tres
+  letras) y un fantasma para correr contra la mejor vuelta propia o la del récord.
 - Campeonato: los circuitos oficiales seguidos; gana quien gane más carreras y, con
   empate, el menor tiempo sumado.
 - En las estrechas los carriles se juntan y dos coches a la par se tocan; la curva
