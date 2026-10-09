@@ -1080,3 +1080,12 @@ app en la consola de Play.
 
 - El quinto escenario: juguete, una mesa de madera con la pista de plástico.
   `pnyk.json`: 1.4.0. Con esto, la estética de juguete queda cerrada.
+
+## El botón COMUNIDAD (09/10/2026, rama `28-boton-comunidad`)
+
+- El tercer grupo del menú se llamaba CIRCUITOS y despistaba: parecía el sitio donde se
+  elige el circuito oficial, que está en CARRERA. Ahora es **COMUNIDAD** (COMMUNITY,
+  COMUNIDADE, COMUNITAT, COMUNITÀ, COMMUNAUTÉ), también en el título de su escena: ahí
+  están los circuitos que comparte la gente y el constructor para hacer y publicar el
+  tuyo. «Compartidos» no abarcaba el constructor. Solo cambian las cadenas
+  (`opcion.circuitos`, `circuitos.titulo`); las claves y los `id` se quedan.

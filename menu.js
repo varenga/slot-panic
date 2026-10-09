@@ -4,7 +4,7 @@
  * Con diez opciones en fila, en un portátil la letra de la barra bajaba a
  * 9-11 px. Ahora la barra lleva cuatro botones: CARRERA (modo, circuito,
  * vueltas, CPU y, con teclado, quién juega), COCHE (modelo, color y lo que
- * tiene cada uno: su largo y su carácter), CIRCUITOS (la galería y el constructor, en su escena) y AJUSTES
+ * tiene cada uno: su largo y su carácter), COMUNIDAD (la galería y el constructor, en su escena) y AJUSTES
  * (escenario, hora, sonido, idioma). Cada uno abre un panel sobre la pista;
  * con teclado siguen las teclas directas de cada opción, sin abrir nada.
  *
