@@ -27,13 +27,13 @@ export const ORDEN_HORAS = ['dia', 'atardecer', 'noche'];
 
 /*
  * La luz de una carrera de resistencia, según lo que lleva corrido el primero
- * (`fraccion`, de 0 a 1): el primer quinto con la hora elegida, el segundo
- * cayendo la tarde, el del medio al atardecer, el cuarto anocheciendo y el
- * último de noche. Nunca más clara que la hora elegida: quien eligió la noche
- * corre de noche.
+ * (`fraccion`, de 0 a 1): el primer quinto de día, el segundo cayendo la
+ * tarde, el del medio al atardecer, el cuarto anocheciendo y el último de
+ * noche. El ciclo entero, sea cual sea la hora elegida: la resistencia es la
+ * carrera que dura un día.
  */
 const CAMINO_LUZ = [[0.2, 0], [0.4, 1], [0.6, 1], [0.8, 2]];
-export function luzDeCarrera(hora, fraccion) {
+export function luzDeCarrera(fraccion) {
   let luz = 2;
   for (let i = 0; i < CAMINO_LUZ.length; i++) {
     const [f, l] = CAMINO_LUZ[i];
@@ -43,7 +43,7 @@ export function luzDeCarrera(hora, fraccion) {
     luz = l0 + (l - l0) * (fraccion - f0) / (f - f0);
     break;
   }
-  return Math.max(ORDEN_HORAS.indexOf(hora), luz);
+  return luz;
 }
 
 /*

@@ -838,10 +838,12 @@ app en la consola de Play.
   pintan lo mismo que antes.
 - **`luzDeCarrera(hora, fracción)`**: por lo que lleva corrido el primero, el primer
   quinto con la hora elegida, cae la tarde hasta el 40 %, atardecer hasta el 60 %,
-  anochece hasta el 80 % y el resto de noche. Nunca más clara que la hora elegida: del
-  atardecer solo anochece y de noche no cambia. Solo en la de resistencia (`anochece`
-  en `CARRERAS`); la exhibición de la portada y las demás carreras siguen con su hora.
+  anochece hasta el 80 % y el resto de noche. **El ciclo entero, sea cual sea la hora
+  elegida** (se probó a partir de ella, sin aclarar nunca, y se prefirió que la
+  resistencia sea siempre «la carrera que dura un día»). Solo en la de resistencia
+  (`anochece` en `CARRERAS`); la exhibición de la portada y las demás carreras siguen
+  con su hora.
 - Visto en una carrera entera de CPU contra CPU en El ocho (1:35): de día hasta la
   vuelta 2, atardecer en la 5-6, anocheciendo en la 7-8 y noche cerrada en la 9-10.
-- Arnés: de cada hora, la luz de la resistencia empieza en ella, acaba de noche y nunca
-  se aclara; solo anochece la de resistencia. 684/684 en verde.
+- Arnés: la luz de la resistencia empieza de día, pasa por el atardecer a mitad de
+  carrera, acaba de noche y nunca se aclara; solo anochece la de resistencia.

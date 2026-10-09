@@ -30,7 +30,7 @@ import { validarCircuito } from './nucleo/validar.js';
 import { aCodigo, aPiezas, COLUMNAS, deCodigo, FILAS, validarTrazado, VARIANTES } from './nucleo/cuadricula.js';
 import { construirDePiezas } from './nucleo/piezas.js';
 import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucleo/trazo.js';
-import { luzDeCarrera, ORDEN_HORAS } from './luz.js';
+import { luzDeCarrera } from './luz.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato, tiempoFinal } from './nucleo/campeonato.js';
 import { codificar, decodificar, posar } from './nucleo/fantasma.js';
 
@@ -782,13 +782,10 @@ console.log('\nEl campeonato');
   }
   console.log(`  ${medidas.join(', ')}`);
 
-  // En la de resistencia anochece: de la hora elegida a la noche, sin aclarar nunca.
-  for (const hora of ORDEN_HORAS) {
-    const camino = Array.from({ length: 101 }, (_, k) => luzDeCarrera(hora, k / 100));
-    const empieza = ORDEN_HORAS.indexOf(hora);
-    comprobar(camino[0] === empieza && camino[100] === 2, `de ${hora}, la luz de la resistencia va de ${camino[0]} a ${camino[100]}`);
-    comprobar(camino.every((l, k) => k === 0 || l >= camino[k - 1]), `de ${hora}, la luz de la resistencia se aclara en algún momento`);
-  }
+  // En la de resistencia anochece: del día a la noche, pasando por el atardecer, sin aclarar nunca.
+  const camino = Array.from({ length: 101 }, (_, k) => luzDeCarrera(k / 100));
+  comprobar(camino[0] === 0 && camino[50] === 1 && camino[100] === 2, `la luz de la resistencia va de ${camino[0]} a ${camino[50]} y a ${camino[100]}`);
+  comprobar(camino.every((l, k) => k === 0 || l >= camino[k - 1]), 'la luz de la resistencia se aclara en algún momento');
   comprobar(CARRERAS.filter((c) => c.anochece).map((c) => c.id).join() === 'resistencia', 'anochece otra carrera que la de resistencia');
 }
 

@@ -940,14 +940,14 @@ function pintarMundo() {
 
 /*
  * La luz de ahora: la hora elegida o, en una carrera que anochece (la de
- * resistencia), la que toca por lo que lleva corrido el primero.
+ * resistencia), la que toca por lo que lleva corrido el primero, del día a la noche.
  */
 function luzAhora() {
   const { carrera } = estado;
   if (!carrera.anochece) return ORDEN_HORAS.indexOf(estado.hora);
   const corrido = Math.max(...carrera.coches.map((slot) => slot.progreso));
   const fraccion = Math.min(1, Math.max(0, corrido / (carrera.vueltas * carrera.circuito.largo)));
-  return luzDeCarrera(estado.hora, fraccion);
+  return luzDeCarrera(fraccion);
 }
 
 /** Cuánto chirría el coche más al límite de los que conduce alguien, en [0, 1]. */
