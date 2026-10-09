@@ -879,3 +879,7 @@ app en la consola de Play.
   El resto del decorado sigue con su sombra fija: son bajos.
 - Arnés: la sombra mide < 6 px de día y > 20 al atardecer, se alarga mientras se apaga,
   gira al caer la tarde y de noche no hay. 684/684 en verde.
+
+## Slot Panic 1.1.1 (09/10/2026)
+
+- Corrección sin funcionalidad nueva: la sombra de las torres sigue al sol. `pnyk.json`: 1.1.1.
