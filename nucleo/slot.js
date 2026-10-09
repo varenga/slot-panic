@@ -194,12 +194,14 @@ function crearSlot(circuito, lateral, color) {
 }
 
 /*
+ * `vueltas`: las de la carrera (CARRERAS, en config.js).
  * `grabar`: grabar las vueltas (los fantasmas). Lo pide el juego en sus
  * carreras; el arnés, solo donde lo mide (en miles de carreras triplicaba su tiempo).
  */
-export function crearCarreraSlot(circuito, colores, turno = 0, { grabar: grabarVueltas = false } = {}) {
+export function crearCarreraSlot(circuito, colores, turno = 0, { vueltas = VUELTAS_SLOT, grabar: grabarVueltas = false } = {}) {
   const carrera = {
     circuito,
+    vueltas,
     grabar: grabarVueltas,
     // El coche i va por el carril (i + turno) % 2.
     coches: colores.map((color, i) => crearSlot(circuito, CARRILES[(i + turno) % 2], color)),
@@ -448,7 +450,7 @@ function contarVueltas(carrera, slot, i) {
   }
   slot.carrilVuelta = carrilEn(carrera.circuito, slot.lateral, slot.s);
   slot.inicioVuelta = carrera.tiempo;
-  if (completadas < VUELTAS_SLOT) {
+  if (completadas < carrera.vueltas) {
     carrera.eventos.push({ tipo: 'vuelta', coche: i });
     return;
   }
@@ -460,9 +462,9 @@ function contarVueltas(carrera, slot, i) {
   }
 }
 
-/** Vuelta en curso de un coche, de 1 a VUELTAS_SLOT. */
-export function vueltaSlot(slot) {
-  return Math.min(slot.completadas + 1, VUELTAS_SLOT);
+/** Vuelta en curso de un coche, de 1 a las de la carrera. */
+export function vueltaSlot(carrera, slot) {
+  return Math.min(slot.completadas + 1, carrera.vueltas);
 }
 
 export function mejorVueltaSlot(slot) {

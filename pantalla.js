@@ -15,7 +15,7 @@
  * qué se ha pulsado: así no pueden divergir (regla de Orbit Panic).
  */
 
-import { ALTO, ANCHO, COLOR, CUENTA_ATRAS, DURACION_SALIDA, FUENTE, VUELTAS_SLOT } from './config.js';
+import { ALTO, ANCHO, CARRERAS, COLOR, CUENTA_ATRAS, DURACION_SALIDA, FUENTE } from './config.js';
 import { circulo, ctx, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { BANDA_TEXTO } from './nucleo/decorado.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
@@ -102,21 +102,34 @@ export function dibujarAvisos(avisos) {
 
 // --- Portada -------------------------------------------------------------------
 
-/* Las opciones de la portada, en la banda de arriba. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'campeonato', 'circuitos', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
+/*
+ * Las opciones de la portada, en la banda de arriba. Dibujo y pulsación: las
+ * dos con las mismas etiquetas (etiquetasPortada). Con nueve no caben iguales:
+ * cada botón mide lo que su etiqueta, y lo que sobra se reparte a partes iguales
+ * (si no caben, encogen todas a la vez).
+ */
+const OPCIONES = ['circuito', 'duracion', 'campeonato', 'circuitos', 'coche', 'escenario', 'hora', 'sonido', 'idioma'];
 
-export function opcionesPortada() {
-  const alto = 30, hueco = 10;
-  const ancho = Math.min(230, Math.floor((ANCHO - 24 - hueco * (OPCIONES.length - 1)) / OPCIONES.length));
-  const x0 = ANCHO / 2 - (ancho * OPCIONES.length + hueco * (OPCIONES.length - 1)) / 2;
-  return OPCIONES.map((id, i) => ({
-    id, x: x0 + i * (ancho + hueco), y: (BANDA_TEXTO - alto) / 2, ancho, alto
-  }));
+export function opcionesPortada(etiquetas) {
+  const alto = 30, hueco = 8, relleno = 18;
+  const disponible = ANCHO - 24 - hueco * (OPCIONES.length - 1);
+  ctx.font = `600 13px ${FUENTE}`;
+  const natural = OPCIONES.map((id) => ctx.measureText(etiquetas[id]).width + relleno);
+  const suma = natural.reduce((a, b) => a + b, 0);
+  const sobra = Math.max(0, disponible - suma) / OPCIONES.length;
+  const escala = Math.min(1, disponible / suma);
+  let x = 12;
+  return OPCIONES.map((id, i) => {
+    const ancho = Math.floor(natural[i] * escala + sobra);
+    const caja = { id, x, y: (BANDA_TEXTO - alto) / 2, ancho, alto };
+    x += ancho + hueco;
+    return caja;
+  });
 }
 
-const TECLA_OPCION = { circuito: 'C', campeonato: 'T', circuitos: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
+const TECLA_OPCION = { circuito: 'C', duracion: 'V', campeonato: 'T', circuitos: 'G', coche: 'K', sonido: 'M', idioma: 'L', escenario: 'E', hora: 'H' };
 
-export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo, marca = null) {
+export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo, duracion, marca = null) {
   const { x, y } = centro(circuito);
   panel(x, y - 120, 470, 252);
   texto('SLOT PANIC', x, y - 70, { tam: 64, color: COLOR.hud, peso: 800 });
@@ -126,24 +139,34 @@ export function dibujarPortada(circuito, tiempo, escenario, tactil, hora, modelo
   if (Math.floor(tiempo * 1.6) % 2 === 0) {
     texto(t(tactil ? 'portada.jugarTactil' : 'portada.jugar'), x, y + 34, { tam: 24, color: COLOR.ambar, peso: 700 });
   }
-  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: VUELTAS_SLOT }), x, y + 80, { tam: 14, color: COLOR.texto });
+  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: vueltasDe(duracion) }), x, y + 80, { tam: 14, color: COLOR.texto });
   // En un oficial, el botón de los récords (con el récord y tu mejor vuelta); si no, cómo se juega contra la CPU.
   if (marca) boton(cajaRecordsPortada(circuito), marca + '  ›', false, 14);
   else texto(t('slot.cpuLibre'), x, y + 104, { tam: 14, color: COLOR.texto });
 
   bandas();
+  const etiquetas = etiquetasPortada({ circuito, escenario, tactil, hora, modelo, duracion });
+  for (const opcion of opcionesPortada(etiquetas)) boton(opcion, etiquetas[opcion.id]);
+  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
+}
+
+/** Lo que pone en cada opción de la portada, con su tecla si no es táctil. */
+export function etiquetasPortada({ circuito, escenario, tactil, hora, modelo, duracion }) {
   const valores = {
     circuito: nombreCircuito(circuito),
     coche: t('coche.' + modelo),
     sonido: t(silenciado() ? 'sonido.no' : 'sonido.si'),
     idioma: idiomaActual().nombre.toUpperCase(),
     escenario: t('escenario.' + escenario),
-    hora: t('hora.' + hora)
+    hora: t('hora.' + hora),
+    duracion: t('duracion.' + duracion)
   };
-  for (const opcion of opcionesPortada()) {
-    boton(opcion, (tactil ? '' : TECLA_OPCION[opcion.id] + '  ·  ') + t('opcion.' + opcion.id, { v: valores[opcion.id] }));
-  }
-  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
+  return Object.fromEntries(OPCIONES.map((id) => [id, (tactil ? '' : TECLA_OPCION[id] + '  ·  ') + t('opcion.' + id, { v: valores[id] })]));
+}
+
+/** Las vueltas de una carrera de CARRERAS, por su id. */
+export function vueltasDe(duracion) {
+  return CARRERAS.find((c) => c.id === duracion).vueltas;
 }
 
 /** El botón de los récords, en el panel de la portada de un oficial. Dibujo y pulsación. */
@@ -208,7 +231,7 @@ export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null) {
   if (carrera.fase === 'cuenta') guiaSlot(carrera, humanos, tactil, rotulo);
   ctx.fillStyle = COLOR.banda;
   ctx.fillRect(0, 0, ANCHO, alto);
-  carrera.coches.forEach((slot, i) => marcadorCoche(slot, i, humanos, alto));
+  carrera.coches.forEach((slot, i) => marcadorCoche(carrera, slot, i, humanos, alto));
   if (carrera.fase === 'cuenta') {
     texto(String(Math.ceil(carrera.cuenta)), ANCHO / 2, alto / 2 + 1, { tam: 38, color: COLOR.ambar, peso: 800 });
   } else {
@@ -221,7 +244,7 @@ export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null) {
  * Lo de un coche en la barra, de fuera hacia dentro: su color, quién lo lleva,
  * la vuelta y la mejor; debajo, la potencia. El J2 es el espejo del J1.
  */
-function marcadorCoche(slot, i, humanos, alto) {
+function marcadorCoche(carrera, slot, i, humanos, alto) {
   const lado = i === 0 ? 1 : -1;
   const borde = i === 0 ? 16 : ANCHO - 16;
   const alinear = i === 0 ? 'left' : 'right';
@@ -229,7 +252,7 @@ function marcadorCoche(slot, i, humanos, alto) {
   ctx.fillStyle = slot.coche.color;
   rectanguloRedondo(i === 0 ? borde : borde - 22, y - 11, 22, 22, 5);
   texto(nombreSlot(i, humanos), borde + lado * 32, y, { tam: 22, color: COLOR.hud, peso: 800, alinear });
-  texto(t('hud.vuelta', { n: vueltaSlot(slot), total: VUELTAS_SLOT }), borde + lado * 112, y, { tam: 22, color: COLOR.hud, peso: 700, alinear });
+  texto(t('hud.vuelta', { n: vueltaSlot(carrera, slot), total: carrera.vueltas }), borde + lado * 112, y, { tam: 22, color: COLOR.hud, peso: 700, alinear });
   const mejor = mejorVueltaSlot(slot);
   if (mejor !== null) texto(t('hud.mejor', { tiempo: formatearTiempo(mejor) }), borde + lado * 280, y, { tam: 16, color: COLOR.texto, alinear });
   barraPotencia(slot, i === 0 ? borde : borde - 240, alto - 11, 240);

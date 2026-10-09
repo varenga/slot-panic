@@ -18,13 +18,13 @@
 
 import {
   ALTO, ALTO_LUPA, ALTO_LUPA_MAXIMO, ANCHO, ANCHO_LUPA, COLOR, LUPA_ADELANTO, LUPA_GIRO, LUPA_MIRA, LUPA_ZOOM,
-  MAPA_CRECE, VUELTAS_SLOT
+  MAPA_CRECE
 } from './config.js';
 import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import {
   barraPotencia, boton, DESTACADO, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, panel, pintarCabeceraCampeonato,
-  pintarTablaCampeonato, semaforo
+  pintarTablaCampeonato, semaforo, vueltasDe
 } from './pantalla.js';
 import { dibujarConfeti } from './particulas.js';
 import { idiomaActual, t } from './i18n.js';
@@ -230,7 +230,7 @@ export function dibujarMarcadorLupa(carrera, humanos, rotulo = null) {
     texto(nombreSlot(i, humanos), borde + lado * 26, y, { tam: 20, color: COLOR.hud, peso: 800, alinear });
     // Tras el nombre, mida lo que mida («J1» o «CPU»).
     const nombre = ctx.measureText(nombreSlot(i, humanos)).width;
-    texto(`${vueltaSlot(slot)}/${VUELTAS_SLOT}`, borde + lado * (26 + nombre + 12), y, { tam: 20, color: COLOR.hud, peso: 700, alinear });
+    texto(`${vueltaSlot(carrera, slot)}/${carrera.vueltas}`, borde + lado * (26 + nombre + 12), y, { tam: 20, color: COLOR.hud, peso: 700, alinear });
     barraPotencia(slot, izquierda ? borde : borde - 150, BARRA - 12, 150);
   });
   if (carrera.fase === 'cuenta') {
@@ -264,7 +264,7 @@ export function dibujarAvisosLupa(avisos) {
 // --- Portada ---------------------------------------------------------------------
 
 /* Las opciones, en dos columnas abajo. Dibujo y pulsación. */
-const OPCIONES = ['circuito', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'campeonato', 'circuitos'];
+const OPCIONES = ['circuito', 'duracion', 'coche', 'hora', 'escenario', 'sonido', 'idioma', 'circuitos', 'campeonato'];
 
 export function opcionesPortadaLupa() {
   const columnas = 2, alto = 44, hueco = 12;
@@ -287,7 +287,7 @@ export function cajaRecordsPortadaLupa() {
   return { id: 'records', x: ANCHO_LUPA / 2 - 210, y: BAJO_MAPA + 30 + 168, ancho: 420, alto: 28 };
 }
 
-export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo, marca }) {
+export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora, modelo, duracion, marca }) {
   dibujarMapa(circuito, carrera.coches);
   const x = ANCHO_LUPA / 2, y = BAJO_MAPA + 30;
   panel(x, y, 440, 200);
@@ -296,7 +296,7 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
   if (Math.floor(tiempo * 1.6) % 2 === 0) {
     texto(t('portada.jugarTactil'), x, y + 138, { tam: 26, color: COLOR.ambar, peso: 700 });
   }
-  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: VUELTAS_SLOT }), x, y + (marca ? 158 : 174), { tam: 15, color: COLOR.texto });
+  texto(t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: vueltasDe(duracion) }), x, y + (marca ? 158 : 174), { tam: 15, color: COLOR.texto });
   if (marca) boton(cajaRecordsPortadaLupa(), marca + '  ›', false, 15);
 
   const valores = {
@@ -305,7 +305,8 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, escenario, hora,
     sonido: t(silenciado() ? 'sonido.no' : 'sonido.si'),
     idioma: idiomaActual().nombre.toUpperCase(),
     escenario: t('escenario.' + escenario),
-    hora: t('hora.' + hora)
+    hora: t('hora.' + hora),
+    duracion: t('duracion.' + duracion)
   };
   for (const opcion of opcionesPortadaLupa()) boton(opcion, t('opcion.' + opcion.id, { v: valores[opcion.id] }), false, 17);
 }

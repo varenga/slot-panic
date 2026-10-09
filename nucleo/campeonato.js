@@ -11,8 +11,6 @@
  * arnés.
  */
 
-import { VUELTAS_SLOT } from '../config.js';
-
 export function crearCampeonato(circuitos) {
   return { circuitos, carreras: [] };
 }
@@ -29,7 +27,7 @@ export function campeonatoAcabado(campeonato) {
 /** El tiempo de un coche al acabar la carrera: el suyo, o el que habría hecho a su ritmo. */
 export function tiempoFinal(carrera, slot) {
   if (slot.terminado !== null) return slot.terminado;
-  const meta = VUELTAS_SLOT * carrera.circuito.largo;
+  const meta = carrera.vueltas * carrera.circuito.largo;
   // Sin haber avanzado (no ha salido, o apenas), no hay ritmo: el doble del ganador.
   if (slot.progreso < meta * 0.05) return carrera.tiempo * 2;
   return carrera.tiempo * meta / slot.progreso;

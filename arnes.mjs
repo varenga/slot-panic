@@ -13,7 +13,7 @@
  */
 
 import {
-  AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRIL, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
+  AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRERAS, CARRIL, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO, LARGO_COCHE, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -122,8 +122,8 @@ function seccionCircuito(circuito, oficial, { decorado: conDecorado = true } = {
  * romper sin que se note: coordenadas, mesa, progreso y la mano; y cuenta los
  * choques, y si alguno se repite sin que los coches hayan avanzado.
  */
-function correrUna(circuito, opciones, turno, limite) {
-  const carrera = crearCarreraSlot(circuito, opciones.map((_, i) => ['#f00', '#00f'][i]), turno);
+function correrUna(circuito, opciones, turno, limite, vueltas = VUELTAS_SLOT) {
+  const carrera = crearCarreraSlot(circuito, opciones.map((_, i) => ['#f00', '#00f'][i]), turno, { vueltas });
   const pilotos = opciones.map((o) => crearPiloto(o));
   const medida = {
     noFinito: false, fueraDeMesa: false, retrocede: false, manoMax: 0, manos: [], recolocaLejos: 0,
@@ -171,8 +171,8 @@ function correrUna(circuito, opciones, turno, limite) {
  * primero por el carril 0 y el segundo por el 1): así los choques no
  * ensucian las medidas. `juntos` los pone a los dos en la misma carrera.
  */
-function correrSlot(circuito, opciones, { limite = 400, juntos = false } = {}) {
-  if (juntos) return correrUna(circuito, opciones, 0, limite);
+function correrSlot(circuito, opciones, { limite = 400, juntos = false, vueltas = VUELTAS_SLOT } = {}) {
+  if (juntos) return correrUna(circuito, opciones, 0, limite, vueltas);
   const partes = opciones.map((o, i) => correrUna(circuito, [o], i, limite));
   return {
     carrera: { coches: partes.map((p) => p.carrera.coches[0]) },
@@ -745,6 +745,22 @@ console.log('\nEl campeonato');
   empate.carreras[2].tiempos = [46, 47];
   empate.carreras[1].tiempos = [70, 60];
   comprobar(clasificacion(empate).delante === 1, 'con 2-2 el desempate no cambia con los tiempos');
+
+  // Las carreras que se eligen (rápida, normal, resistencia): acaban en sus
+  // vueltas, y el que no acaba lleva su ritmo con esas vueltas, no con las de serie.
+  const medidas = [];
+  for (const { id, vueltas } of CARRERAS) {
+    const { carrera } = correrSlot(CIRCUITOS[0], [{ prudencia: 1.6 }, { ...CPU_SLOT, semilla: 7 }], { juntos: true, vueltas });
+    const ganador = carrera.coches[carrera.ganador];
+    const otro = carrera.coches[1 - carrera.ganador];
+    medidas.push(`${id} ${vueltas} vueltas en ${formatearTiempo(ganador.terminado)}`);
+    comprobar(ganador.vueltas.length === vueltas && otro.vueltas.length === vueltas, `la carrera ${id} no acaba en ${vueltas} vueltas`);
+    // A medio camino cuando llega el ganador: su tiempo, el doble.
+    const aMedias = { vueltas, circuito: CIRCUITOS[0], tiempo: 60 };
+    const ritmo = tiempoFinal(aMedias, { terminado: null, progreso: vueltas * CIRCUITOS[0].largo / 2 }) / aMedias.tiempo;
+    comprobar(Math.abs(ritmo - 2) < 1e-9, `en la carrera ${id}, al que va a medias se le pone ${ritmo.toFixed(2)} veces el tiempo del ganador`);
+  }
+  console.log(`  ${medidas.join(', ')}`);
 }
 
 // --- 7. El fantasma ------------------------------------------------------------

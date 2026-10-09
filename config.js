@@ -119,7 +119,18 @@ export const ESPERA_REINICIO = 0.6;   // s antes de aceptar la tecla que reinici
  *   muy pasado (LIMITE_SLOT).
  */
 export const CARRIL = 15;               // px del eje a cada carril
-export const VUELTAS_SLOT = 5;
+export const VUELTAS_SLOT = 5;          // las de la carrera normal: las de serie y las del arnés
+/*
+ * Las carreras que se eligen en la portada (tecla V), de la corta a la larga.
+ * Las vueltas no cambian la física ni la CPU: una carrera larga castiga más
+ * salirse a menudo y deja remontar más. Los récords son de vuelta, así que no
+ * dependen de esto; el campeonato corre todas sus carreras con las elegidas.
+ */
+export const CARRERAS = [
+  { id: 'rapida', vueltas: 3 },
+  { id: 'normal', vueltas: VUELTAS_SLOT },
+  { id: 'resistencia', vueltas: 10 }
+];
 export const PASO_FANTASMA = 1 / 30;    // s entre muestras de una vuelta grabada (nucleo/fantasma.js)
 export const VELOCIDAD_SLOT = 470;      // px/s con la potencia a tope
 export const SUBE_POTENCIA = 0.35;      // s: pulsando, la potencia recorre 2/3 de lo que le falta

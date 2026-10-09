@@ -774,3 +774,27 @@ app en la consola de Play.
   y la galería, con la imagen nueva (rama `11-slot-panic-records` de pnyk).
 - **Lo que queda** sigue en `TODO.md`: los playtests (a dos, la lupa, la galería y los
   récords) y la app de Google Play.
+
+## Carreras de 3, 5 o 10 vueltas (09/10/2026, rama `17-vueltas`)
+
+> La primera «dificultad» que se elige: no la de la CPU (sigue en `TODO.md`) sino lo
+> larga que es la carrera. Una corta es para echar una; una larga castiga salirse a
+> menudo y deja remontar.
+
+- **`CARRERAS`** (`config.js`): rápida (3), normal (5, `VUELTAS_SLOT`, la de serie) y
+  resistencia (10). Las vueltas son de cada carrera (`crearCarreraSlot(…, { vueltas })`,
+  `carrera.vueltas`): las cuentan `contarVueltas`, el marcador (`vueltaSlot(carrera,
+  slot)`), el aviso de la última vuelta y el tiempo a su ritmo del que no acaba en el
+  campeonato (`tiempoFinal`). La física y la CPU no cambian.
+- **En la portada**, una opción más, **CARRERA** (tecla V), que se recuerda
+  (`slotpanic.carrera`) y vale también para el campeonato; el panel dice las vueltas
+  («EL RESBALÓN · 10 VUELTAS»). Los récords no dependen de ella: son de vuelta.
+- **Nueve botones no caben iguales** en la banda: con el mismo ancho, «CIRCUITO: EL
+  RESBALÓN» encogía a 9 px. Ahora cada botón mide lo que su etiqueta y lo que sobra se
+  reparte (`opcionesPortada(etiquetasPortada(…))`, la misma para dibujar y pulsar): la
+  letra queda igual en todos, también en francés. En la lupa son cinco filas; cabe en
+  9:16 (360 × 640).
+- GA4: `empezar_carrera` y `empezar_campeonato` llevan `vueltas`.
+- Arnés: las tres carreras acaban en sus vueltas (La horquilla: 0:37,9, 1:02,5 y 2:04,1)
+  y el que va a medias cuando llega el ganador se lleva el doble con sus vueltas, no con
+  las de serie. 665/665 en verde.

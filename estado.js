@@ -6,7 +6,7 @@
  * nunca se reasigna la variable `estado`.
  */
 
-import { GAME_SLUG } from './config.js';
+import { CARRERAS, GAME_SLUG } from './config.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { codificar, decodificar } from './nucleo/fantasma.js';
 
@@ -22,6 +22,20 @@ export function leerEscenario() {
 
 export function guardarEscenario(nombre) {
   try { localStorage.setItem(`${GAME_SLUG}.escenario`, nombre); } catch (error) { /* modo privado */ }
+}
+
+/** La carrera elegida (rápida, normal o resistencia, CARRERAS): también se recuerda. */
+export function leerDuracion() {
+  try {
+    const guardada = localStorage.getItem(`${GAME_SLUG}.carrera`);
+    return CARRERAS.some((c) => c.id === guardada) ? guardada : 'normal';
+  } catch (error) {
+    return 'normal';
+  }
+}
+
+export function guardarDuracion(id) {
+  try { localStorage.setItem(`${GAME_SLUG}.carrera`, id); } catch (error) { /* modo privado */ }
 }
 
 /** El circuito elegido, por su clave: también se recuerda. */
@@ -179,6 +193,7 @@ export const estado = {
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario
   hora: 'dia',         // 'dia' | 'atardecer' | 'noche': cosmética, combinable con el escenario
+  duracion: 'normal',  // la carrera: 'rapida' | 'normal' | 'resistencia' (CARRERAS, con sus vueltas)
   modelo: null,        // el coche del J1 (coches.js); el otro lleva el siguiente. Cosmético
   tactil: false,       // se activa con el primer toque
   lupa: false,         // el móvil en vertical: la vista que sigue al J1 (lupa.js)

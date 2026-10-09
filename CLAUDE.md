@@ -9,7 +9,7 @@ ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos), y récords de vuelta online con
+contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
