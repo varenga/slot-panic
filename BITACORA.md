@@ -883,3 +883,26 @@ app en la consola de Play.
 ## Slot Panic 1.1.1 (09/10/2026)
 
 - Corrección sin funcionalidad nueva: la sombra de las torres sigue al sol. `pnyk.json`: 1.1.1.
+
+## Los árboles y las gradas también siguen al sol (09/10/2026, rama `19-sombras-decorado`)
+
+> Tras la de las torres: que giren también las sombras de los árboles y las gradas.
+
+- **`sombraSol(luz, alto)`** (`luz.js`): el sol de `sombraTorre`, para cualquier alto
+  (la de las torres es la de 8 px). Nada da una sombra de más de 11,25 veces su alto.
+- **El fondo, en dos capas** (`dibujo.js`): el suelo con la pista, y el decorado (gradas
+  y piezas) sin sombra, transparente; las dos se hornean como antes. Entre una y otra,
+  cada fotograma, las sombras: cada cosa barrida desde su base hasta donde cae la de su
+  copa (círculos) o su escalón más alto (rectángulos), en un trazado y un relleno por
+  tipo para que no se oscurezcan donde se pisan. Lo alto de cada pieza, en radios: pino
+  1,5, cactus 1,2, árbol 1, arbusto 0,5, roca 0,35; la grada, 7 px. Las de los árboles
+  no pasan de 6 radios.
+- A mediodía quedan como antes (desplazadas medio radio abajo a la derecha); al caer la
+  tarde los árboles echan sombras largas en diagonal y la grada cubre la grava que tiene
+  delante; de noche no hay. En el constructor, de día.
+- Arnés: la sombra del decorado es proporcional a lo alto. 685/685 en verde.
+
+## Slot Panic 1.1.2 (09/10/2026)
+
+- Corrección sin funcionalidad nueva: las sombras de los árboles y las gradas siguen al
+  sol, como las de las torres. `pnyk.json`: 1.1.2.

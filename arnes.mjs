@@ -30,7 +30,7 @@ import { validarCircuito } from './nucleo/validar.js';
 import { aCodigo, aPiezas, COLUMNAS, deCodigo, FILAS, validarTrazado, VARIANTES } from './nucleo/cuadricula.js';
 import { construirDePiezas } from './nucleo/piezas.js';
 import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucleo/trazo.js';
-import { luzDeCarrera, sombraTorre } from './luz.js';
+import { luzDeCarrera, sombraSol, sombraTorre } from './luz.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato, tiempoFinal } from './nucleo/campeonato.js';
 import { codificar, decodificar, posar } from './nucleo/fantasma.js';
 
@@ -793,6 +793,9 @@ console.log('\nEl campeonato');
   comprobar(sombras[0].largo < 6 && sombras[2].largo > 20, `la sombra de una torre mide ${sombras[0].largo.toFixed(1)} px de día y ${sombras[2].largo.toFixed(1)} al atardecer`);
   comprobar(sombras.every((s, k) => k === 0 || (s.largo >= sombras[k - 1].largo && s.alfa <= sombras[k - 1].alfa)), 'la sombra de una torre no se alarga y se apaga a la vez');
   comprobar(sombras[4].alfa === 0 && sombras[5].alfa === 0, 'de noche las torres siguen dando sombra de sol');
+  // Los árboles y las gradas, con el mismo sol: la sombra, proporcional a lo alto.
+  comprobar([0, 0.5, 1, 1.3].every((l) => Math.abs(sombraSol(l, 3).largo - 3 * sombraSol(l, 1).largo) < 1e-9 && sombraSol(l, 3).fuerza === sombraSol(l, 1).fuerza),
+    'la sombra del decorado no es proporcional a lo alto');
   comprobar(Math.atan2(sombras[0].y, sombras[0].x) - Math.atan2(sombras[3].y, sombras[3].x) > 0.3, 'la sombra de una torre no gira al caer la tarde');
   comprobar(CARRERAS.filter((c) => c.anochece).map((c) => c.id).join() === 'resistencia', 'anochece otra carrera que la de resistencia');
 }
