@@ -847,3 +847,14 @@ app en la consola de Play.
   vuelta 2, atardecer en la 5-6, anocheciendo en la 7-8 y noche cerrada en la 9-10.
 - Arnés: la luz de la resistencia empieza de día, pasa por el atardecer a mitad de
   carrera, acaba de noche y nunca se aclara; solo anochece la de resistencia.
+
+## Slot Panic 1.1.0 (09/10/2026)
+
+> Una funcionalidad visible (`CONVENCIONES.md`): la carrera se elige. Rápida, normal o
+> de resistencia (3, 5 o 10 vueltas, y en la de 10 anochece), contra una CPU fácil,
+> normal o difícil.
+
+- **`pnyk.json`**: 1.1.0. Se publica junto con lo de la rama `16-records` (los récords
+  de vuelta en el juego, 0.9.0, y la 1.0.0), que no había llegado a `master`: allí solo
+  estaba el servidor de los récords. Los tags `v0.9.0` y `v1.0.0` se ponen ahora, en sus
+  commits.
