@@ -1012,3 +1012,10 @@ app en la consola de Play.
 - **Los faros de arriba del Multiplo**: de un óvalo de 2 × 1,5 en x = 6, separado del
   parabrisas, a una cuenca de 1,8 × 1,4 pegada a su borde (x = 5,8) con la lente solo en
   la mitad de delante (0,8 × 1,1): miran a la carretera. Visto a 12 y a 4 aumentos.
+
+## Slot Panic 1.3.0 (09/10/2026)
+
+- Los coches con características: cada modelo con su largo, su aceleración, su agarre y
+  su punta; récords con todos los coches en la misma tabla; COCHE enseña lo que tiene
+  cada uno. Multiplo y Cinquecenti. La columna `coche` ya estaba en la base antes del
+  push. `pnyk.json`: 1.3.0.
