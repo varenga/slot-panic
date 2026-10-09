@@ -823,3 +823,25 @@ app en la consola de Play.
 - GA4: `empezar_carrera` y `empezar_campeonato` llevan `cpu`.
 - Arnés: en cada oficial, la fácil deja 1,3-3 s, la difícil 0,25-0,8 s y van en orden.
   677/677 en verde, en ~28 s (antes ~20).
+
+## Primer playtest de los niveles y anochece en la de resistencia (09/10/2026, rama `17-vueltas`)
+
+> Playtest de la CPU a 3 vueltas: la fácil «es sencilla de ganar, como debe ser» (dos
+> salidas propias contra una de la CPU, y aun así ganada); la difícil «no se siente
+> demasiado complicada»: perdida, pero razonablemente cerca, con dos salidas contra una.
+> Se quedan como están. Y una petición: que en las de 10 vueltas la luz pase de día a
+> atardecer y a noche.
+
+- **La luz es un número** (`luz.js`): 0 de día, 1 al atardecer, 2 de noche, y entre medias
+  se funden. Hasta 1 crece el velo del atardecer; de 1 a 2 se va mientras la capa de la
+  noche (y sus focos, balizas y flashes) sube con la misma fuerza. Las horas fijas
+  pintan lo mismo que antes.
+- **`luzDeCarrera(hora, fracción)`**: por lo que lleva corrido el primero, el primer
+  quinto con la hora elegida, cae la tarde hasta el 40 %, atardecer hasta el 60 %,
+  anochece hasta el 80 % y el resto de noche. Nunca más clara que la hora elegida: del
+  atardecer solo anochece y de noche no cambia. Solo en la de resistencia (`anochece`
+  en `CARRERAS`); la exhibición de la portada y las demás carreras siguen con su hora.
+- Visto en una carrera entera de CPU contra CPU en El ocho (1:35): de día hasta la
+  vuelta 2, atardecer en la 5-6, anocheciendo en la 7-8 y noche cerrada en la 9-10.
+- Arnés: de cada hora, la luz de la resistencia empieza en ella, acaba de noche y nunca
+  se aclara; solo anochece la de resistencia. 684/684 en verde.

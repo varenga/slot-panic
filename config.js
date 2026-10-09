@@ -125,11 +125,12 @@ export const VUELTAS_SLOT = 5;          // las de la carrera normal: las de seri
  * Las vueltas no cambian la física ni la CPU: una carrera larga castiga más
  * salirse a menudo y deja remontar más. Los récords son de vuelta, así que no
  * dependen de esto; el campeonato corre todas sus carreras con las elegidas.
+ * En la de resistencia (`anochece`) cae la tarde mientras se corre (luz.js).
  */
 export const CARRERAS = [
   { id: 'rapida', vueltas: 3 },
   { id: 'normal', vueltas: VUELTAS_SLOT },
-  { id: 'resistencia', vueltas: 10 }
+  { id: 'resistencia', vueltas: 10, anochece: true }
 ];
 export const PASO_FANTASMA = 1 / 30;    // s entre muestras de una vuelta grabada (nucleo/fantasma.js)
 export const VELOCIDAD_SLOT = 470;      // px/s con la potencia a tope

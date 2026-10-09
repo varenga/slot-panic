@@ -50,7 +50,7 @@ import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra
 import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from './galeria.js';
 import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js';
 import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
-import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
+import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
   altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
@@ -567,6 +567,7 @@ function empezarCarrera() {
   estado.turno = 1 - estado.turno;
   estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno, { vueltas: vueltasElegidas(), grabar: conRecords() });
   vestir(estado.carrera);
+  estado.carrera.anochece = !!CARRERAS.find((c) => c.id === estado.duracion).anochece;
   const { piloto } = NIVELES_CPU.find((n) => n.id === estado.nivel);
   estado.pilotos = [0, 1].map(() => crearPiloto({ ...piloto, semilla: semilla() }));
   estado.humanos = [false, false];
@@ -933,8 +934,20 @@ function pintarMundo() {
   // El que va por el aire, encima.
   const coches = [...estado.carrera.coches].sort((a, b) => a.altura - b.altura);
   coches.forEach(dibujarCocheSlot);
-  pintarHora(estado.hora, estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
+  pintarHora(luzAhora(), estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
   dibujarChispas(estado.particulas);
+}
+
+/*
+ * La luz de ahora: la hora elegida o, en una carrera que anochece (la de
+ * resistencia), la que toca por lo que lleva corrido el primero.
+ */
+function luzAhora() {
+  const { carrera } = estado;
+  if (!carrera.anochece) return ORDEN_HORAS.indexOf(estado.hora);
+  const corrido = Math.max(...carrera.coches.map((slot) => slot.progreso));
+  const fraccion = Math.min(1, Math.max(0, corrido / (carrera.vueltas * carrera.circuito.largo)));
+  return luzDeCarrera(estado.hora, fraccion);
 }
 
 /** Cuánto chirría el coche más al límite de los que conduce alguien, en [0, 1]. */

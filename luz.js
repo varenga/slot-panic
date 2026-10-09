@@ -13,6 +13,10 @@
  *   fotograma, los dos haces de los faros y un halo por coche. Luego, sumando
  *   color, el brillo de faros y focos, las balizas de las curvas cerradas y
  *   los flashes de las cámaras en las gradas.
+ *
+ * La luz es un número: 0 de día, 1 al atardecer y 2 de noche. Entre medias se
+ * funden: en una carrera de resistencia cae la tarde mientras se corre
+ * (`luzDeCarrera`).
  */
 
 import { ALTO, ANCHO, ANCHO_COCHE, GAME_SLUG, LARGO_COCHE } from './config.js';
@@ -20,6 +24,27 @@ import { crearCapa, ctx, dibujarEn } from './nucleo/lienzo.js';
 import { RADIO_CURVA_NEUMATICOS } from './nucleo/decorado.js';
 
 export const ORDEN_HORAS = ['dia', 'atardecer', 'noche'];
+
+/*
+ * La luz de una carrera de resistencia, según lo que lleva corrido el primero
+ * (`fraccion`, de 0 a 1): el primer quinto con la hora elegida, el segundo
+ * cayendo la tarde, el del medio al atardecer, el cuarto anocheciendo y el
+ * último de noche. Nunca más clara que la hora elegida: quien eligió la noche
+ * corre de noche.
+ */
+const CAMINO_LUZ = [[0.2, 0], [0.4, 1], [0.6, 1], [0.8, 2]];
+export function luzDeCarrera(hora, fraccion) {
+  let luz = 2;
+  for (let i = 0; i < CAMINO_LUZ.length; i++) {
+    const [f, l] = CAMINO_LUZ[i];
+    if (fraccion > f) continue;
+    if (i === 0) { luz = l; break; }
+    const [f0, l0] = CAMINO_LUZ[i - 1];
+    luz = l0 + (l - l0) * (fraccion - f0) / (f - f0);
+    break;
+  }
+  return Math.max(ORDEN_HORAS.indexOf(hora), luz);
+}
 
 /*
  * La hora elegida es una preferencia, como el escenario: se recuerda. Vive
@@ -182,12 +207,18 @@ function pintarConos(coches) {
 }
 
 /**
- * Pinta la hora sobre el mundo ya dibujado. `coches`: los que llevan faros.
- * De día no hace nada.
+ * Pinta la luz (0 día, 1 atardecer, 2 noche, o entre medias) sobre el mundo ya
+ * dibujado. `coches`: los que llevan faros. De día no hace nada.
  */
-export function pintarHora(hora, circuito, decorado, coches) {
-  if (hora === 'atardecer') return pintarAtardecer();
-  if (hora !== 'noche') return;
+export function pintarHora(luz, circuito, decorado, coches) {
+  if (luz <= 0) return;
+  // Hasta el atardecer, su velo crece; anocheciendo, se va bajo la noche.
+  if (luz < 2) pintarAtardecer(luz <= 1 ? luz : 2 - luz);
+  if (luz > 1) pintarNoche(luz - 1, circuito, decorado, coches);
+}
+
+/** La noche, con su fuerza: `fuerza` 1 es la noche cerrada. */
+function pintarNoche(fuerza, circuito, decorado, coches) {
   if (!foco) { foco = crearFoco(); ambar = crearFoco('255, 160, 30'); cono = crearCono(); trabajo = crearCapa(ANCHO, ALTO); }
 
   const clave = circuito.clave + '/' + decorado.nombre;
@@ -207,23 +238,26 @@ export function pintarHora(hora, circuito, decorado, coches) {
     for (const coche of coches) estampar(foco, coche.x, coche.y, HALO);
     ctx.globalCompositeOperation = 'source-over';
   });
+  ctx.save();
+  ctx.globalAlpha = fuerza;
   ctx.drawImage(trabajo, 0, 0);
+  ctx.restore();
 
   // El brillo, sumando: los haces de los faros, cálidos, y los focos de cada
   // torre, blancos, encendidos en su cabeza.
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = 0.12;
+  ctx.globalAlpha = 0.12 * fuerza;
   pintarConos(coches);
   for (const t of torres) {
     const cx = t.x + Math.cos(t.angulo) * 4, cy = t.y + Math.sin(t.angulo) * 4;
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.9 * fuerza;
     estampar(foco, cx, cy, 7);
-    ctx.globalAlpha = 0.35;
+    ctx.globalAlpha = 0.35 * fuerza;
     estampar(foco, cx, cy, 15);
   }
-  pintarBalizas();
-  pintarFlashes(decorado.gradas, coches);
+  pintarBalizas(fuerza);
+  pintarFlashes(decorado.gradas, coches, fuerza);
   ctx.restore();
 }
 
@@ -250,15 +284,15 @@ function balizasDe(circuito) {
   return lista;
 }
 
-function pintarBalizas() {
+function pintarBalizas(fuerza) {
   const paso = Math.floor(performance.now() / 1000 * BALIZA_RITMO);
   for (const b of balizas) {
     // La encendida y, detrás, la que se apaga: la ola tiene cola.
     const fase = (((b.k - paso) % BALIZA_OLA) + BALIZA_OLA) % BALIZA_OLA;
     const brillo = fase === 0 ? 1 : fase === BALIZA_OLA - 1 ? 0.4 : 0.08;
-    ctx.globalAlpha = brillo;
+    ctx.globalAlpha = brillo * fuerza;
     estampar(ambar, b.x, b.y, BALIZA_HALO);
-    ctx.globalAlpha = Math.min(1, brillo * 1.4);
+    ctx.globalAlpha = Math.min(1, brillo * 1.4) * fuerza;
     estampar(ambar, b.x, b.y, BALIZA_LUZ);
   }
 }
@@ -268,7 +302,7 @@ function pintarBalizas() {
  * sitios al azar de cada grada, muchos más cuando pasa un coche cerca. Es
  * presentación: aquí vale Math.random().
  */
-function pintarFlashes(gradas, coches) {
+function pintarFlashes(gradas, coches, fuerza) {
   const ahora = performance.now() / 1000;
   const dt = Math.min(0.1, Math.max(0, ahora - antes));
   antes = ahora;
@@ -281,7 +315,7 @@ function pintarFlashes(gradas, coches) {
     }
   }
   for (const f of flashes) {
-    ctx.globalAlpha = Math.max(0, f.vida / FLASH_VIDA);
+    ctx.globalAlpha = Math.max(0, f.vida / FLASH_VIDA) * fuerza;
     estampar(foco, f.x, f.y, 8);
     estampar(foco, f.x, f.y, 2.5);
     f.vida -= dt;
@@ -289,8 +323,9 @@ function pintarFlashes(gradas, coches) {
   flashes = flashes.filter((f) => f.vida > 0);
 }
 
-function pintarAtardecer() {
+function pintarAtardecer(fuerza) {
   ctx.save();
+  ctx.globalAlpha = fuerza;
   // El sol, bajo y arriba a la izquierda: claro y cálido hacia él, malva al otro lado.
   ctx.globalCompositeOperation = 'multiply';
   const g = ctx.createLinearGradient(0, 0, ANCHO, ALTO);
