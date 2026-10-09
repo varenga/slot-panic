@@ -16,7 +16,7 @@ import {
 import { azar } from './nucleo/decorado.js';
 import { CARRILES, trazadoCarril } from './nucleo/slot.js';
 import { modelo, pintarModelo, sombraModelo } from './coches.js';
-import { sombraTorre } from './luz.js';
+import { sombraSol, sombraTorre } from './luz.js';
 
 const PASO_PIANO = 2;    // puntos del eje por franja de piano
 const CASILLA_META = 8;
@@ -25,31 +25,40 @@ const MOTAS = 2200;
 const ANCHO_FRANJA = 48; // césped segado
 const PUBLICO = ['#e05a63', '#f2cd68', '#88aede', '#4fbf7a', '#e6e8ee', '#c08a9c', '#ff9f5a'];
 
-let capa = null;
+let capaSuelo = null;       // suelo, escapatoria, neumáticos y pista
+let capaDecorado = null;    // gradas y piezas, sin sombra: transparente
 let claveCapa = '';
 let capaCarriles = null;
 let claveCarriles = '';
 const JUNTA = 96;        // px de eje entre dos juntas de las piezas
 
-/** El fondo entero: suelo, decorado y pista. Se repinta solo si cambia. */
-export function dibujarFondo(circuito, decorado) {
+/*
+ * El fondo entero: suelo, pista y decorado, en dos capas que se repintan solo
+ * si cambian. Entre una y otra, en cada fotograma, las sombras de las gradas
+ * y las piezas, que van con el sol de la luz de ahora (`luz`, 0 día … 2 noche).
+ * Las torres, aparte (dibujarTorres): son lo más alto.
+ */
+export function dibujarFondo(circuito, decorado, luz = 0) {
   const clave = circuito.clave + '/' + decorado.nombre;
   if (clave !== claveCapa) {
-    capa = crearCapa(ANCHO, ALTO);
-    dibujarEn(capa, () => {
+    capaSuelo = crearCapa(ANCHO, ALTO);
+    dibujarEn(capaSuelo, () => {
       pintarSuelo(decorado);
       pintarEscapatoria(circuito, decorado);
       decorado.neumaticos.forEach(pintarNeumatico);
       pintarPista(circuito);
+    });
+    capaDecorado = crearCapa(ANCHO, ALTO);
+    dibujarEn(capaDecorado, () => {
       decorado.gradas.forEach((g) => pintarGrada(g, decorado.semilla));
       const color = decorado.escenario.color;
-      decorado.piezas.forEach((p) => pintarSombra(p));
       decorado.piezas.forEach((p) => PINTAR[p.tipo](p, color));
-      // Las torres no: su sombra se mueve con el sol (dibujarTorres).
     });
     claveCapa = clave;
   }
-  ctx.drawImage(capa, 0, 0);
+  ctx.drawImage(capaSuelo, 0, 0);
+  pintarSombras(decorado, luz);
+  ctx.drawImage(capaDecorado, 0, 0);
 }
 
 // --- Suelo ---------------------------------------------------------------------
@@ -239,11 +248,59 @@ function pintarMeta(circuito) {
 
 // --- Decorado --------------------------------------------------------------------
 
-function pintarSombra(p) {
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+/*
+ * Lo alto de cada pieza, en radios (lo que estira su sombra), y el de las
+ * gradas, en px. Un pino es más alto que ancho; una roca, casi plana.
+ */
+const ALTO_PIEZA = { arbol: 1, pino: 1.5, arbusto: 0.5, roca: 0.35, cactus: 1.2 };
+const ALTO_GRADA = 7;
+
+/*
+ * Las sombras de las gradas y las piezas: lo que tapa cada una barrido desde
+ * su base hasta donde cae la sombra de su copa (o su escalón más alto). Todas
+ * en un solo trazado y un relleno por tipo, para que lo semitransparente no se
+ * acumule donde se pisan.
+ */
+function pintarSombras(decorado, luz) {
+  const sol = sombraSol(luz, 1);   // la de 1 px de alto: se escala
+  if (sol.fuerza <= 0.005) return;
+  const dx = sol.x, dy = sol.y;
+
+  ctx.fillStyle = `rgba(0, 0, 0, ${0.25 * sol.fuerza})`;
   ctx.beginPath();
-  ctx.ellipse(p.x + p.r * 0.3, p.y + p.r * 0.35, p.r, p.r * 0.85, 0, 0, Math.PI * 2);
-  ctx.fill();
+  for (const g of decorado.gradas) {
+    // El sol, en los ejes de la grada.
+    const cos = Math.cos(g.angulo), sin = Math.sin(g.angulo);
+    const u = (dx * cos + dy * sin) * ALTO_GRADA, v = (-dx * sin + dy * cos) * ALTO_GRADA;
+    const pasos = Math.max(1, Math.ceil(Math.hypot(u, v) / 3));
+    for (let k = 1; k <= pasos; k++) {
+      const f = k / pasos;
+      [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([i, j], n) => {
+        const a = i * g.largo / 2 + u * f, b = j * g.fondo / 2 + v * f;
+        const x = g.x + a * cos - b * sin, y = g.y + a * sin + b * cos;
+        if (n === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+    }
+  }
+  ctx.fill('nonzero');
+
+  ctx.fillStyle = `rgba(0, 0, 0, ${0.22 * sol.fuerza})`;
+  ctx.beginPath();
+  for (const p of decorado.piezas) {
+    const alto = ALTO_PIEZA[p.tipo] * p.r;
+    const largo = Math.min(sol.largo * alto, 6 * p.r);
+    const radio = p.r * 0.9;
+    const pasos = Math.max(1, Math.ceil(largo / (radio * 0.5)));
+    for (let k = 0; k <= pasos; k++) {
+      const d = 0.1 * p.r + (largo - 0.1 * p.r) * k / pasos;
+      const x = p.x + dx / sol.largo * d, y = p.y + dy / sol.largo * d;
+      ctx.moveTo(x + radio, y);
+      ctx.arc(x, y, radio, 0, Math.PI * 2);
+    }
+  }
+  ctx.fill('nonzero');
 }
 
 const PINTAR = {
@@ -375,8 +432,6 @@ function pintarGrada(g, semilla) {
   ctx.save();
   ctx.translate(g.x, g.y);
   ctx.rotate(g.angulo);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-  ctx.fillRect(-g.largo / 2 + 3, -g.fondo / 2 + 4, g.largo, g.fondo);
   const filas = 3;
   const alto = g.fondo / filas;
   for (let f = 0; f < filas; f++) {
