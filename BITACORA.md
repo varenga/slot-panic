@@ -858,3 +858,28 @@ app en la consola de Play.
   de vuelta en el juego, 0.9.0, y la 1.0.0), que no había llegado a `master`: allí solo
   estaba el servidor de los récords. Los tags `v0.9.0` y `v1.0.0` se ponen ahora, en sus
   commits.
+
+## La sombra de las torres sigue al sol (09/10/2026, rama `18-sombras`)
+
+> Playtest a 10 vueltas: «el anochecer ha quedado muy realista»; las 10 vueltas de la
+> resistencia «van perfectas, no se hace largo, es resistencia». La CPU, bien: «en nivel
+> fácil le ganas con facilidad», y en el difícil «hay que estar muy atento para poder
+> ganarle, pero no se hace imposible». Una corrección: la sombra de las torres no se
+> movía (22 px abajo a la derecha, horneada en el fondo, también de noche). De día casi
+> no tiene que haber; al caer la tarde, alargarse y girar, y al ponerse el sol, irse.
+
+- **`sombraTorre(luz)`** (`luz.js`): un sol con altura y dirección. La altura baja de 65°
+  a mediodía a 15° al atardecer y a 3° al ponerse (luz 1,5); la sombra mide lo alto de
+  la torre (8 px) entre la tangente de la altura, hasta 90 px, y gira de 80° (casi hacia
+  abajo) a 35°. Se desvanece entre luz 1,1 y 1,6: de día y al atardecer, 0,28; de noche, nada.
+  Mide 4 px de día, 30 al atardecer, 58 (más tenue) anocheciendo.
+- **Las torres salen del fondo horneado** (`dibujarTorres` en `dibujo.js`): sombra y torre
+  se pintan cada fotograma, encima de los carriles (son lo más alto) y debajo de los
+  coches. Son ~20 líneas y rectángulos: no se nota. En el constructor, siempre de día.
+  El resto del decorado sigue con su sombra fija: son bajos.
+- Arnés: la sombra mide < 6 px de día y > 20 al atardecer, se alarga mientras se apaga,
+  gira al caer la tarde y de noche no hay. 684/684 en verde.
+
+## Slot Panic 1.1.1 (09/10/2026)
+
+- Corrección sin funcionalidad nueva: la sombra de las torres sigue al sol. `pnyk.json`: 1.1.1.

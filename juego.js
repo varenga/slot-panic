@@ -29,7 +29,7 @@ import { validarCircuito } from './nucleo/validar.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato } from './nucleo/campeonato.js';
 import { posar } from './nucleo/fantasma.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
-import { dibujarCarriles, dibujarCocheSlot, dibujarFantasma, dibujarFondo } from './dibujo.js';
+import { dibujarCarriles, dibujarCocheSlot, dibujarFantasma, dibujarFondo, dibujarTorres } from './dibujo.js';
 import { formatearTiempo } from './nucleo/slot.js';
 import { MODELOS, siguienteModelo } from './coches.js';
 import {
@@ -927,14 +927,16 @@ function pintarFantasma() {
 }
 
 function pintarMundo() {
+  const luz = luzAhora();
   dibujarFondo(estado.circuito, estado.decorado);
   dibujarCarriles(estado.circuito);
+  dibujarTorres(estado.decorado, luz);
   dibujarHumo(estado.particulas);
   pintarFantasma();
   // El que va por el aire, encima.
   const coches = [...estado.carrera.coches].sort((a, b) => a.altura - b.altura);
   coches.forEach(dibujarCocheSlot);
-  pintarHora(luzAhora(), estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
+  pintarHora(luz, estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
   dibujarChispas(estado.particulas);
 }
 

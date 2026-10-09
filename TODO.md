@@ -23,9 +23,6 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
       cruce divierten o frustran?, ¿el peralte y los baches se leen antes de llegar?
 - [ ] Más circuitos oficiales (hoy cuatro).
 - [ ] Estética de juguete: piezas con juntas, trencillas, la mesa.
-- [ ] Playtest de las carreras largas: ¿la difícil a 10 vueltas se hace eterna o se
-      gana?, ¿se nota que anochece, o distrae? (a 3 vueltas ya se jugaron los dos
-      extremos de la CPU: `BITACORA.md`).
 - [ ] Playtest de los récords: ¿el fantasma ayuda o estorba (hoy al 0,3)?, ¿se entiende
       firmar?, ¿el mínimo de vuelta del servidor (el 80 % del mejor piloto automático)
       deja pasar a los buenos?
