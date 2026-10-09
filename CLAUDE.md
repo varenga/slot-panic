@@ -9,7 +9,7 @@ ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con siete coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cuatro seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
@@ -115,7 +115,7 @@ node arnes.mjs
 ```
 
 Importa los módulos reales del núcleo (no tocan el DOM) y corre carreras enteras con
-pilotos automáticos en unos segundos (hoy, ~20 s). Si las piezas de un circuito no
+pilotos automáticos en unos segundos (hoy, ~35 s). Si las piezas de un circuito no
 cierran, ni arranca: lo dice `construirDePiezas` al importarlo. Sale con código 1 si algo falla. No admite
 argumentos: siempre corre todas las secciones enteras. Es `.mjs` a propósito: el
 `.htaccess` deniega `*.mjs` (y `*.md`, `pnyk.json`), así que no se publica; por lo
@@ -132,6 +132,13 @@ demás, en `BITACORA.md`). Mide y comprueba:
 2. **Decorado**, en los cuatro escenarios: es determinista, caben al menos 40 piezas y
    ninguna pieza, neumático, grada ni torre de iluminación pisa la pista, el marcador ni
    las bandas de texto; hay al menos 8 torres (hoy 20).
+3b. **Los coches** (`COCHES`): cada uno gasta 0 de presupuesto (`PESO_CARACTER`) y mide
+   27-35 px, y el clásico es el de siempre (×1, 31 px). En cada oficial, con cada modelo:
+   el prudente no se sale y da la vuelta a ±3 % del clásico; a fondo se sale ≥ 1 vez por
+   vuelta y pierde > 20 %; ninguna curva se pasa a su punta; arrancando en una curva no
+   se sale, ni un humano que reacciona 0,2 s tarde; los niveles de la CPU dejan sus
+   márgenes, en orden. Ninguno es el más rápido en los cuatro, y los más cortos y los
+   más largos chocan en cada encuentro (y en paralelo, nunca).
 3. **Slot**: los carriles van por el asfalto y dentro del lienzo, y sus tramos lejanos a
    > 60 px. El piloto prudente (×1, no pasa del agarre) no se sale nunca y da la vuelta
    en 9-16 s (hoy 13,5); entrar derrapando le gana (hoy 11 %) y a fondo se sale al menos
@@ -159,10 +166,12 @@ demás, en `BITACORA.md`). Mide y comprueba:
 6. **El campeonato**: corre los circuitos oficiales en orden, las victorias suman las
    carreras, al que no acaba se le pone más tiempo que al ganador y, con las mismas
    victorias, gana el menor tiempo sumado.
-7. **El fantasma**: en cada oficial, la vuelta grabada se separa < 1 px del coche, acaba
+7. **El fantasma**: en cada oficial, con el coche más rápido ahí, la vuelta grabada (y su coche) se separa < 1 px del coche, acaba
    en la meta, desaparece después y guardada ocupa < 12.000 caracteres; con `php`, el
    servidor (`servidor/records.php`) tiene el circuito, su mínimo por debajo de una vuelta
-   fina y su meta, acepta la vuelta de verdad y rechaza las trucadas.
+   fina con el coche más rápido y su meta, los mismos coches que `COCHES`, acepta la
+   vuelta de verdad (también sin coche: la de una caché vieja) y rechaza las trucadas
+   (y un coche cambiado).
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).
@@ -229,7 +238,8 @@ circuitos/resbalon.js  «El resbalón», de piezas: las estrechas (corta y larga
 dibujo.js              el mundo: suelo, decorado y pista (en una capa que se pinta
                        una vez), carriles y coches
 coches.js              la forma de cada modelo, vista desde arriba: silueta, ruedas
-                       y detalles. Cosmética: los choques siguen con la caja del coche
+                       y detalles, escalada a su largo. Su carácter (largo,
+                       aceleración, agarre, punta) es de la física: COCHES, en config.js
 particulas.js          chispas, humo y confeti. Presentación: aquí sí vale Math.random()
 luz.js                 la hora: día, atardecer (un velo) o noche (la pista a media
                        luz, las torres del decorado, faros y halos). Cosmética, y se
@@ -278,6 +288,10 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
 - **El coche enganchado solo tiene `s` y velocidad**: la posición y el rumbo salen del
   carril (el eje desplazado `CARRIL` px). El carril de dentro es más corto y más
   cerrado.
+- **Cada coche, su ficha** (`slot.ficha`, de `COCHES`): su punta, su aceleración y su
+  agarre multiplican las del motor; el piloto automático conoce el agarre del suyo. El
+  clásico es ×1 en todo: con él valen los récords de antes de la 1.3. Un modelo nuevo
+  gasta 0 de presupuesto y pasa la sección 3b.
 - **La potencia sigue al dedo con retraso** (`SUBE_POTENCIA`, `BAJA_POTENCIA`): a toques
   se queda a medias. Si subiera y bajara a ritmo fijo, a toques se quedaba en nada o en
   todo.

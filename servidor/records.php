@@ -3,7 +3,8 @@
  * Slot Panic — los récords de vuelta, en el servidor.
  *
  * Qué se acepta como récord de un circuito oficial: una vuelta de al menos su
- * mínimo y su fantasma (nucleo/fantasma.js, `codificar`), coherente con ella.
+ * mínimo, con qué coche (COCHES en config.js) y su fantasma
+ * (nucleo/fantasma.js, `codificar`), coherente con ella.
  * No hace imposible hacer trampas (todo sale del cliente), pero un tiempo
  * inventado tiene que venir con una vuelta entera que lo cuadre.
  *
@@ -16,8 +17,9 @@
 
 /*
  * Los oficiales (CIRCUITOS en circuitos/indice.js): la vuelta mínima, en ms (el
- * 80 % de la del mejor piloto automático: un humano que derrapa bien le gana,
- * pero no tanto), y dónde está la meta, en px.
+ * 80 % de la del mejor piloto automático con el coche más rápido en ese
+ * circuito: un humano que derrapa bien le gana, pero no tanto), y dónde está
+ * la meta, en px.
  */
 const RECORDS_CIRCUITOS = [
   'primero'  => ['minimo' => 9300, 'meta' => [423, 620]],
@@ -25,21 +27,30 @@ const RECORDS_CIRCUITOS = [
   'nudo'     => ['minimo' => 8700, 'meta' => [420, 620]],
   'resbalon' => ['minimo' => 6500, 'meta' => [600, 620]],
 ];
+/*
+ * Los coches (COCHES en config.js). Una tabla con todos: cada vuelta dice con
+ * cuál se hizo. Las que llegan sin coche son de antes de que los coches
+ * tuvieran carácter (o de una caché vieja): todas con la física del clásico.
+ */
+const RECORDS_COCHES = ['clasico', 'escalon', 'patito', 'tiburon', 'escarabajo', 'bambino', 'monovolumen'];
+const RECORDS_COCHE_ANTIGUO = 'clasico';
 const RECORDS_MAXIMO = 120000;            // ms: más que esto no es una vuelta
 const RECORDS_PASO = 1 / 30;              // s entre muestras (PASO_FANTASMA)
 const RECORDS_SALTO = 600;                // décimas de px entre muestras, como mucho (la mano incluida)
 const RECORDS_DESDE_META = 500;           // décimas de px de la primera muestra a la meta, como mucho
 const RECORDS_ANCHO = 12800, RECORDS_ALTO = 7200;   // la mesa, en décimas de px
 
-/** null si vale; si no, por qué. `$fantasma` es el texto de `codificar`. */
-function records_validar($circuito, $vuelta, $carril, $fantasma) {
+/** null si vale; si no, por qué. `$fantasma` es el texto de `codificar`; `$coche`, ya con el de antes si no vino. */
+function records_validar($circuito, $vuelta, $carril, $fantasma, $coche = RECORDS_COCHE_ANTIGUO) {
   if (!is_string($circuito) || !isset(RECORDS_CIRCUITOS[$circuito])) return 'circuito';
+  if (!in_array($coche, RECORDS_COCHES, true)) return 'coche';
   if (!is_int($vuelta) || $vuelta < RECORDS_CIRCUITOS[$circuito]['minimo'] || $vuelta > RECORDS_MAXIMO) return 'vuelta';
   if (!in_array($carril, [0, 1], true)) return 'carril';
   if (!is_string($fantasma) || strlen($fantasma) > 40000) return 'fantasma';
   $datos = json_decode($fantasma, true);
   if (!is_array($datos) || ($datos['v'] ?? null) !== 1) return 'fantasma';
   if (!is_numeric($datos['paso'] ?? null) || abs($datos['paso'] - RECORDS_PASO) > 1e-9) return 'fantasma';
+  if (($datos['c'] ?? RECORDS_COCHE_ANTIGUO) !== $coche) return 'coche';
   if (!is_numeric($datos['tiempo'] ?? null) || abs(round($datos['tiempo'] * 1000) - $vuelta) > 1) return 'tiempo';
   $d = $datos['d'] ?? null;
   if (!is_array($d) || count($d) % 3 !== 0) return 'fantasma';

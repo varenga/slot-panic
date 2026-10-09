@@ -208,8 +208,8 @@ export function guardarPublicados(lista) {
 
 /*
  * El récord personal de cada circuito oficial: la mejor vuelta ({ tiempo,
- * carril }) y, aparte, su fantasma (nucleo/fantasma.js, ~5 KB). Lo que no se
- * lea bien no existe.
+ * carril, coche }) y, aparte, su fantasma (nucleo/fantasma.js, ~5 KB). Una
+ * con todos los coches, como la tabla. Lo que no se lea bien no existe.
  */
 export function leerMejorVuelta(clave) {
   try {
@@ -224,10 +224,10 @@ export function leerFantasmaPropio(clave) {
   try { return decodificar(localStorage.getItem(`${GAME_SLUG}.fantasma.${clave}`) || ''); } catch (error) { return null; }
 }
 
-export function guardarMejorVuelta(clave, { tiempo, carril, muestras }) {
+export function guardarMejorVuelta(clave, { tiempo, carril, coche, muestras }) {
   try {
-    localStorage.setItem(`${GAME_SLUG}.vuelta.${clave}`, JSON.stringify({ tiempo, carril }));
-    localStorage.setItem(`${GAME_SLUG}.fantasma.${clave}`, codificar({ tiempo, muestras }));
+    localStorage.setItem(`${GAME_SLUG}.vuelta.${clave}`, JSON.stringify({ tiempo, carril, coche }));
+    localStorage.setItem(`${GAME_SLUG}.fantasma.${clave}`, codificar({ tiempo, muestras, coche }));
   } catch (error) { /* modo privado o sin sitio */ }
 }
 

@@ -47,15 +47,18 @@ CREATE TABLE IF NOT EXISTS jugadas (
 
 -- Los récords de vuelta de los circuitos oficiales (servidor/records.php): una
 -- fila por marca enviada. La tabla que se ve son las 10 mejores de cada
--- circuito (a igualdad, la más antigua); se guardan las 50 mejores. El
--- fantasma es la vuelta entera (nucleo/fantasma.js, `codificar`, ~5 KB): el
--- del primero se descarga para correr contra él.
+-- circuito (a igualdad, la más antigua); se guardan las 50 mejores. Una tabla
+-- con todos los coches: cada vuelta dice con cuál se hizo (las de antes de que
+-- tuvieran carácter, el clásico). El fantasma es la vuelta entera
+-- (nucleo/fantasma.js, `codificar`, ~5 KB): el del primero se descarga para
+-- correr contra él.
 CREATE TABLE IF NOT EXISTS records (
   id         INT UNSIGNED      NOT NULL AUTO_INCREMENT,
   circuito   VARCHAR(16)       NOT NULL,
   alias      VARCHAR(3)        NOT NULL,
   vuelta     INT UNSIGNED      NOT NULL,   -- ms
   carril     TINYINT UNSIGNED  NOT NULL,   -- 0 o 1 (CARRILES)
+  coche      VARCHAR(16)       NOT NULL DEFAULT 'clasico',   -- el modelo (COCHES en config.js)
   fantasma   MEDIUMTEXT        NOT NULL,
   huella     CHAR(64)          NOT NULL,   -- HMAC de la IP: el límite diario
   fecha      TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -63,3 +66,7 @@ CREATE TABLE IF NOT EXISTS records (
   KEY tabla (circuito, vuelta, fecha),
   KEY enviados (huella, fecha)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Una base de antes de los coches con carácter (Slot Panic 1.3.0) necesita la
+-- columna, y ANTES de publicar el api.php que la lee y la escribe:
+-- ALTER TABLE records ADD COLUMN coche VARCHAR(16) NOT NULL DEFAULT 'clasico' AFTER carril;

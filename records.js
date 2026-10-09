@@ -10,7 +10,7 @@
  */
 
 import { DEPURACION, enApp, SITE_ORIGIN } from './config.js';
-import { codificar, decodificar } from './nucleo/fantasma.js';
+import { cocheDe, codificar, decodificar } from './nucleo/fantasma.js';
 
 const otra = DEPURACION ? new URLSearchParams(location.search).get('api') : null;
 const API = otra ? new URL('api.php', otra).href : enApp() ? SITE_ORIGIN + 'api.php' : new URL('api.php', import.meta.url).href;
@@ -31,7 +31,8 @@ export function tablaDe(clave) {
 const valida = (f) => f && typeof f.alias === 'string' && Number.isInteger(f.vuelta) && (f.carril === 0 || f.carril === 1);
 
 function guardarRespuesta(tabla, datos) {
-  tabla.lista = Array.isArray(datos.records) ? datos.records.filter(valida) : [];
+  // Cada fila, con su coche (el de siempre, si no lo dice).
+  tabla.lista = Array.isArray(datos.records) ? datos.records.filter(valida).map((f) => ({ ...f, coche: cocheDe(f.coche) })) : [];
   tabla.fantasma = datos.fantasma ? decodificar(datos.fantasma) : null;
   tabla.error = false;
 }
@@ -67,14 +68,14 @@ export function entraEnTabla(clave, vuelta) {
   return Math.round(vuelta * 1000) < lista[TOP - 1].vuelta;
 }
 
-/** Envía una vuelta. Devuelve el puesto, o lanza (con `estado`: 0 sin red, 429 límite…). */
-export async function enviarRecord(clave, alias, { tiempo, carril, muestras }) {
+/** Envía una vuelta, con su coche. Devuelve el puesto, o lanza (con `estado`: 0 sin red, 429 límite…). */
+export async function enviarRecord(clave, alias, { tiempo, carril, coche, muestras }) {
   const datos = await pedir(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      accion: 'record', circuito: clave, alias, vuelta: Math.round(tiempo * 1000), carril,
-      fantasma: codificar({ tiempo, muestras })
+      accion: 'record', circuito: clave, alias, vuelta: Math.round(tiempo * 1000), carril, coche,
+      fantasma: codificar({ tiempo, muestras, coche })
     })
   });
   guardarRespuesta(tablaDe(clave), datos);

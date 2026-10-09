@@ -9,7 +9,7 @@
  * fotograma a fotograma sería tirar el tiempo.
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, COLOR, LARGO_COCHE } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, COLOR } from './config.js';
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
@@ -519,7 +519,7 @@ export function dibujarCocheSlot(slot) {
   ctx.save();
   ctx.fillStyle = `rgba(0, 0, 0, ${0.25 * altura})`;
   ctx.beginPath();
-  ctx.ellipse(coche.x + 8 * altura, coche.y + 10 * altura, LARGO_COCHE * 0.6, ANCHO_COCHE * 0.7, coche.angulo, 0, Math.PI * 2);
+  ctx.ellipse(coche.x + 8 * altura, coche.y + 10 * altura, slot.ficha.largo * 0.6, ANCHO_COCHE * 0.7, coche.angulo, 0, Math.PI * 2);
   ctx.fill();
   const escala = 1 + 0.35 * altura;
   ctx.translate(coche.x, coche.y);
