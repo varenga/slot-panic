@@ -250,7 +250,7 @@ luz.js                 la hora: día, atardecer (un velo) o noche (la pista a me
 pantalla.js            lo que va encima: marcador, avisos, portada, cartel de fin.
                        botonesFin() sirve al dibujo Y a la pulsación
 menu.js                el menú de la portada: los cuatro grupos (CARRERA, COCHE,
-                       CIRCUITOS, AJUSTES) y el panel de cada uno, en la mesa y en
+                       COMUNIDAD, AJUSTES) y el panel de cada uno, en la mesa y en
                        la lupa; cajasGrupos() y cajasMenu() dibujan Y se pulsan
 lupa.js                el modo lupa (móvil en vertical): la cámara que sigue al J1,
                        el mapa y su marcador, portada y fin. Presentación, como
@@ -258,7 +258,7 @@ lupa.js                el modo lupa (móvil en vertical): la cámara que sigue a
 constructor.js         la escena del constructor: gestos, trazo, barra. Cerrado y
                        válido, construye el circuito y lo pinta con dibujo.js
 publicar.js            el diálogo de compartir y publicar (normas, nombre, alias)
-galeria.js             CIRCUITOS (galería o constructor) y la galería de circuitos
+galeria.js             COMUNIDAD (galería o constructor) y la galería de circuitos
                        públicos: tarjetas y miniaturas
 publicos.js            la red de la galería (api.php): nunca bloquea el juego
 records.js             la red de los récords de vuelta (api.php): la tabla y firmar
