@@ -6,13 +6,13 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_LUPA, COLETEO_DESDE, COLOR, CONTROLES_SLOT, CPU_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE,
-  SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT, VUELTAS_SLOT
+  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE, NIVELES_CPU,
+  SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT
 } from './config.js';
 import {
-  aceptarNormas, estado, guardarAlias, guardarMejorVuelta, guardarTipoFantasma, leerFantasmaPropio, leerMejorVuelta,
+  aceptarNormas, estado, guardarAlias, guardarDuracion, guardarNivel, guardarMejorVuelta, guardarTipoFantasma, leerFantasmaPropio, leerMejorVuelta,
   leerTipoFantasma, TIPOS_FANTASMA, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
-  leerAlias, leerCircuito, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
+  leerAlias, leerCircuito, leerDuracion, leerNivel, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { CIRCUITOS } from './circuitos/indice.js';
@@ -37,7 +37,7 @@ import {
 } from './particulas.js';
 import {
   botonesFin, cajaRecordsPortada, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
-  nombreCircuito, opcionesPortada
+  etiquetasPortada, nombreCircuito, opcionesPortada
 } from './pantalla.js';
 import {
   actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
@@ -50,7 +50,7 @@ import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra
 import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from './galeria.js';
 import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js';
 import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
-import { guardarHora, leerHora, ORDEN_HORAS, pintarHora } from './luz.js';
+import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
   altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
@@ -119,12 +119,31 @@ function circuitoDeCodigo(codigo, mio = null) {
 
 /*
  * Los dos pilotos de la exhibición de la portada (la CPU de la carrera es
- * `CPU_SLOT`, en config.js). La semilla cambia en cada carrera.
+ * la del nivel elegido, NIVELES_CPU en config.js). La semilla cambia en cada carrera.
  */
 const EXHIBICION = [{ prudencia: 1.6, variacion: 0.25, fallo: 0.04 }, { prudencia: 1.3, variacion: 0.25, fallo: 0.04 }];
 const semilla = () => Math.floor(Math.random() * 2 ** 32);
 
 // --- Partidas -------------------------------------------------------------
+
+/** Las vueltas de la carrera elegida (CARRERAS, en config.js). */
+function vueltasElegidas() {
+  return CARRERAS.find((c) => c.id === estado.duracion).vueltas;
+}
+
+/** Rápida, normal o resistencia: también vale para el campeonato. */
+function cambiarDuracion() {
+  const i = CARRERAS.findIndex((c) => c.id === estado.duracion);
+  estado.duracion = CARRERAS[(i + 1) % CARRERAS.length].id;
+  guardarDuracion(estado.duracion);
+}
+
+/** La CPU de la carrera: fácil, normal o difícil. */
+function cambiarNivel() {
+  const i = NIVELES_CPU.findIndex((n) => n.id === estado.nivel);
+  estado.nivel = NIVELES_CPU[(i + 1) % NIVELES_CPU.length].id;
+  guardarNivel(estado.nivel);
+}
 
 function cambiarHora() {
   estado.hora = ORDEN_HORAS[(ORDEN_HORAS.indexOf(estado.hora) + 1) % ORDEN_HORAS.length];
@@ -172,7 +191,7 @@ function cambiarCircuito() {
  */
 function empezarCampeonato() {
   estado.campeonato = crearCampeonato(CIRCUITOS);
-  evento('empezar_campeonato', { tactil: estado.tactil, lupa: estado.lupa });
+  evento('empezar_campeonato', { vueltas: vueltasElegidas(), cpu: estado.nivel, tactil: estado.tactil, lupa: estado.lupa });
   correrSiguiente();
 }
 
@@ -546,9 +565,11 @@ function empezarCarrera() {
   estado.fase = 'carrera';
   // Cada carrera, los coches se cambian de carril: no son iguales.
   estado.turno = 1 - estado.turno;
-  estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno, { grabar: conRecords() });
+  estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno, { vueltas: vueltasElegidas(), grabar: conRecords() });
   vestir(estado.carrera);
-  estado.pilotos = [0, 1].map(() => crearPiloto({ ...CPU_SLOT, semilla: semilla() }));
+  estado.carrera.anochece = !!CARRERAS.find((c) => c.id === estado.duracion).anochece;
+  const { piloto } = NIVELES_CPU.find((n) => n.id === estado.nivel);
+  estado.pilotos = [0, 1].map(() => crearPiloto({ ...piloto, semilla: semilla() }));
   estado.humanos = [false, false];
   estado.fantasma = fantasmaElegido();
   if (conRecords()) cargarRecords(estado.circuito.clave);
@@ -738,6 +759,8 @@ function datosCarrera() {
     circuito: estado.circuito.publico ? 'publico' : estado.circuito.dibujado ? 'dibujado' : estado.circuito.clave,
     escenario: estado.escenario,
     hora: estado.hora,
+    vueltas: vueltasElegidas(),
+    cpu: estado.nivel,
     coche: estado.modelo,
     tactil: estado.tactil
   };
@@ -826,6 +849,8 @@ function opcionPulsada(id) {
   else if (id === 'idioma') { cambiarIdioma(1); textosDelDocumento(); }
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
+  else if (id === 'duracion') cambiarDuracion();
+  else if (id === 'nivel') cambiarNivel();
   else if (id === 'coche') cambiarCoche();
   else if (id === 'circuitos') abrirCircuitos();
   else if (id === 'campeonato') empezarCampeonato();
@@ -909,8 +934,20 @@ function pintarMundo() {
   // El que va por el aire, encima.
   const coches = [...estado.carrera.coches].sort((a, b) => a.altura - b.altura);
   coches.forEach(dibujarCocheSlot);
-  pintarHora(estado.hora, estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
+  pintarHora(luzAhora(), estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
   dibujarChispas(estado.particulas);
+}
+
+/*
+ * La luz de ahora: la hora elegida o, en una carrera que anochece (la de
+ * resistencia), la que toca por lo que lleva corrido el primero, del día a la noche.
+ */
+function luzAhora() {
+  const { carrera } = estado;
+  if (!carrera.anochece) return ORDEN_HORAS.indexOf(estado.hora);
+  const corrido = Math.max(...carrera.coches.map((slot) => slot.progreso));
+  const fraccion = Math.min(1, Math.max(0, corrido / (carrera.vueltas * carrera.circuito.largo)));
+  return luzDeCarrera(fraccion);
 }
 
 /** Cuánto chirría el coche más al límite de los que conduce alguien, en [0, 1]. */
@@ -1109,7 +1146,7 @@ const ESCENAS = {
         dibujarPortadaLupa({ ...estado, tiempo: reloj, marca: marcaPortada() });
         return;
       }
-      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo, marcaPortada());
+      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo, estado.duracion, estado.nivel, marcaPortada());
     },
     teclear(codigo) {
       if (empezar(codigo)) empezarCarrera();
@@ -1117,6 +1154,8 @@ const ESCENAS = {
       else if (codigo === 'KeyE') cambiarEscenario();
       else if (codigo === 'KeyC') cambiarCircuito();
       else if (codigo === 'KeyH') cambiarHora();
+      else if (codigo === 'KeyV') cambiarDuracion();
+      else if (codigo === 'KeyD') cambiarNivel();
       else if (codigo === 'KeyK') cambiarCoche();
       else if (codigo === 'KeyB') abrirConstructor();
       else if (codigo === 'KeyG') abrirCircuitos();
@@ -1124,7 +1163,7 @@ const ESCENAS = {
       else if (codigo === 'KeyR') abrirRecords();
     },
     pulsar(p) {
-      const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada()).find((caja) => dentro(p, caja));
+      const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada(etiquetasPortada(estado))).find((caja) => dentro(p, caja));
       const records = conRecords() && dentro(p, estado.lupa ? cajaRecordsPortadaLupa() : cajaRecordsPortada(estado.circuito));
       if (records) abrirRecords();
       else if (opcion) opcionPulsada(opcion.id);
@@ -1151,7 +1190,7 @@ const ESCENAS = {
         if (evento.tipo === 'vuelta') {
           sfxVuelta();
           // El primero que entra en la última vuelta la anuncia.
-          if (!estado.ultimaAvisada && carrera.coches[evento.coche].completadas === VUELTAS_SLOT - 1) {
+          if (!estado.ultimaAvisada && carrera.coches[evento.coche].completadas === carrera.vueltas - 1) {
             estado.ultimaAvisada = true;
             estado.avisos.push({ texto: t('aviso.ultima'), vida: 1.6, color: COLOR.rojo });
           }
@@ -1315,6 +1354,8 @@ function aplicarVista() {
 estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 estado.escenario = leerEscenario();
 estado.hora = leerHora();
+estado.duracion = leerDuracion();
+estado.nivel = leerNivel();
 estado.modelo = leerModelo(MODELOS.map((m) => m.id));
 estado.tipoFantasma = leerTipoFantasma();
 const elegido = leerCircuito([...CIRCUITOS, ...MIOS].map((c) => c.clave));

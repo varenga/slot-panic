@@ -774,3 +774,87 @@ app en la consola de Play.
   y la galería, con la imagen nueva (rama `11-slot-panic-records` de pnyk).
 - **Lo que queda** sigue en `TODO.md`: los playtests (a dos, la lupa, la galería y los
   récords) y la app de Google Play.
+
+## Carreras de 3, 5 o 10 vueltas (09/10/2026, rama `17-vueltas`)
+
+> La primera «dificultad» que se elige: no la de la CPU (sigue en `TODO.md`) sino lo
+> larga que es la carrera. Una corta es para echar una; una larga castiga salirse a
+> menudo y deja remontar.
+
+- **`CARRERAS`** (`config.js`): rápida (3), normal (5, `VUELTAS_SLOT`, la de serie) y
+  resistencia (10). Las vueltas son de cada carrera (`crearCarreraSlot(…, { vueltas })`,
+  `carrera.vueltas`): las cuentan `contarVueltas`, el marcador (`vueltaSlot(carrera,
+  slot)`), el aviso de la última vuelta y el tiempo a su ritmo del que no acaba en el
+  campeonato (`tiempoFinal`). La física y la CPU no cambian.
+- **En la portada**, una opción más, **CARRERA** (tecla V), que se recuerda
+  (`slotpanic.carrera`) y vale también para el campeonato; el panel dice las vueltas
+  («EL RESBALÓN · 10 VUELTAS»). Los récords no dependen de ella: son de vuelta.
+- **Nueve botones no caben iguales** en la banda: con el mismo ancho, «CIRCUITO: EL
+  RESBALÓN» encogía a 9 px. Ahora cada botón mide lo que su etiqueta y lo que sobra se
+  reparte (`opcionesPortada(etiquetasPortada(…))`, la misma para dibujar y pulsar): la
+  letra queda igual en todos, también en francés. En la lupa son cinco filas; cabe en
+  9:16 (360 × 640).
+- GA4: `empezar_carrera` y `empezar_campeonato` llevan `vueltas`.
+- Arnés: las tres carreras acaban en sus vueltas (La horquilla: 0:37,9, 1:02,5 y 2:04,1)
+  y el que va a medias cuando llega el ganador se lleva el doble con sus vueltas, no con
+  las de serie. 665/665 en verde.
+
+## Niveles de CPU: fácil, normal y difícil (09/10/2026, rama `17-vueltas`)
+
+> La otra dificultad, la de `TODO.md`: una sola CPU (~1,2 s por vuelta del mejor piloto
+> en La horquilla) era mucho para quien empieza y poco para quien ya la gana.
+
+- **`NIVELES_CPU`** (`config.js`): la normal es `CPU_SLOT`, tal cual. Las otras dos, de un
+  barrido de prudencia, variación y fallos en los cuatro oficiales (seis semillas por
+  los dos carriles), con lo que deja por vuelta al mejor piloto automático:
+
+  | nivel | piloto | Horquilla | Ocho | Nudo | Resbalón |
+  |---|---|---|---|---|---|
+  | fácil | ×0,9 ± 25 %, 8 % de fallos | 2,31 s | 1,73 s | 1,79 s | 1,63 s |
+  | normal | ×1,2 ± 25 %, 5 % | 1,18 s | 0,76 s | 0,77 s | 0,81 s |
+  | difícil | ×1,35 ± 15 %, 3 % | 0,68 s | 0,44 s | 0,37 s | 0,48 s |
+
+  La fácil, en torno a los 2 s del «ahora es fácil» de los playtests de Race Panic; la
+  difícil, por debajo de los 0,7 s de la CPU perfecta que «no había quien le ganara», pero
+  aún falla alguna vez. ×1,45 ± 12 % bajaba a 0,26-0,54 s: se descartó por imbatible.
+- **En la portada**, la opción **CPU** (tecla D), que se recuerda (`slotpanic.cpu`) y vale
+  para la carrera, el campeonato y la prueba del constructor; la exhibición no cambia.
+  Diez botones en la banda; en francés encogen un poco. En la lupa, cinco filas de dos.
+- GA4: `empezar_carrera` y `empezar_campeonato` llevan `cpu`.
+- Arnés: en cada oficial, la fácil deja 1,3-3 s, la difícil 0,25-0,8 s y van en orden.
+  677/677 en verde, en ~28 s (antes ~20).
+
+## Primer playtest de los niveles y anochece en la de resistencia (09/10/2026, rama `17-vueltas`)
+
+> Playtest de la CPU a 3 vueltas: la fácil «es sencilla de ganar, como debe ser» (dos
+> salidas propias contra una de la CPU, y aun así ganada); la difícil «no se siente
+> demasiado complicada»: perdida, pero razonablemente cerca, con dos salidas contra una.
+> Se quedan como están. Y una petición: que en las de 10 vueltas la luz pase de día a
+> atardecer y a noche.
+
+- **La luz es un número** (`luz.js`): 0 de día, 1 al atardecer, 2 de noche, y entre medias
+  se funden. Hasta 1 crece el velo del atardecer; de 1 a 2 se va mientras la capa de la
+  noche (y sus focos, balizas y flashes) sube con la misma fuerza. Las horas fijas
+  pintan lo mismo que antes.
+- **`luzDeCarrera(hora, fracción)`**: por lo que lleva corrido el primero, el primer
+  quinto con la hora elegida, cae la tarde hasta el 40 %, atardecer hasta el 60 %,
+  anochece hasta el 80 % y el resto de noche. **El ciclo entero, sea cual sea la hora
+  elegida** (se probó a partir de ella, sin aclarar nunca, y se prefirió que la
+  resistencia sea siempre «la carrera que dura un día»). Solo en la de resistencia
+  (`anochece` en `CARRERAS`); la exhibición de la portada y las demás carreras siguen
+  con su hora.
+- Visto en una carrera entera de CPU contra CPU en El ocho (1:35): de día hasta la
+  vuelta 2, atardecer en la 5-6, anocheciendo en la 7-8 y noche cerrada en la 9-10.
+- Arnés: la luz de la resistencia empieza de día, pasa por el atardecer a mitad de
+  carrera, acaba de noche y nunca se aclara; solo anochece la de resistencia.
+
+## Slot Panic 1.1.0 (09/10/2026)
+
+> Una funcionalidad visible (`CONVENCIONES.md`): la carrera se elige. Rápida, normal o
+> de resistencia (3, 5 o 10 vueltas, y en la de 10 anochece), contra una CPU fácil,
+> normal o difícil.
+
+- **`pnyk.json`**: 1.1.0. Se publica junto con lo de la rama `16-records` (los récords
+  de vuelta en el juego, 0.9.0, y la 1.0.0), que no había llegado a `master`: allí solo
+  estaba el servidor de los récords. Los tags `v0.9.0` y `v1.0.0` se ponen ahora, en sus
+  commits.

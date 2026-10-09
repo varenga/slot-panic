@@ -9,7 +9,7 @@ ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos), y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con siete coches a elegir (solo de forma), carrera suelta o campeonato (los cuatro seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
@@ -139,8 +139,9 @@ demás, en `BITACORA.md`). Mide y comprueba:
    ningún carril (16 entradas). Arrancando parado en una curva a fondo no se sale en esa
    curva (0 de 68). A toques, la mitad pulsado, la velocidad se queda a medias (hoy ~195
    de 470). Un humano que reacciona 0,25 s tarde no se sale por ningún carril. La CPU
-   (`CPU_SLOT`) deja al mejor piloto entre 0,6 y 1,4 s por vuelta (hoy 1,2), se equivoca
-   alguna vez y con la misma semilla repite la carrera. La mano devuelve siempre el coche
+   (`CPU_SLOT`, la normal) deja al mejor piloto entre 0,6 y 1,4 s por vuelta (hoy 1,2), se
+   equivoca alguna vez y con la misma semilla repite la carrera; en los oficiales, la fácil
+   deja 1,3-3 s (hoy 2,3) y la difícil 0,25-0,8 s (hoy 0,7), en orden (`NIVELES_CPU`). La mano devuelve siempre el coche
    a la `s` donde se salió, en ≤ 2,6 s (hoy ~1,4). Nada sale de la mesa ni es no finito,
    el progreso no retrocede, los carriles se separan < 8 % con el mismo piloto (hoy
    1,7 %; con una X, < 2 %) y con el turno cambiado los coches se cambian de carril.
