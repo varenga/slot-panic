@@ -998,3 +998,5 @@ app en la consola de Play.
 - Arnés: la sección 3b (cada modelo en cada oficial) y la 7 con el coche más rápido.
   993/993 en verde, ~33 s (antes ~9: la 3b corre cada modelo en cada oficial; la sección 3
   se reescribió con ayudantes por modelo).
+- **La base, ya con la columna**: `ALTER TABLE records ADD COLUMN coche…` (el final de
+  `schema.sql`) ejecutado en Plesk antes de publicar el `api.php` nuevo.

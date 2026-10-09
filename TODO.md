@@ -48,8 +48,6 @@ Hecho: cada modelo con su largo y su carácter (`BITACORA.md`). Lo que queda:
       sale disparado) compensa en carrera lo que el piloto automático le mide de menos
       (hasta un 1,7 % por vuelta)?, ¿los nerviosos (los que aceleran o corren más para su
       agarre) son difíciles o injugables?, ¿se leen las barras en el móvil?
-- [ ] Antes de publicar: `ALTER TABLE records ADD COLUMN coche…` (final de
-      `schema.sql`) en la base de Plesk, **antes** del push que sube el `api.php` nuevo.
 
 # Fase 3 — La app de Google Play
 
