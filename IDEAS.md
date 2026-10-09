@@ -28,12 +28,25 @@ Cada idea pasa por el mismo filtro:
   circuito, correrlo. Y a compartirlo (un código corto, como el fantasma de Race Panic).
 - **Cruces** (las piezas en X): vuelve la idea del ocho, sin puente.
 
-# 2. La estética de juguete
+# 2. Un escenario «juguete»
 
-- La pista es de piezas negras con sus juntas, el carril plateado; el escenario, una
-  **mesa** o el suelo de un salón (alfombra, patas de sillas, un gato que cruza…).
-- Hoy la pista es la de Race Panic (asfalto, pianos, grava, gradas) con los carriles
-  encima: es un prototipo.
+La estética de juguete como estética de todo el juego se probó y se descartó
+(`BITACORA.md`): la de hoy, mezcla de slot y maqueta realista, va mejor con el día, el
+atardecer, la noche y los escenarios. Pero la maqueta está hecha y guardada en la rama
+`25-maqueta-juguete` (con `?juguete` en local), y podría volver como **un escenario más**,
+al lado de verde, tierra, desierto y nieve:
+
+- Una mesa de madera; bordes de plástico gris en vez de grava; pista negra con brillo,
+  trencillas trenzadas y juntas marcadas; pianos impresos; gradas y neumáticos de
+  plástico; en vez de árboles, tazas, latas, lápices, monedas, chapas, dados y piezas
+  de construcción.
+- Para que sea un escenario, lo que hoy decide el `JUGUETE` de `config.js` pasaría a
+  decidirlo el escenario (`ESCENARIOS.juguete` en `escenarios.js`): sus colores de
+  pista y piano, y qué pinta cada pieza del decorado.
+- Lo que falta: las torres de iluminación como farolas de juguete; ver la noche (los
+  faros y los halos sobre la madera); el aclarado de objetos (uno de cada tres) llevarlo
+  al decorado, con sus propios pesos y tamaños, para que el arnés lo mida; y quizá otros
+  suelos (alfombra, baldosa).
 
 # 3. Coches y jugadores
 

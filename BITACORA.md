@@ -1026,3 +1026,21 @@ app en la consola de Play.
 
 - El carácter de cada coche, los nerviosos, el Cinquecenti y las barras del móvil: sin
   nada que cambiar. La fase 2d queda cerrada.
+
+## La estética de juguete, descartada (09/10/2026, rama `25-maqueta-juguete`)
+
+> «Me quedo con la estética tal cual la teníamos. La mezcla actual entre real y juguete me
+> convence más: en ella entran mejor el día, el atardecer y la noche, la iluminación y los
+> escenarios.»
+
+- **La prueba**: una maqueta tras `?juguete` (solo en local), sin tocar nada que mida el
+  arnés (993/993 en verde): mesa de madera, bordes de plástico gris en la zona de la
+  grava, pista negra con trencillas trenzadas y juntas de muro a muro (en la chicane,
+  solo la pista: si no, se cruzaban con el borde de la curva de al lado), pianos de
+  colores planos, gradas y neumáticos de plástico, y objetos de mesa en el sitio de los
+  árboles (con todos, la mesa parecía un cajón vaciado: uno de cada tres).
+- **Por qué no**: la luz realista (atardecer, noche, torres, faros) no tiene tanto
+  sentido sobre una mesa, y los cuatro escenarios se pierden. A escala de un coche de
+  slot, los objetos de mesa quedan pequeños o se comen la pista.
+- **Guardada**: la rama `25-maqueta-juguete` no se fusiona. Podría volver como un
+  escenario más (`IDEAS.md` §2).
