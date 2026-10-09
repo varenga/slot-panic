@@ -66,18 +66,73 @@ export function guardarCircuito(clave) {
   try { localStorage.setItem(`${GAME_SLUG}.circuito`, clave); } catch (error) { /* modo privado */ }
 }
 
-/** El coche del J1, por su modelo (coches.js): también se recuerda. */
-export function leerModelo(ids) {
+/*
+ * El coche de cada jugador, por su modelo (coches.js): también se recuerda. El
+ * del J1, en la clave de siempre; el del J2, por defecto el siguiente.
+ */
+export function leerModelos(ids) {
+  const leer = (clave, defecto) => {
+    try {
+      const guardado = localStorage.getItem(`${GAME_SLUG}.${clave}`);
+      return ids.includes(guardado) ? guardado : defecto;
+    } catch (error) {
+      return defecto;
+    }
+  };
+  const j1 = leer('coche', ids[0]);
+  return [j1, leer('coche2', ids[(ids.indexOf(j1) + 1) % ids.length])];
+}
+
+export function guardarModelos([j1, j2]) {
   try {
-    const guardado = localStorage.getItem(`${GAME_SLUG}.coche`);
-    return ids.includes(guardado) ? guardado : ids[0];
+    localStorage.setItem(`${GAME_SLUG}.coche`, j1);
+    localStorage.setItem(`${GAME_SLUG}.coche2`, j2);
+  } catch (error) { /* modo privado */ }
+}
+
+/** El color de cada coche, de la paleta (COLORES_COCHE): distintos, y se recuerdan. */
+export function leerColores(paleta) {
+  try {
+    const [a, b] = JSON.parse(localStorage.getItem(`${GAME_SLUG}.colores`) || 'null') || [];
+    if (paleta.includes(a) && paleta.includes(b) && a !== b) return [a, b];
+  } catch (error) { /* modo privado o roto */ }
+  return paleta.slice(0, 2);
+}
+
+export function guardarColores(colores) {
+  try { localStorage.setItem(`${GAME_SLUG}.colores`, JSON.stringify(colores)); } catch (error) { /* modo privado */ }
+}
+
+/** Carrera suelta o campeonato (MODOS): también se recuerda. */
+export const MODOS = ['suelta', 'campeonato'];
+
+export function leerModo() {
+  try {
+    const guardado = localStorage.getItem(`${GAME_SLUG}.modo`);
+    return MODOS.includes(guardado) ? guardado : MODOS[0];
   } catch (error) {
-    return ids[0];
+    return MODOS[0];
   }
 }
 
-export function guardarModelo(id) {
-  try { localStorage.setItem(`${GAME_SLUG}.coche`, id); } catch (error) { /* modo privado */ }
+export function guardarModo(modo) {
+  try { localStorage.setItem(`${GAME_SLUG}.modo`, modo); } catch (error) { /* modo privado */ }
+}
+
+/*
+ * Quién lleva cada carril con teclado: 'humano' o 'cpu'. Por defecto, el J1
+ * contra la CPU. En el móvil no cuenta: se entra tocando.
+ */
+export function leerJugadores() {
+  try {
+    const lista = JSON.parse(localStorage.getItem(`${GAME_SLUG}.jugadores`) || 'null');
+    if (Array.isArray(lista) && lista.length === 2 && lista.every((j) => j === 'humano' || j === 'cpu')) return lista;
+  } catch (error) { /* modo privado o roto */ }
+  return ['humano', 'cpu'];
+}
+
+export function guardarJugadores(jugadores) {
+  try { localStorage.setItem(`${GAME_SLUG}.jugadores`, JSON.stringify(jugadores)); } catch (error) { /* modo privado */ }
 }
 
 /*
@@ -209,12 +264,16 @@ export const estado = {
   hora: 'dia',         // 'dia' | 'atardecer' | 'noche': cosmética, combinable con el escenario
   nivel: 'normal',     // la CPU: 'facil' | 'normal' | 'dificil' (NIVELES_CPU)
   duracion: 'normal',  // la carrera: 'rapida' | 'normal' | 'resistencia' (CARRERAS, con sus vueltas)
-  modelo: null,        // el coche del J1 (coches.js); el otro lleva el siguiente. Cosmético
+  modelos: [],         // el modelo del coche de cada jugador (coches.js). Cosmético
+  colores: [],         // el color de cada coche (COLORES_COCHE), distintos
+  modo: 'suelta',      // 'suelta' | 'campeonato' (MODOS): lo que arranca la portada
+  jugadores: ['humano', 'cpu'], // con teclado, quién lleva cada carril
+  menu: null,          // el grupo abierto en la portada (menu.js): 'carrera' | 'coche' | 'ajustes' | null
   tactil: false,       // se activa con el primer toque
   lupa: false,         // el móvil en vertical: la vista que sigue al J1 (lupa.js)
   carrera: null,       // la de los dos coches; en la portada, la exhibición
   pilotos: [],         // el piloto de cada carril, por si nadie lo conduce
-  humanos: [false, false], // qué coches conduce alguien (se toman al pulsar)
+  humanos: [false, false], // qué coches conduce alguien (con teclado, los elegidos; tocando, al pulsar)
   turno: 1,            // alterna en cada carrera quién va por qué carril
   ultimaAvisada: false, // ya se ha anunciado la última vuelta
   avisos: [],          // carteles flotantes: { texto, vida }

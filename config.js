@@ -239,12 +239,18 @@ export const COLOR = {
   ambar: '#f2cd68',
   verde: '#4fbf7a',
   rojo: '#e05a63',
-  cocheSlot: ['#e05a63', '#88aede'],   // J1 rojo, J2 azul
   ranura: '#0b0c10',
   carril: '#aab1c0',
   velo: 'rgba(18, 20, 26, 0.82)',
   panel: 'rgba(18, 20, 26, 0.72)',
   banda: 'rgba(18, 20, 26, 0.62)'
 };
+
+/*
+ * Los colores que se pueden elegir para el coche (el menú COCHE). Vivos y
+ * claros: se leen sobre el asfalto de noche y sobre los cuatro suelos. Los
+ * dos primeros son los de siempre: el J1 rojo y el J2 azul.
+ */
+export const COLORES_COCHE = ['#e05a63', '#88aede', '#f2c14e', '#5cc27a', '#f08a3c', '#a986e6', '#4cc9c0', '#eef0f4'];
 
 export const FUENTE = 'system-ui, -apple-system, "Segoe UI", sans-serif';

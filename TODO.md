@@ -56,17 +56,11 @@ Dos contextos, no cuatro: **ordenador** (teclado) y **móvil** (táctil: la PWA 
 con las mismas decisiones). Se decide por cómo se juega, no por la orientación: girar el
 móvil no esconde opciones; la lupa solo quita lo que no cabe en vertical (jugar dos).
 
-- [ ] Los cuatro grupos, en la mesa y en la lupa; en el ordenador siguen todas las
-      teclas directas (C, V, D, T, K, G, E, H, M, L) sin abrir el panel.
-- [ ] Jugadores, en el ordenador: **J1 Humano/CPU · J2 CPU/Humano** (CPU contra CPU, la
-      exhibición). En el móvil horizontal, el segundo entra tocando, como hoy; en la
-      lupa, siempre contra la CPU.
-- [ ] Cada jugador ve de qué carril sale y con qué teclas va su coche (con su color),
-      en la portada y en la cuenta atrás; los carriles se siguen cambiando en cada carrera.
-- [ ] COCHE: elegir modelo y color (paleta cerrada de 6-8 que se lean de noche y en los
-      cuatro escenarios); si J2 coge el color de J1, pasa al siguiente. Se recuerda.
-- [ ] El panel central de la portada resume lo que se va a correr: circuito, vueltas,
-      quién juega y con qué coche.
+Hecho: los cuatro grupos, quién juega, el coche y el color de cada uno (`BITACORA.md`).
+Lo que queda:
+
+- [ ] Playtest en el móvil (horizontal y lupa): ¿se encuentra todo a la primera?, ¿los
+      paneles se tocan bien con el dedo?
 - [ ] ¿El constructor en la app? Decidir antes de subirla a Play.
 
 # Fase 2d — Coches con características

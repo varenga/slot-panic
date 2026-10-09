@@ -6,13 +6,14 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE, NIVELES_CPU,
+  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, LARGO_COCHE, NIVELES_CPU,
   SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT
 } from './config.js';
 import {
-  aceptarNormas, estado, guardarAlias, guardarDuracion, guardarNivel, guardarMejorVuelta, guardarTipoFantasma, leerFantasmaPropio, leerMejorVuelta,
-  leerTipoFantasma, TIPOS_FANTASMA, guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelo, guardarPublicados,
-  leerAlias, leerCircuito, leerDuracion, leerNivel, leerEscenario, leerLlave, leerMisCircuitos, leerModelo, leerPublicados, normasAceptadas
+  aceptarNormas, estado, guardarAlias, guardarColores, guardarDuracion, guardarJugadores, guardarModo, guardarNivel, guardarMejorVuelta,
+  guardarTipoFantasma, leerColores, leerFantasmaPropio, leerJugadores, leerMejorVuelta, leerModo, leerTipoFantasma, MODOS, TIPOS_FANTASMA,
+  guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelos, guardarPublicados, leerAlias, leerCircuito, leerDuracion, leerNivel,
+  leerEscenario, leerLlave, leerMisCircuitos, leerModelos, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { CIRCUITOS } from './circuitos/indice.js';
@@ -31,13 +32,14 @@ import { posar } from './nucleo/fantasma.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
 import { dibujarCarriles, dibujarCocheSlot, dibujarFantasma, dibujarFondo, dibujarTorres } from './dibujo.js';
 import { formatearTiempo } from './nucleo/slot.js';
-import { MODELOS, siguienteModelo } from './coches.js';
+import { MODELOS } from './coches.js';
+import { cajasGrupos, cajasMenu, dibujarGrupos, dibujarMenu } from './menu.js';
 import {
   actualizarParticulas, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
 } from './particulas.js';
 import {
   botonesFin, cajaRecordsPortada, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
-  etiquetasPortada, nombreCircuito, opcionesPortada
+  marcoMenu, nombreCircuito
 } from './pantalla.js';
 import {
   actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
@@ -53,7 +55,7 @@ import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaR
 import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
   altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
-  dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, opcionesPortadaLupa, prepararLupa, seguirCamara, zoomLupa
+  dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, marcoMenuLupa, prepararLupa, seguirCamara, zoomLupa
 } from './lupa.js';
 
 const lienzo = document.getElementById('lienzo');
@@ -151,19 +153,56 @@ function cambiarHora() {
 }
 
 /*
- * El J1 lleva el coche elegido y el otro, el siguiente de la lista: nunca
- * son el mismo. Se cambia en la portada, y la exhibición lo enseña ya.
+ * Cada jugador elige su coche y su color (el menú COCHE); la exhibición de la
+ * portada lo enseña ya. El modelo puede repetirse; el color, no: coger el del
+ * otro es cambiárselo.
  */
-function cambiarCoche() {
-  estado.modelo = siguienteModelo(estado.modelo);
-  guardarModelo(estado.modelo);
+function cambiarModelo(i, paso) {
+  const n = MODELOS.length;
+  const actual = MODELOS.findIndex((m) => m.id === estado.modelos[i]);
+  estado.modelos[i] = MODELOS[(actual + paso + n) % n].id;
+  guardarModelos(estado.modelos);
+  vestir(estado.carrera);
+}
+
+function cambiarColor(i, color) {
+  const otro = 1 - i;
+  if (estado.colores[otro] === color) estado.colores[otro] = estado.colores[i];
+  estado.colores[i] = color;
+  guardarColores(estado.colores);
   vestir(estado.carrera);
 }
 
 function vestir(carrera) {
-  const [j1, j2] = carrera.coches;
-  j1.coche.modelo = estado.modelo;
-  j2.coche.modelo = siguienteModelo(estado.modelo);
+  carrera.coches.forEach((slot, i) => {
+    slot.coche.modelo = estado.modelos[i];
+    slot.coche.color = estado.colores[i];
+  });
+}
+
+/** Carrera suelta o campeonato: lo que arranca la portada. */
+function cambiarModo() {
+  estado.modo = MODOS[(MODOS.indexOf(estado.modo) + 1) % MODOS.length];
+  guardarModo(estado.modo);
+}
+
+/** Con teclado, quién lleva el carril i: una persona o la CPU. */
+function cambiarJugador(i) {
+  estado.jugadores[i] = estado.jugadores[i] === 'humano' ? 'cpu' : 'humano';
+  guardarJugadores(estado.jugadores);
+}
+
+/*
+ * Quién juega se elige solo con teclado y en la mesa. Tocando, cada carril es
+ * de la CPU hasta que alguien toca su mitad; en la lupa, el J1 contra la CPU.
+ */
+const eligeJugadores = () => !estado.tactil && !estado.lupa;
+
+/** Desde la portada: la carrera o el campeonato, según el modo. */
+function arrancar() {
+  estado.menu = null;
+  if (estado.modo === 'campeonato') empezarCampeonato();
+  else empezarCarrera();
 }
 
 function cambiarEscenario() {
@@ -531,6 +570,7 @@ function alMenu() {
   if (estado.probando) volverAlConstructor();
   else {
     estado.campeonato = null;
+    estado.menu = null;
     irAPortada();
   }
 }
@@ -545,7 +585,7 @@ function limpiarPista() {
 function irAPortada() {
   estado.fase = 'portada';
   if (conRecords()) cargarRecords(estado.circuito.clave);
-  estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot);
+  estado.carrera = crearCarreraSlot(estado.circuito, estado.colores);
   vestir(estado.carrera);
   estado.pilotos = EXHIBICION.map((opciones) => crearPiloto({ ...opciones, semilla: semilla() }));
   estado.humanos = [false, false];
@@ -554,9 +594,9 @@ function irAPortada() {
 }
 
 /*
- * Cada carril lo lleva la CPU hasta que alguien pulsa su control (la mitad de
- * la pantalla o sus teclas); desde ahí es suyo toda la carrera. Así juegan uno
- * contra la CPU o dos entre sí sin menú.
+ * Con teclado, cada carril es de quien diga CARRERA (una persona o la CPU).
+ * Tocando, lo lleva la CPU hasta que alguien toca su mitad de la pantalla;
+ * desde ahí es suyo toda la carrera: juegan uno o dos sin menú.
  */
 function empezarCarrera() {
   evento('empezar_carrera', datosCarrera());
@@ -565,12 +605,19 @@ function empezarCarrera() {
   estado.fase = 'carrera';
   // Cada carrera, los coches se cambian de carril: no son iguales.
   estado.turno = 1 - estado.turno;
-  estado.carrera = crearCarreraSlot(estado.circuito, COLOR.cocheSlot, estado.turno, { vueltas: vueltasElegidas(), grabar: conRecords() });
+  estado.carrera = crearCarreraSlot(estado.circuito, estado.colores, estado.turno, { vueltas: vueltasElegidas(), grabar: conRecords() });
   vestir(estado.carrera);
   estado.carrera.anochece = !!CARRERAS.find((c) => c.id === estado.duracion).anochece;
   const { piloto } = NIVELES_CPU.find((n) => n.id === estado.nivel);
   estado.pilotos = [0, 1].map(() => crearPiloto({ ...piloto, semilla: semilla() }));
   estado.humanos = [false, false];
+  if (eligeJugadores()) {
+    estado.carrera.coches.forEach((slot, i) => {
+      if (estado.jugadores[i] !== 'humano') return;
+      estado.humanos[i] = true;
+      slot.humanoDesde = 0;
+    });
+  }
   estado.fantasma = fantasmaElegido();
   if (conRecords()) cargarRecords(estado.circuito.clave);
   estado.ultimaAvisada = false;
@@ -761,7 +808,7 @@ function datosCarrera() {
     hora: estado.hora,
     vueltas: vueltasElegidas(),
     cpu: estado.nivel,
-    coche: estado.modelo,
+    coche: estado.modelos[0],
     tactil: estado.tactil
   };
 }
@@ -780,6 +827,8 @@ function mandos() {
     // En la lupa se juega solo: el otro carril es siempre de la CPU.
     if (estado.lupa && i === 1) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
     const pulsado = pulsada(CONTROLES_SLOT[i]) || lados.has(i === 0 ? 'izq' : 'der');
+    // Con teclado, el carril de la CPU no se toma pulsando.
+    if (eligeJugadores() && !estado.humanos[i]) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
     if (pulsado && !estado.humanos[i]) {
       estado.humanos[i] = true;
       slot.humanoDesde = carrera.fase === 'carrera' ? carrera.tiempo : 0;
@@ -844,16 +893,49 @@ for (const tipo of ['pointerup', 'pointercancel', 'lostpointercapture']) {
 }
 
 function opcionPulsada(id) {
-  if (id === 'circuito') cambiarCircuito();
+  if (id === 'modo') cambiarModo();
+  else if (id === 'j1') cambiarJugador(0);
+  else if (id === 'j2') cambiarJugador(1);
+  else if (id === 'circuito') cambiarCircuito();
   else if (id === 'sonido') alternarSilencio();
   else if (id === 'idioma') { cambiarIdioma(1); textosDelDocumento(); }
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
   else if (id === 'duracion') cambiarDuracion();
   else if (id === 'nivel') cambiarNivel();
-  else if (id === 'coche') cambiarCoche();
-  else if (id === 'circuitos') abrirCircuitos();
-  else if (id === 'campeonato') empezarCampeonato();
+}
+
+// --- El menú de la portada ----------------------------------------------------
+
+/* Lo que menu.js necesita de la vista de ahora: dónde va cada cosa. */
+const vistaMenu = () => ({ ...vistaGaleria(), lupa: estado.lupa });
+const marcoActual = () => (estado.lupa ? marcoMenuLupa() : marcoMenu());
+const opcionesMenu = () => ({ columnas: estado.lupa ? 1 : 2, eligeJugadores: eligeJugadores(), lupa: estado.lupa, teclado: !estado.tactil });
+
+/** Un grupo de la barra: CIRCUITOS es su escena; los demás abren (o cierran) su panel. */
+function pulsarGrupo(id) {
+  if (id === 'circuitos') {
+    estado.menu = null;
+    abrirCircuitos();
+  } else estado.menu = estado.menu === id ? null : id;
+}
+
+/*
+ * Un toque con el panel abierto: lo de dentro actúa; fuera de él lo cierra
+ * (y no arranca: con el panel abierto, un toque perdido no es correr).
+ */
+function pulsarMenu(p) {
+  const marco = marcoActual();
+  const { cajas, alto, ancho } = cajasMenu(marco, estado.menu, opcionesMenu());
+  const caja = cajas.find((c) => dentro(p, c));
+  if (!caja) {
+    const fondo = { x: marco.x + marco.ancho / 2 - ancho / 2, y: marco.y, ancho, alto };
+    if (!dentro(p, fondo)) estado.menu = null;
+  } else if (caja.id === 'opcion') opcionPulsada(caja.opcion);
+  else if (caja.id === 'listo') estado.menu = null;
+  else if (caja.id === 'vista') cambiarModelo(caja.i, 1);
+  else if (caja.id === 'modelo') cambiarModelo(caja.i, caja.paso);
+  else if (caja.id === 'color') cambiarColor(caja.i, COLORES_COCHE[caja.c]);
 }
 
 /** Lo único de la interfaz que no se pinta en el lienzo. */
@@ -1144,32 +1226,38 @@ const ESCENAS = {
     },
     dibujar() {
       dibujarMundo();
-      if (estado.lupa) {
-        dibujarPortadaLupa({ ...estado, tiempo: reloj, marca: marcaPortada() });
-        return;
-      }
-      dibujarPortada(estado.circuito, reloj, estado.escenario, estado.tactil, estado.hora, estado.modelo, estado.duracion, estado.nivel, marcaPortada());
+      const datos = { ...estado, tiempo: reloj, marca: marcaPortada() };
+      if (estado.lupa) dibujarPortadaLupa(datos);
+      else dibujarPortada(datos);
+      dibujarGrupos(vistaMenu(), estado.menu);
+      if (estado.menu) dibujarMenu(marcoActual(), estado.menu, estado, opcionesMenu());
     },
     teclear(codigo) {
-      if (empezar(codigo)) empezarCarrera();
+      if (empezar(codigo)) arrancar();
+      else if (codigo === 'Escape') estado.menu = null;
+      else if (codigo === 'KeyT') cambiarModo();
+      else if (codigo === 'Digit1' || codigo === 'Numpad1') cambiarJugador(0);
+      else if (codigo === 'Digit2' || codigo === 'Numpad2') cambiarJugador(1);
       else if (codigo === 'KeyL') { cambiarIdioma(1); textosDelDocumento(); }
       else if (codigo === 'KeyE') cambiarEscenario();
       else if (codigo === 'KeyC') cambiarCircuito();
       else if (codigo === 'KeyH') cambiarHora();
       else if (codigo === 'KeyV') cambiarDuracion();
       else if (codigo === 'KeyD') cambiarNivel();
-      else if (codigo === 'KeyK') cambiarCoche();
+      else if (codigo === 'KeyK') cambiarModelo(0, 1);
       else if (codigo === 'KeyB') abrirConstructor();
-      else if (codigo === 'KeyG') abrirCircuitos();
-      else if (codigo === 'KeyT') empezarCampeonato();
+      else if (codigo === 'KeyG') pulsarGrupo('circuitos');
       else if (codigo === 'KeyR') abrirRecords();
     },
     pulsar(p) {
-      const opcion = (estado.lupa ? opcionesPortadaLupa() : opcionesPortada(etiquetasPortada(estado))).find((caja) => dentro(p, caja));
-      const records = conRecords() && dentro(p, estado.lupa ? cajaRecordsPortadaLupa() : cajaRecordsPortada(estado.circuito));
-      if (records) abrirRecords();
-      else if (opcion) opcionPulsada(opcion.id);
-      else empezarCarrera();
+      const grupo = cajasGrupos(vistaMenu()).find((caja) => dentro(p, caja));
+      // Los récords, solo con el panel de la portada a la vista (sin menú y en una carrera suelta).
+      const records = !estado.menu && estado.modo !== 'campeonato' && conRecords()
+        && dentro(p, estado.lupa ? cajaRecordsPortadaLupa() : cajaRecordsPortada(estado.circuito));
+      if (grupo) pulsarGrupo(grupo.id);
+      else if (estado.menu) pulsarMenu(p);
+      else if (records) abrirRecords();
+      else arrancar();
       // El toque que arranca no debe tomar ya un carril.
       punteros.clear();
     }
@@ -1358,7 +1446,10 @@ estado.escenario = leerEscenario();
 estado.hora = leerHora();
 estado.duracion = leerDuracion();
 estado.nivel = leerNivel();
-estado.modelo = leerModelo(MODELOS.map((m) => m.id));
+estado.modelos = leerModelos(MODELOS.map((m) => m.id));
+estado.colores = leerColores(COLORES_COCHE);
+estado.modo = leerModo();
+estado.jugadores = leerJugadores();
 estado.tipoFantasma = leerTipoFantasma();
 const elegido = leerCircuito([...CIRCUITOS, ...MIOS].map((c) => c.clave));
 estado.circuito = DIBUJADO || [...CIRCUITOS, ...MIOS].find((c) => c.clave === elegido);
