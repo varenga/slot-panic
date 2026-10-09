@@ -50,14 +50,16 @@ export function dibujarFondo(circuito, decorado, luz = 0) {
         pintarSuelo(decorado);
         pintarEscapatoria(circuito, decorado);
       }
-      decorado.neumaticos.forEach(pintarNeumatico);
+      decorado.neumaticos.forEach(JUGUETE ? pintarNeumaticoJuguete : pintarNeumatico);
       pintarPista(circuito);
     });
     capaDecorado = crearCapa(ANCHO, ALTO);
     dibujarEn(capaDecorado, () => {
-      decorado.gradas.forEach((g) => pintarGrada(g, decorado.semilla));
+      decorado.gradas.forEach((g) => (JUGUETE ? pintarGradaJuguete : pintarGrada)(g, decorado.semilla));
       const color = decorado.escenario.color;
-      decorado.piezas.forEach((p) => PINTAR[p.tipo](p, color));
+      // MAQUETA: en la mesa, uno de cada tres; con todos parece un cajón vaciado.
+      if (JUGUETE) decorado.piezas.filter((p, i) => i % 3 === 0).forEach(pintarObjeto);
+      else decorado.piezas.forEach((p) => PINTAR[p.tipo](p, color));
     });
     claveCapa = clave;
   }
@@ -93,6 +95,8 @@ const PLASTICO = {
   bordeMotas: ['#8e929b', '#a6aab2', '#878b94'],
   reborde: '#e3e5ea',
   junta: 'rgba(0, 0, 0, 0.55)',
+  piano: '#e0262f',
+  pianoClaro: '#f6f4ef',
   juntaLuz: 'rgba(255, 255, 255, 0.10)'
 };
 const TABLA = 72;   // px de alto de cada tabla de la mesa
@@ -234,6 +238,7 @@ function pintarPista(circuito) {
     polilinea(circuito.eje);
   }
   pintarPianos(circuito);
+  if (JUGUETE) pintarFiloPianos(circuito);
   pintarPiezas(circuito);
   pintarSectores(circuito);
   pintarMeta(circuito);
@@ -304,7 +309,9 @@ function pintarPianos(circuito) {
   for (let i = 0; i < eje.length; i += PASO_PIANO) {
     const a = eje[i], b = eje[(i + PASO_PIANO) % eje.length];
     if (!a.piano || !b.piano) continue;
-    ctx.strokeStyle = (i / PASO_PIANO) % 2 === 0 ? COLOR.piano : COLOR.pianoClaro;
+    const par = (i / PASO_PIANO) % 2 === 0;
+    const [rojo, blanco] = JUGUETE ? [PLASTICO.piano, PLASTICO.pianoClaro] : [COLOR.piano, COLOR.pianoClaro];
+    ctx.strokeStyle = par ? rojo : blanco;
     for (const [k, lado] of [[0, -1], [1, 1]]) {
       // Por dentro de una curva cerrada el piano es más estrecho: lo que cabe.
       const ancho = a.borde[k] - circuito.ancho / 2;
@@ -383,6 +390,7 @@ function pintarSombras(decorado, luz) {
   }
   ctx.fill('nonzero');
 
+  if (JUGUETE) return;   // MAQUETA: cada objeto de la mesa lleva su sombra
   ctx.fillStyle = `rgba(0, 0, 0, ${0.22 * sol.fuerza})`;
   ctx.beginPath();
   for (const p of decorado.piezas) {
@@ -471,6 +479,271 @@ const PINTAR = {
     }
   }
 };
+
+/*
+ * MAQUETA: el piano de juguete va impreso en el borde de plástico: colores
+ * planos y vivos, y un filo oscuro por fuera que lo despega del gris.
+ */
+function pintarFiloPianos(circuito) {
+  const { eje } = circuito;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = 'butt';
+  for (const [k, lado] of [[0, -1], [1, 1]]) {
+    ctx.beginPath();
+    let abierto = false;
+    for (let i = 0; i <= eje.length; i++) {
+      const p = eje[i % eje.length];
+      const d = p.borde[k];
+      if (!p.piano || d <= circuito.ancho / 2) { abierto = false; continue; }
+      const x = p.x - Math.sin(p.angulo) * lado * d, y = p.y + Math.cos(p.angulo) * lado * d;
+      if (abierto) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+      abierto = true;
+    }
+    ctx.stroke();
+  }
+}
+
+/*
+ * MAQUETA: lo que hay en la mesa, en el sitio de los árboles, las rocas y los
+ * cactus (el mismo círculo: no pisa nada). Por tamaño: tazas, latas y lápices
+ * donde iban los árboles y los pinos; monedas y chapas donde los arbustos;
+ * dados y piezas de construcción donde las rocas y los cactus.
+ */
+const SOMBRA_MESA = { x: 2.5, y: 3.5, color: 'rgba(40, 20, 5, 0.32)' };
+const OBJETO = { arbol: 'grande', pino: 'grande', arbusto: 'plano', roca: 'pequeno', cactus: 'pequeno' };
+const PLASTICOS = ['#d93a3a', '#f2c230', '#2f6fd0', '#3aa055', '#f0f0ea'];
+
+function pintarObjeto(p) {
+  const v = p.variante;
+  const clase = OBJETO[p.tipo];
+  if (clase === 'grande') (v < 0.4 ? taza : v < 0.7 ? lapiz : lata)(p);
+  else if (clase === 'plano') (v < 0.5 ? moneda : chapa)(p);
+  else (v < 0.5 ? dado : ladrillo)(p);
+}
+
+/** Rellena `forma` (un trazado alrededor del origen) desplazada, como sombra. */
+function sombraObjeto(p, alto, forma) {
+  ctx.save();
+  ctx.translate(p.x + SOMBRA_MESA.x * alto, p.y + SOMBRA_MESA.y * alto);
+  ctx.rotate(p.giro);
+  ctx.fillStyle = SOMBRA_MESA.color;
+  forma();
+  ctx.fill();
+  ctx.restore();
+}
+
+function taza(p) {
+  const r = p.r * 0.78;
+  const asa = { x: Math.cos(p.giro) * r * 1.05, y: Math.sin(p.giro) * r * 1.05 };
+  sombraObjeto(p, 1.6, () => { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); });
+  const loza = ['#ece7dc', '#c9483d', '#3f6fb0', '#e9b93a'][Math.floor(p.variante * 10) % 4];
+  ctx.strokeStyle = loza;
+  ctx.lineWidth = Math.max(2, p.r * 0.16);
+  ctx.beginPath();
+  ctx.arc(p.x + asa.x, p.y + asa.y, p.r * 0.24, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = loza;
+  circulo(p.x, p.y, r);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+  circulo(p.x, p.y, r * 0.86);
+  ctx.fillStyle = '#4a2c1a';                 // el café
+  circulo(p.x, p.y, r * 0.8);
+  ctx.fillStyle = 'rgba(200, 150, 100, 0.35)';
+  circulo(p.x - r * 0.2, p.y - r * 0.2, r * 0.32);
+}
+
+function lata(p) {
+  const r = p.r * 0.72;
+  sombraObjeto(p, 1.8, () => { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); });
+  ctx.fillStyle = ['#c8202c', '#2a5fb8', '#1f8f4c'][Math.floor(p.variante * 10) % 3];
+  circulo(p.x, p.y, r);
+  ctx.fillStyle = '#c9cdd4';
+  circulo(p.x, p.y, r * 0.86);
+  ctx.fillStyle = '#a9aeb7';
+  circulo(p.x, p.y, r * 0.74);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.giro);
+  ctx.fillStyle = '#d9dde3';                 // la anilla
+  ctx.beginPath();
+  ctx.roundRect(-r * 0.1, -r * 0.18, r * 0.62, r * 0.36, r * 0.16);
+  ctx.fill();
+  ctx.fillStyle = '#2b2e34';                 // la boca
+  ctx.beginPath();
+  ctx.roundRect(-r * 0.55, -r * 0.16, r * 0.4, r * 0.32, r * 0.12);
+  ctx.fill();
+  ctx.restore();
+}
+
+function lapiz(p) {
+  const largo = p.r * 1.9, ancho = Math.max(3.5, p.r * 0.3);
+  sombraObjeto(p, 0.5, () => { ctx.beginPath(); ctx.rect(-largo / 2, -ancho / 2, largo, ancho); });
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.giro);
+  const punta = largo * 0.16, goma = largo * 0.1, cuerpo = largo - goma - punta;
+  ctx.fillStyle = ['#f2c230', '#2f6fd0', '#d93a3a', '#3aa055'][Math.floor(p.variante * 13) % 4];
+  ctx.fillRect(-largo / 2 + goma, -ancho / 2, cuerpo, ancho);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+  ctx.fillRect(-largo / 2 + goma, ancho * 0.12, cuerpo, ancho * 0.38);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.fillRect(-largo / 2 + goma, -ancho / 2, cuerpo, ancho * 0.22);
+  ctx.fillStyle = '#e98a9b';                 // la goma
+  ctx.fillRect(-largo / 2, -ancho / 2, goma * 0.6, ancho);
+  ctx.fillStyle = '#b9bdc5';
+  ctx.fillRect(-largo / 2 + goma * 0.6, -ancho / 2, goma * 0.4, ancho);
+  ctx.fillStyle = '#e8c59a';                 // la madera
+  poligono([{ x: largo / 2 - punta, y: -ancho / 2 }, { x: largo / 2, y: 0 }, { x: largo / 2 - punta, y: ancho / 2 }]);
+  ctx.fillStyle = '#2b2b2b';                 // la mina
+  poligono([{ x: largo / 2 - punta * 0.35, y: -ancho * 0.17 }, { x: largo / 2, y: 0 }, { x: largo / 2 - punta * 0.35, y: ancho * 0.17 }]);
+  ctx.restore();
+}
+
+function moneda(p) {
+  const r = p.r * 0.75;
+  sombraObjeto(p, 0.3, () => { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); });
+  const oro = p.variante < 0.25;
+  ctx.fillStyle = oro ? '#c9a443' : '#b9bdc5';
+  circulo(p.x, p.y, r);
+  ctx.fillStyle = oro ? '#ddb955' : '#ced2d8';
+  circulo(p.x, p.y, r * 0.8);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  circulo(p.x - r * 0.25, p.y - r * 0.25, r * 0.3);
+}
+
+function chapa(p) {
+  const r = p.r * 0.8;
+  const dientes = () => {
+    ctx.beginPath();
+    for (let k = 0; k < 42; k++) {
+      const a = k * Math.PI / 21, d = k % 2 ? r * 0.88 : r;
+      if (k === 0) ctx.moveTo(Math.cos(a) * d, Math.sin(a) * d);
+      else ctx.lineTo(Math.cos(a) * d, Math.sin(a) * d);
+    }
+    ctx.closePath();
+  };
+  sombraObjeto(p, 0.4, dientes);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.giro);
+  ctx.fillStyle = ['#d93a3a', '#2f6fd0', '#3aa055', '#f2c230'][Math.floor(p.variante * 17) % 4];
+  dientes();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+const PUNTOS_DADO = {
+  1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]],
+  4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
+  6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]]
+};
+
+function dado(p) {
+  const l = p.r * 1.25;
+  const cara = () => { ctx.beginPath(); ctx.roundRect(-l / 2, -l / 2, l, l, l * 0.2); };
+  sombraObjeto(p, 0.8, cara);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.giro);
+  const rojo = p.variante < 0.3;
+  ctx.fillStyle = rojo ? '#d93a3a' : '#f4f2ec';
+  cara();
+  ctx.fill();
+  ctx.fillStyle = rojo ? '#f4f2ec' : '#22242a';
+  for (const [i, j] of PUNTOS_DADO[1 + Math.floor(p.variante * 60) % 6]) {
+    ctx.beginPath();
+    ctx.arc(i * l * 0.27, j * l * 0.27, Math.max(0.7, l * 0.09), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** Una pieza de construcción de 2 × 4 (o de 2 × 2), con sus tetones. */
+function ladrillo(p) {
+  const largos = p.variante < 0.75 ? 4 : 2;
+  const t = p.r * 1.7 / Math.hypot(largos, 2);   // lo que mide un tetón: cabe en el círculo
+  const w = largos * t, h = 2 * t;
+  const caja = () => { ctx.beginPath(); ctx.rect(-w / 2, -h / 2, w, h); };
+  sombraObjeto(p, 0.7, caja);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.giro);
+  const color = PLASTICOS[Math.floor(p.variante * 23) % PLASTICOS.length];
+  ctx.fillStyle = color;
+  caja();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  for (let i = 0; i < largos; i++) {
+    for (let j = 0; j < 2; j++) {
+      const cx = -w / 2 + t * (i + 0.5), cy = -h / 2 + t * (j + 0.5);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      circulo(cx + 0.5, cy + 0.6, t * 0.32);
+      ctx.fillStyle = color;
+      circulo(cx, cy, t * 0.32);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      circulo(cx - t * 0.1, cy - t * 0.1, t * 0.12);
+    }
+  }
+  ctx.restore();
+}
+
+/** MAQUETA: el neumático de juguete, de goma brillante con la llanta de color. */
+function pintarNeumaticoJuguete(n, i) {
+  ctx.fillStyle = SOMBRA_MESA.color;
+  circulo(n.x + 1.5, n.y + 2, n.r);
+  ctx.fillStyle = '#17181c';
+  circulo(n.x, n.y, n.r);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, n.r * 0.78, Math.PI * 1.05, Math.PI * 1.6);
+  ctx.stroke();
+  ctx.fillStyle = ['#e0262f', '#f6f4ef', '#2f6fd0'][i % 3];
+  circulo(n.x, n.y, n.r * 0.48);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  circulo(n.x, n.y, n.r * 0.18);
+}
+
+/*
+ * MAQUETA: la grada de juguete, de plástico: una base blanca con su reborde,
+ * escalones azules con el público impreso en filas, y la marquesina roja y
+ * blanca por detrás.
+ */
+function pintarGradaJuguete(g, semilla) {
+  const tirar = azar(semilla + Math.round(g.x * 7 + g.y));
+  ctx.save();
+  ctx.translate(g.x, g.y);
+  ctx.rotate(g.angulo);
+  const { largo, fondo } = g;
+  ctx.fillStyle = '#ecebe6';
+  ctx.beginPath();
+  ctx.roundRect(-largo / 2 - 2, -fondo / 2 - 2, largo + 4, fondo + 4, 2);
+  ctx.fill();
+  const filas = 3, alto = (fondo - 4) / filas;
+  for (let f = 0; f < filas; f++) {
+    const y = -fondo / 2 + f * alto;
+    ctx.fillStyle = ['#2f6fd0', '#3b7ce0', '#4a8aec'][f];
+    ctx.fillRect(-largo / 2, y, largo, alto - 0.6);
+    for (let x = -largo / 2 + 2.5; x < largo / 2 - 2; x += 4) {
+      if (tirar() < 0.12) continue;
+      ctx.fillStyle = PLASTICOS[Math.floor(tirar() * PLASTICOS.length)];
+      ctx.fillRect(x - 1.2, y + alto / 2 - 1.5, 2.4, 2.4);
+    }
+  }
+  for (let x = -largo / 2 - 2, k = 0; x < largo / 2 + 2; x += 6, k++) {
+    ctx.fillStyle = k % 2 ? '#f6f4ef' : '#e0262f';
+    ctx.fillRect(x, fondo / 2 - 4, Math.min(6, largo / 2 + 2 - x), 6);
+  }
+  ctx.restore();
+}
 
 function pintarNeumatico(n, i) {
   ctx.fillStyle = '#16181d';
