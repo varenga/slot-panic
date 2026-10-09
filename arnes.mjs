@@ -30,7 +30,7 @@ import { validarCircuito } from './nucleo/validar.js';
 import { aCodigo, aPiezas, COLUMNAS, deCodigo, FILAS, validarTrazado, VARIANTES } from './nucleo/cuadricula.js';
 import { construirDePiezas } from './nucleo/piezas.js';
 import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucleo/trazo.js';
-import { luzDeCarrera } from './luz.js';
+import { luzDeCarrera, sombraTorre } from './luz.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato, tiempoFinal } from './nucleo/campeonato.js';
 import { codificar, decodificar, posar } from './nucleo/fantasma.js';
 
@@ -786,6 +786,14 @@ console.log('\nEl campeonato');
   const camino = Array.from({ length: 101 }, (_, k) => luzDeCarrera(k / 100));
   comprobar(camino[0] === 0 && camino[50] === 1 && camino[100] === 2, `la luz de la resistencia va de ${camino[0]} a ${camino[50]} y a ${camino[100]}`);
   comprobar(camino.every((l, k) => k === 0 || l >= camino[k - 1]), 'la luz de la resistencia se aclara en algún momento');
+
+  // La sombra de las torres: casi nada a mediodía, larga al atardecer, alargándose y girando hasta irse de noche.
+  const sombras = [0, 0.5, 1, 1.3, 1.6, 2].map(sombraTorre);
+  console.log(`  la sombra de una torre mide ${sombras.map((s) => `${s.largo.toFixed(0)} px (${s.alfa.toFixed(2)})`).join(', ')} de día a noche`);
+  comprobar(sombras[0].largo < 6 && sombras[2].largo > 20, `la sombra de una torre mide ${sombras[0].largo.toFixed(1)} px de día y ${sombras[2].largo.toFixed(1)} al atardecer`);
+  comprobar(sombras.every((s, k) => k === 0 || (s.largo >= sombras[k - 1].largo && s.alfa <= sombras[k - 1].alfa)), 'la sombra de una torre no se alarga y se apaga a la vez');
+  comprobar(sombras[4].alfa === 0 && sombras[5].alfa === 0, 'de noche las torres siguen dando sombra de sol');
+  comprobar(Math.atan2(sombras[0].y, sombras[0].x) - Math.atan2(sombras[3].y, sombras[3].x) > 0.3, 'la sombra de una torre no gira al caer la tarde');
   comprobar(CARRERAS.filter((c) => c.anochece).map((c) => c.id).join() === 'resistencia', 'anochece otra carrera que la de resistencia');
 }
 

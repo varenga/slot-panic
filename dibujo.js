@@ -16,6 +16,7 @@ import {
 import { azar } from './nucleo/decorado.js';
 import { CARRILES, trazadoCarril } from './nucleo/slot.js';
 import { modelo, pintarModelo, sombraModelo } from './coches.js';
+import { sombraTorre } from './luz.js';
 
 const PASO_PIANO = 2;    // puntos del eje por franja de piano
 const CASILLA_META = 8;
@@ -44,8 +45,7 @@ export function dibujarFondo(circuito, decorado) {
       const color = decorado.escenario.color;
       decorado.piezas.forEach((p) => pintarSombra(p));
       decorado.piezas.forEach((p) => PINTAR[p.tipo](p, color));
-      // Las torres, al final: son lo más alto.
-      decorado.torres.forEach(pintarTorre);
+      // Las torres no: su sombra se mueve con el sol (dibujarTorres).
     });
     claveCapa = clave;
   }
@@ -329,21 +329,36 @@ function pintarNeumatico(n, i) {
 }
 
 /*
- * Una torre de iluminación vista desde arriba: la sombra larga del mástil, la
- * base y la cabeza de focos, atravesada y mirando a la pista. De día son
- * postes; de noche, `luz.js` enciende los focos.
+ * Las torres de iluminación, en cada fotograma y encima de los carriles: son
+ * lo más alto. Su sombra va con el sol de la luz de ahora (`sombraTorre`): en
+ * la carrera de resistencia se alarga, gira y se va al ponerse.
+ */
+export function dibujarTorres(decorado, luz) {
+  const sombra = sombraTorre(luz);
+  if (sombra.alfa > 0.005 && sombra.largo > 0.5) {
+    ctx.save();
+    ctx.strokeStyle = `rgba(0, 0, 0, ${sombra.alfa})`;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (const t of decorado.torres) {
+      ctx.moveTo(t.x, t.y);
+      ctx.lineTo(t.x + sombra.x, t.y + sombra.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  decorado.torres.forEach(pintarTorre);
+}
+
+/*
+ * Una torre de iluminación vista desde arriba: la base y la cabeza de focos,
+ * atravesada y mirando a la pista. De día son postes; de noche, `luz.js`
+ * enciende los focos.
  */
 function pintarTorre(t) {
   ctx.save();
   ctx.translate(t.x, t.y);
-  // El mástil es alto: su sombra cae lejos, abajo a la derecha, como todas.
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(14, 17);
-  ctx.stroke();
   ctx.fillStyle = '#3a3e48';
   ctx.fillRect(-2.5, -2.5, 5, 5);
   ctx.rotate(t.angulo);

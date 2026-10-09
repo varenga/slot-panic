@@ -26,7 +26,7 @@ import { validarCircuito } from './nucleo/validar.js';
 import {
   abrir, aTrazado, cambiarVariante, copiarTrazo, crearTrazo, deTrazado, pasoEnCasilla, pisar, rumbos
 } from './nucleo/trazo.js';
-import { dibujarCarriles, dibujarFondo } from './dibujo.js';
+import { dibujarCarriles, dibujarFondo, dibujarTorres } from './dibujo.js';
 import { boton } from './pantalla.js';
 import { t } from './i18n.js';
 
@@ -227,6 +227,7 @@ export function dibujarConstructor(edicion, { tiempo, tactil, nombre }) {
   if (edicion.circuito) {
     dibujarFondo(edicion.circuito, edicion.decorado);
     dibujarCarriles(edicion.circuito);
+    dibujarTorres(edicion.decorado, 0);   // el constructor es siempre de día
     // Sobre el suelo del escenario (la nieve es clara), la cuadrícula va en oscuro.
     pintarCuadricula('rgba(18, 20, 26, 0.14)');
   } else {

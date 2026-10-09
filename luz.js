@@ -32,6 +32,24 @@ export const ORDEN_HORAS = ['dia', 'atardecer', 'noche'];
  * noche. El ciclo entero, sea cual sea la hora elegida: la resistencia es la
  * carrera que dura un día.
  */
+/*
+ * El sol de cada luz, para la sombra de las torres (`sombraTorre`): lo alto
+ * que está (grados sobre el horizonte) y hacia dónde cae la sombra (grados
+ * desde +x, girando hacia abajo). A mediodía, alto: la sombra casi no se ve.
+ * Cayendo la tarde, baja y gira, y la sombra se alarga hacia la derecha; al
+ * ponerse (luz 1,1-1,6) se desvanece. De noche no hay.
+ */
+const MASTIL = 8;            // px: lo alto de una torre, a escala de su sombra
+const SOMBRA_MAXIMA = 90;    // px: con el sol rozando el horizonte
+const SOMBRA_ALFA = 0.28;
+export function sombraTorre(luz) {
+  const altura = luz <= 1 ? 65 - 50 * luz : Math.max(3, 15 - 24 * (luz - 1));
+  const hacia = (80 - 30 * Math.min(luz, 1.5)) * Math.PI / 180;
+  const largo = Math.min(SOMBRA_MAXIMA, MASTIL / Math.tan(altura * Math.PI / 180));
+  const alfa = SOMBRA_ALFA * Math.min(1, Math.max(0, (1.6 - luz) / 0.5));
+  return { x: Math.cos(hacia) * largo, y: Math.sin(hacia) * largo, largo, alfa };
+}
+
 const CAMINO_LUZ = [[0.2, 0], [0.4, 1], [0.6, 1], [0.8, 2]];
 export function luzDeCarrera(fraccion) {
   let luz = 2;
