@@ -901,6 +901,9 @@ app en la consola de Play.
   tarde los árboles echan sombras largas en diagonal y la grada cubre la grava que tiene
   delante; de noche no hay. En el constructor, de día.
 - Arnés: la sombra del decorado es proporcional a lo alto. 685/685 en verde.
+- **En el móvil, los FPS van bien** también al atardecer de una resistencia, con las
+  sombras más largas (playtest tras publicar la 1.1.2): no hace falta hornear la capa de
+  sombras solo cuando cambia la luz.
 
 ## Slot Panic 1.1.2 (09/10/2026)
 
