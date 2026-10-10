@@ -1,5 +1,6 @@
 /*
- * Slot Panic — el decorado: árboles, rocas, cactus, pinos, gradas, pilas de
+ * Slot Panic — el decorado: árboles, rocas, cactus, pinos (y lo propio de cada
+ * escenario: flores, estanques, pacas, matojos, huesos, muñecos), gradas, pilas de
  * neumáticos y torres de iluminación. Solo decide DÓNDE va cada cosa; cómo se pinta es de `dibujo.js`.
  *
  * Es la lección del decorado de Rail Panic, con sus dos reglas:
@@ -28,9 +29,11 @@ const TORRE_SEPARA = 80;           // px como mínimo entre dos torres: si no, p
 
 const TAMANO = {
   arbol: [10, 17], pino: [9, 14], arbusto: [5, 8], roca: [4, 9], cactus: [5, 8],
+  // Los propios de cada escenario.
+  flores: [5, 9], estanque: [20, 30], paja: [8, 11], matojo: [4, 7], huesos: [5, 8], muneco: [8, 11],
   // Los de la mesa del escenario juguete: más grandes que lo que crece.
   taza: [20, 25], lata: [16, 20], lapiz: [26, 34], moneda: [10, 13], chapa: [11, 13],
-  dado: [12, 15], ladrillo: [16, 21]
+  dado: [12, 15], ladrillo: [16, 21], canica: [5, 7], goma: [9, 12], clip: [9, 12]
 };
 
 /** mulberry32: un PRNG de 32 bits, sembrado, que no toca `Math.random()`. */
@@ -114,6 +117,8 @@ export function generarDecorado(circuito, nombreEscenario) {
   // Lo grande (la mesa del juguete) necesita más intentos, y con menos ya se llena.
   const intentos = escenario.intentos ?? INTENTOS;
   const cuantas = escenario.cuantas ?? PIEZAS;
+  const tope = escenario.tope ?? {};
+  const deTipo = {};
   for (let intento = 0; intento < intentos && piezas.length < cuantas; intento++) {
     let dado = tirar(), tipo = tipos[0][0];
     for (const [nombre, peso] of tipos) {
@@ -129,9 +134,12 @@ export function generarDecorado(circuito, nombreEscenario) {
       giro: tirar() * Math.PI * 2,
       variante: tirar()
     };
+    // Lleno su tope, se descarta después de tirar: así no mueve lo demás.
+    if ((deTipo[tipo] ?? 0) >= (tope[tipo] ?? Infinity)) continue;
     // Las gradas son rectángulos; para ellas basta con no acercarse a su círculo.
     if (ocupado.every((o) => Math.hypot(o.x - pieza.x, o.y - pieza.y) > o.r + pieza.r) && cabe(circuito, pieza, piezas)) {
       piezas.push(pieza);
+      deTipo[tipo] = (deTipo[tipo] ?? 0) + 1;
     }
   }
   // De arriba abajo: lo de más abajo tapa lo de más arriba, como en una maqueta.

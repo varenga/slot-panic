@@ -1294,3 +1294,44 @@ app en la consola de Play.
 - El quinto oficial, *La bañera*, con una pieza nueva: el desvío (la chicane de
   Goodwood del juguete). El campeonato pasa a cinco carreras. `servidor/records.php`
   admite el circuito; la base no cambia. `pnyk.json`: 1.7.0.
+
+## Lo propio de cada escenario (10/10/2026, rama `33-escenarios-con-detalle`)
+
+> «Adelante con los escenarios.» Las tres tandas que quedaban de las cuatro de la
+> rama `30`: piezas propias de cada escenario, más vida en el suelo y más cosas en la
+> mesa del juguete.
+
+- **Piezas nuevas** (`TAMANO` en `nucleo/decorado.js`, `PINTAR` en `dibujo.js`), con
+  sus pesos en `escenarios.js`:
+  - Verde: **macizos de flores** (hojas y flores de cinco pétalos, de un color) y
+    **estanques** (orilla de barro, agua, reflejo y nenúfares).
+  - Tierra: **pacas redondas de paja**, de pie, con la espiral del enrollado.
+  - Desierto: **matojos secos** (una maraña de ramitas) y **huesos** blanqueados.
+  - Nieve: **muñecos de nieve** vistos desde arriba: cuerpo, cabeza con sombrero,
+    nariz de zanahoria, brazos de rama y un botón.
+  - Juguete: **canicas**, **gomas de borrar** y **clips**.
+- **`tope`**: un escenario puede limitar cuántas hay de un tipo (estanques, 2). La
+  pieza se descarta después de tirar sus números: un tope no mueve lo demás.
+- **Lo plano** (`ALTO_PIEZA` 0, el estanque) no da sombra y va en la capa del suelo,
+  como el aparcamiento: lo que crece a su lado lo tapa.
+- **La vida del suelo** (`marcas` del escenario, `VIDA_SUELO` en `dibujo.js`), pintada
+  con el suelo, debajo de la escapatoria y la pista, que la tapan: los **caminos** del
+  público en el césped (acaban en la grava, como los de verdad), las **roderas** de
+  los tractores en la tierra (dos surcos con su dibujo), las **ondas** del viento en
+  la arena (todas a lo ancho del mismo viento, con su sombra y su luz) y las
+  **huellas** en la nieve (de un paseante y, alguna, de un zorro). Con su propia
+  semilla: no mueven nada.
+- **Tras verlo**: las pacas, de 6-8 px, se leían como monedas (lo mismo que se
+  pregunta de las balas de La bañera): pasan a 8-11 px con un filo oscuro. Los
+  muñecos, de 6-9 a 8-11. Las huellas y las roderas, más marcadas.
+- **Medido**: las piezas que caben no bajan (La horquilla: verde 44, nieve 41, el
+  mínimo es 40; los demás oficiales llenan las 90 menos El nudo, 53 y 51). Estanques,
+  de 0 a 2 por circuito; muñecos, de 0 a 6.
+- Arnés: 1709/1709 en verde. Visto de día en La bañera y El ocho, en los cinco
+  escenarios.
+
+## Slot Panic 1.8.0 (10/10/2026)
+
+- Lo propio de cada escenario (flores y estanques, pacas, matojos y huesos, muñecos
+  de nieve, y canicas, gomas y clips en la mesa) y la vida del suelo (caminos,
+  roderas, ondas de arena y huellas). `pnyk.json`: 1.8.0.

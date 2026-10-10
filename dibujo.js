@@ -50,6 +50,8 @@ export function dibujarFondo(circuito, decorado, luz = 0) {
       } else {
         pintarSuelo(decorado);
         pintarEscapatoria(circuito, decorado);
+        // Lo plano (un estanque) va con el suelo: lo que crece a su lado lo tapa.
+        decorado.piezas.filter(esPlana).forEach((p) => PINTAR[p.tipo](p, decorado.escenario.color));
       }
       decorado.neumaticos.forEach(juguete ? pintarNeumaticoJuguete : pintarNeumatico);
       pintarPista(circuito, juguete);
@@ -61,7 +63,7 @@ export function dibujarFondo(circuito, decorado, luz = 0) {
       decorado.instalaciones.filter((r) => r.tipo !== 'aparcamiento').forEach((r) => INSTALACION[r.tipo](r, decorado.semilla));
       decorado.gradas.forEach((g) => (juguete ? pintarGradaJuguete : pintarGrada)(g, decorado.semilla));
       const color = decorado.escenario.color;
-      decorado.piezas.forEach((p) => PINTAR[p.tipo](p, color));
+      decorado.piezas.filter((p) => !esPlana(p)).forEach((p) => PINTAR[p.tipo](p, color));
     });
     claveCapa = clave;
   }
@@ -85,7 +87,133 @@ function pintarSuelo({ escenario, semilla }) {
     const t = 1 + tirar() * 2;
     ctx.fillRect(tirar() * ANCHO, tirar() * ALTO, t, t);
   }
+  if (escenario.marcas) VIDA_SUELO[escenario.marcas.tipo](escenario.marcas, azar(semilla + 3));
 }
+
+/*
+ * La vida del suelo: va debajo de la escapatoria y de la pista, que la tapan;
+ * así un camino acaba en la valla, como los que abre el público.
+ */
+
+/** Un recorrido que serpentea desde un borde de la mesa: la lista de puntos. */
+function serpentea(tirar, pasos, paso, giro) {
+  const borde = Math.floor(tirar() * 4);
+  let x = borde === 1 ? ANCHO : borde === 0 ? 0 : tirar() * ANCHO;
+  let y = borde === 2 ? 0 : borde === 3 ? ALTO : tirar() * ALTO;
+  // Hacia dentro de la mesa, con algo de sesgo.
+  let a = [0, Math.PI, Math.PI / 2, -Math.PI / 2][borde] + (tirar() - 0.5) * 1.2;
+  const puntos = [{ x, y }];
+  for (let k = 0; k < pasos; k++) {
+    a += (tirar() - 0.5) * giro;
+    x += Math.cos(a) * paso;
+    y += Math.sin(a) * paso;
+    puntos.push({ x, y, a });
+  }
+  return puntos;
+}
+
+/** Un trazo suave por los puntos, desplazado `d` px a su izquierda. */
+function trazo(puntos, d = 0) {
+  ctx.beginPath();
+  puntos.forEach((p, k) => {
+    const a = p.a ?? puntos[1].a;
+    const x = p.x - Math.sin(a) * d, y = p.y + Math.cos(a) * d;
+    if (k === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+const VIDA_SUELO = {
+  /** Los caminos de tierra que abre el público por el césped. */
+  caminos(marcas, tirar) {
+    ctx.strokeStyle = marcas.color;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let k = 0; k < 3; k++) {
+      const puntos = serpentea(tirar, 70 + Math.floor(tirar() * 50), 8, 0.35);
+      ctx.lineWidth = 6 + tirar() * 3;
+      trazo(puntos);
+      // El borde gastado: más claro y más fino, a un lado.
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.5;
+      trazo(puntos, 4.5);
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = 6;
+    }
+  },
+  /** Las roderas de los tractores: dos surcos paralelos que se cruzan con otros. */
+  roderas(marcas, tirar) {
+    ctx.strokeStyle = marcas.color;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let k = 0; k < 4; k++) {
+      const puntos = serpentea(tirar, 60 + Math.floor(tirar() * 60), 10, 0.18);
+      ctx.lineWidth = 3;
+      trazo(puntos, -6);
+      trazo(puntos, 6);
+      // Las marcas del dibujo de la rueda, cruzadas en cada surco.
+      ctx.lineWidth = 1;
+      for (let i = 1; i < puntos.length; i += 1) {
+        const p = puntos[i];
+        for (const d of [-6, 6]) {
+          const x = p.x - Math.sin(p.a) * d, y = p.y + Math.cos(p.a) * d;
+          ctx.beginPath();
+          ctx.moveTo(x - Math.sin(p.a) * 2.5, y + Math.cos(p.a) * 2.5);
+          ctx.lineTo(x + Math.sin(p.a) * 2.5, y - Math.cos(p.a) * 2.5);
+          ctx.stroke();
+        }
+      }
+    }
+  },
+  /** Las ondas que deja el viento en la arena: todas a lo ancho del mismo viento. */
+  ondas(marcas, tirar) {
+    const viento = 0.5 + tirar() * 0.5;   // las crestas, a lo ancho de él
+    ctx.lineCap = 'round';
+    for (let k = 0; k < 90; k++) {
+      const x0 = tirar() * ANCHO, y0 = tirar() * ALTO;
+      const largo = 30 + tirar() * 50, crestas = 3 + Math.floor(tirar() * 3);
+      for (let c = 0; c < crestas; c++) {
+        const d = c * 6;
+        const puntos = [];
+        for (let u = -largo / 2; u <= largo / 2; u += 4) {
+          const ondula = Math.sin(u * 0.12 + k) * 2;
+          // A lo largo de la cresta (cos, sen) y entre crestas (-sen, cos).
+          puntos.push({
+            x: x0 + Math.cos(viento) * u - Math.sin(viento) * (d + ondula),
+            y: y0 + Math.sin(viento) * u + Math.cos(viento) * (d + ondula),
+            a: 0
+          });
+        }
+        // Cada cresta, su sombra y su luz justo al lado.
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = marcas.color;
+        trazo(puntos);
+        ctx.strokeStyle = marcas.luz;
+        ctx.save();
+        ctx.translate(-Math.sin(viento) * 1.3, Math.cos(viento) * 1.3);
+        trazo(puntos);
+        ctx.restore();
+      }
+    }
+  },
+  /** Las huellas en la nieve: un paseante y, alguna, de un zorro, a pasitos. */
+  huellas(marcas, tirar) {
+    ctx.fillStyle = marcas.color;
+    for (let k = 0; k < 6; k++) {
+      const zorro = k % 3 === 2;
+      const puntos = serpentea(tirar, zorro ? 120 : 70, zorro ? 6 : 10, zorro ? 0.5 : 0.25);
+      puntos.slice(1).forEach((p, i) => {
+        const lado = i % 2 ? 1 : -1, d = zorro ? 2 : 3.5;
+        const x = p.x - Math.sin(p.a) * lado * d, y = p.y + Math.cos(p.a) * lado * d;
+        ctx.beginPath();
+        if (zorro) ctx.arc(x, y, 1.4, 0, Math.PI * 2);
+        else ctx.ellipse(x, y, 3, 1.6, p.a, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+};
 
 // --- El escenario juguete: la mesa y el plástico --------------------------------
 
@@ -440,9 +568,13 @@ function pintarMeta(circuito) {
  */
 const ALTO_PIEZA = {
   arbol: 1, pino: 1.5, arbusto: 0.5, roca: 0.35, cactus: 1.2,
+  // Los de cada escenario; un estanque no tiene alto: es plano, va con el suelo.
+  flores: 0.3, estanque: 0, paja: 1.1, matojo: 0.8, huesos: 0.1, muneco: 1.6,
   // Los de la mesa: una lata es más alta que una taza; una moneda, nada.
-  taza: 1.3, lata: 1.9, lapiz: 0.12, moneda: 0.04, chapa: 0.12, dado: 1, ladrillo: 0.45
+  taza: 1.3, lata: 1.9, lapiz: 0.12, moneda: 0.04, chapa: 0.12, dado: 1, ladrillo: 0.45,
+  canica: 0.9, goma: 0.5, clip: 0.03
 };
+const esPlana = (p) => ALTO_PIEZA[p.tipo] === 0;
 const ALTO_GRADA = 7;
 
 /*
@@ -495,6 +627,7 @@ function pintarSombras(decorado, luz) {
   ctx.beginPath();
   for (const p of decorado.piezas) {
     const alto = ALTO_PIEZA[p.tipo] * p.r;
+    if (!alto) continue;
     const largo = Math.min(sol.largo * alto, 6 * p.r);
     // Lo alargado (un lápiz, una pieza de construcción, un dado) barre su
     // rectángulo; lo demás, su círculo.
@@ -583,6 +716,166 @@ const PINTAR = {
       ctx.lineTo(p.x + Math.cos(a) * p.r * 0.6, p.y + Math.sin(a) * p.r * 0.6);
       ctx.stroke();
     }
+  },
+
+  // --- Lo propio de cada escenario ---
+
+  /** Un macizo de flores: hojas y, encima, flores de cinco pétalos de un color. */
+  flores(p, color) {
+    const tirar = azar(Math.floor(p.variante * 1e9));
+    ctx.fillStyle = color.hojas;
+    for (let k = 0; k < 4; k++) {
+      const a = p.giro + k * 1.57;
+      circulo(p.x + Math.cos(a) * p.r * 0.4, p.y + Math.sin(a) * p.r * 0.4, p.r * 0.62);
+    }
+    const petalo = ['#e8475a', '#f4d03f', '#f5f2ea', '#a77bd4', '#f08fb5'][Math.floor(p.variante * 10) % 5];
+    const cuantas = 4 + Math.floor(p.r / 2);
+    for (let k = 0; k < cuantas; k++) {
+      const a = tirar() * Math.PI * 2, d = Math.sqrt(tirar()) * p.r * 0.75;
+      const x = p.x + Math.cos(a) * d, y = p.y + Math.sin(a) * d, r = 1.1 + tirar() * 0.5;
+      ctx.fillStyle = petalo;
+      for (let h = 0; h < 5; h++) {
+        const b = a + h * Math.PI * 0.4;
+        circulo(x + Math.cos(b) * r, y + Math.sin(b) * r, r * 0.9);
+      }
+      ctx.fillStyle = '#f2b632';
+      circulo(x, y, r * 0.6);
+    }
+  },
+  /** Un estanque: la orilla de barro, el agua, un reflejo y unos nenúfares. */
+  estanque(p) {
+    const cos = Math.cos(p.giro), sin = Math.sin(p.giro);
+    const contorno = (escala) => {
+      const puntos = [];
+      for (let k = 0; k < 18; k++) {
+        const a = k * Math.PI / 9;
+        const r = p.r * escala * (0.82 + 0.1 * Math.sin(k * 1.7 + p.variante * 9) + 0.08 * Math.sin(k * 0.7 + p.giro));
+        // Un poco alargado, a lo largo de su giro.
+        const x = Math.cos(a) * r, y = Math.sin(a) * r * 0.78;
+        puntos.push({ x: p.x + x * cos - y * sin, y: p.y + x * sin + y * cos });
+      }
+      return puntos;
+    };
+    ctx.fillStyle = '#6b6a43';
+    poligono(contorno(1));
+    ctx.fillStyle = '#2f5d73';
+    poligono(contorno(0.88));
+    ctx.fillStyle = '#3b7590';
+    poligono(contorno(0.7));
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(p.x - p.r * 0.2, p.y - p.r * 0.15, p.r * 0.4, Math.PI * 1.1, Math.PI * 1.5);
+    ctx.stroke();
+    // Los nenúfares: hojas redondas con su muesca, y uno en flor.
+    for (let k = 0; k < 3; k++) {
+      const a = p.giro + k * 2.3 + p.variante, d = p.r * (0.2 + 0.12 * k);
+      const x = p.x + Math.cos(a) * d, y = p.y + Math.sin(a) * d * 0.7, r = 2.4 + k * 0.5;
+      ctx.fillStyle = '#4f8a3e';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.arc(x, y, r, a + 0.4, a + Math.PI * 2 - 0.4);
+      ctx.closePath();
+      ctx.fill();
+      if (k === 1) {
+        ctx.fillStyle = '#f3c6d3';
+        circulo(x, y, 1.2);
+      }
+    }
+  },
+  /** Una paca redonda de paja, de pie: la espiral del enrollado. */
+  paja(p) {
+    ctx.fillStyle = '#8a6a2c';                   // el filo: la despega de la tierra
+    circulo(p.x, p.y, p.r + 0.8);
+    ctx.fillStyle = '#c99d4a';
+    circulo(p.x, p.y, p.r);
+    ctx.fillStyle = '#ddb760';
+    circulo(p.x - p.r * 0.08, p.y - p.r * 0.08, p.r * 0.88);
+    ctx.strokeStyle = '#ad8236';
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    for (let k = 0; k <= 60; k++) {
+      const a = p.giro + k * 0.38, r = p.r * 0.82 * k / 60;
+      const x = p.x - p.r * 0.08 + Math.cos(a) * r, y = p.y - p.r * 0.08 + Math.sin(a) * r;
+      if (k === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  },
+  /** Un matojo seco del desierto: una maraña de ramitas. */
+  matojo(p) {
+    const tirar = azar(Math.floor(p.variante * 1e9));
+    ctx.strokeStyle = '#8f7048';
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    for (let k = 0; k < 14; k++) {
+      const a = tirar() * Math.PI * 2, b = a + Math.PI * (0.5 + tirar());
+      const r = p.r * (0.6 + tirar() * 0.4);
+      ctx.moveTo(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r);
+      ctx.quadraticCurveTo(p.x + (tirar() - 0.5) * p.r, p.y + (tirar() - 0.5) * p.r, p.x + Math.cos(b) * r, p.y + Math.sin(b) * r);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = '#b39066';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * 0.85, 0, Math.PI * 2);
+    ctx.stroke();
+  },
+  /** Huesos blanqueados al sol: dos o tres, tirados. */
+  huesos(p) {
+    const tirar = azar(Math.floor(p.variante * 1e9));
+    const cuantos = 2 + Math.floor(p.variante * 2);
+    ctx.strokeStyle = ctx.fillStyle = '#e9e1cc';
+    ctx.lineCap = 'round';
+    for (let k = 0; k < cuantos; k++) {
+      const a = tirar() * Math.PI * 2, d = tirar() * p.r * 0.4;
+      const x = p.x + Math.cos(p.giro + k * 2) * d, y = p.y + Math.sin(p.giro + k * 2) * d;
+      const largo = p.r * (0.9 + tirar() * 0.5), grueso = Math.max(1.2, p.r * 0.16);
+      const ux = Math.cos(a) * largo / 2, uy = Math.sin(a) * largo / 2;
+      ctx.lineWidth = grueso;
+      ctx.beginPath();
+      ctx.moveTo(x - ux, y - uy);
+      ctx.lineTo(x + ux, y + uy);
+      ctx.stroke();
+      // Las cabezas del hueso, dobles.
+      for (const f of [-1, 1]) {
+        for (const g of [-1, 1]) {
+          circulo(x + f * ux - Math.sin(a) * g * grueso * 0.55, y + f * uy + Math.cos(a) * g * grueso * 0.55, grueso * 0.6);
+        }
+      }
+    }
+  },
+  /** Un muñeco de nieve desde arriba: el cuerpo, la cabeza con su sombrero, los brazos y la nariz. */
+  muneco(p) {
+    const cos = Math.cos(p.giro), sin = Math.sin(p.giro);
+    const cabeza = { x: p.x + cos * p.r * 0.3, y: p.y + sin * p.r * 0.3 };
+    ctx.strokeStyle = '#5a3d24';                 // los brazos, de rama
+    ctx.lineWidth = 1.1;
+    ctx.lineCap = 'round';
+    for (const lado of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(p.x - sin * lado * p.r * 0.6, p.y + cos * lado * p.r * 0.6);
+      ctx.lineTo(p.x - sin * lado * p.r * 1.05 - cos * p.r * 0.15, p.y + cos * lado * p.r * 1.05 - sin * p.r * 0.15);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#d4dee8';
+    circulo(p.x, p.y, p.r * 0.72);
+    ctx.fillStyle = '#f7fafc';
+    circulo(p.x - p.r * 0.08, p.y - p.r * 0.08, p.r * 0.62);
+    ctx.fillStyle = '#e3eaf1';
+    circulo(cabeza.x, cabeza.y, p.r * 0.45);
+    ctx.fillStyle = '#e8772e';                   // la nariz de zanahoria, hacia delante
+    poligono([
+      { x: cabeza.x + cos * p.r * 0.75, y: cabeza.y + sin * p.r * 0.75 },
+      { x: cabeza.x + cos * p.r * 0.3 - sin * p.r * 0.09, y: cabeza.y + sin * p.r * 0.3 + cos * p.r * 0.09 },
+      { x: cabeza.x + cos * p.r * 0.3 + sin * p.r * 0.09, y: cabeza.y + sin * p.r * 0.3 - cos * p.r * 0.09 }
+    ]);
+    ctx.fillStyle = '#26292f';                   // el sombrero: el ala y la copa
+    circulo(cabeza.x - cos * p.r * 0.08, cabeza.y - sin * p.r * 0.08, p.r * 0.34);
+    ctx.fillStyle = '#3a3e46';
+    circulo(cabeza.x - cos * p.r * 0.08, cabeza.y - sin * p.r * 0.08, p.r * 0.22);
+    ctx.fillStyle = ['#c0392b', '#2f6fd0', '#3aa055'][Math.floor(p.variante * 10) % 3];
+    circulo(p.x - cos * p.r * 0.2, p.y - sin * p.r * 0.2, p.r * 0.12);   // un botón
   }
 };
 
@@ -613,7 +906,7 @@ function pintarFiloPianos(circuito) {
 
 /*
  * Lo que hay en la mesa del escenario juguete: tazas, latas, lápices, monedas,
- * chapas, dados y piezas de construcción. Son piezas del decorado como los
+ * chapas, dados, piezas de construcción, canicas, gomas y clips. Son piezas del decorado como los
  * árboles (su círculo `r` no pisa nada) y su sombra va con el sol.
  */
 const PLASTICOS = ['#d93a3a', '#f2c230', '#2f6fd0', '#3aa055', '#f0f0ea'];
@@ -626,12 +919,16 @@ function medidaLadrillo(p) {
   const t = p.r * 1.7 / Math.hypot(largos, 2);   // lo que mide un tetón: cabe en el círculo
   return { largos, t, w: largos * t, h: 2 * t };
 }
+const medidaGoma = (p) => [p.r * 1.5, p.r * 0.75];
+const medidaClip = (p) => [p.r * 1.7, p.r * 0.6];
 const CAJA_SOMBRA = {
   lapiz: medidaLapiz,
+  goma: medidaGoma,
+  clip: medidaClip,
   dado: (p) => [ladoDado(p) * 0.9, ladoDado(p) * 0.9],
   ladrillo: (p) => { const m = medidaLadrillo(p); return [m.w, m.h]; }
 };
-const RADIO_SOMBRA = { taza: 0.78, lata: 0.72, moneda: 0.75, chapa: 0.8 };
+const RADIO_SOMBRA = { taza: 0.78, lata: 0.72, moneda: 0.75, chapa: 0.8, canica: 0.8 };
 
 function taza(p) {
   const r = p.r * 0.78;
@@ -785,7 +1082,70 @@ function ladrillo(p) {
   ctx.restore();
 }
 
-Object.assign(PINTAR, { taza, lata, lapiz, moneda, chapa, dado, ladrillo });
+/** Una canica de cristal: la espiral de color dentro y el brillo. */
+function canica(p) {
+  const r = p.r * 0.8;
+  const color = ['#2f6fd0', '#d93a3a', '#3aa055', '#f2c230'][Math.floor(p.variante * 10) % 4];
+  ctx.fillStyle = 'rgba(205, 225, 235, 0.85)';
+  circulo(p.x, p.y, r);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = r * 0.35;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, r * 0.45, p.giro, p.giro + Math.PI * 1.2);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.lineWidth = 0.6;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+  circulo(p.x - r * 0.35, p.y - r * 0.35, r * 0.22);
+}
+
+/** Una goma de borrar de dos colores, con una esquina gastada. */
+function goma(p) {
+  const [largo, ancho] = medidaGoma(p);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.giro);
+  ctx.fillStyle = p.variante < 0.6 ? '#3f78c8' : '#e7a23a';
+  ctx.beginPath();
+  ctx.roundRect(-largo / 2, -ancho / 2, largo, ancho, [ancho * 0.12, ancho * 0.4, ancho * 0.12, ancho * 0.12]);
+  ctx.fill();
+  ctx.fillStyle = '#e46f7c';                 // la parte que borra
+  ctx.beginPath();
+  ctx.roundRect(-largo / 2, -ancho / 2, largo * 0.45, ancho, ancho * 0.12);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.fillRect(-largo / 2, -ancho / 2, largo, ancho * 0.2);
+  ctx.restore();
+}
+
+/** Un clip, de alambre: tres vueltas, una dentro de otra. */
+function clip(p) {
+  const [largo, ancho] = medidaClip(p);
+  const h = ancho / 2;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.giro);
+  ctx.strokeStyle = p.variante < 0.7 ? '#aeb4bd' : PLASTICOS[Math.floor(p.variante * 31) % 4];
+  ctx.lineWidth = 1.1;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(largo * 0.22, h * 0.35);
+  ctx.lineTo(-largo * 0.3, h * 0.35);
+  ctx.arc(-largo * 0.3, 0, h * 0.35, Math.PI / 2, Math.PI * 1.5);
+  ctx.lineTo(largo * 0.32, -h * 0.35);
+  ctx.arc(largo * 0.32, h * 0.15, h * 0.5, -Math.PI / 2, Math.PI / 2);
+  ctx.lineTo(-largo * 0.25, h * 0.65);
+  ctx.arc(-largo * 0.25, -h * 0.1, h * 0.75, Math.PI / 2, Math.PI * 1.5);
+  ctx.lineTo(largo * 0.1, -h * 0.85);
+  ctx.stroke();
+  ctx.restore();
+}
+
+Object.assign(PINTAR, { taza, lata, lapiz, moneda, chapa, dado, ladrillo, canica, goma, clip });
 
 /** El neumático de juguete, de goma brillante con la llanta de color. */
 function pintarNeumaticoJuguete(n, i) {
