@@ -1089,3 +1089,52 @@ app en la consola de Play.
   están los circuitos que comparte la gente y el constructor para hacer y publicar el
   tuyo. «Compartidos» no abarcaba el constructor. Solo cambian las cadenas
   (`opcion.circuitos`, `circuitos.titulo`); las claves y los `id` se quedan.
+
+## Los coches, a escala (10/10/2026, rama `29-coches-a-escala`)
+
+> «Te paso los tamaños reales de los modelos para intentar que conserven la proporción
+> entre ellos», con tres vistas cenitales nuevas (2CV, tiburón y Multiplo) en
+> `_desarrollo/cenital*`.
+
+- **El largo sale del coche de verdad**: 37 · (mm / 4874)^0,79, el tiburón en 37 px.
+  Con la proporción exacta el bambino mediría 22 px al lado de 37: en escritorio, 16 px
+  de pantalla, y difícil de alcanzar en una X. El exponente conserva el orden y aprieta
+  las diferencias a todos por igual. Antes → ahora: tiburón 35 → 37 (4874 mm),
+  monovolumen 33 → 37 (4856), escarabajo 30 → 32 (4070), escalón 29 → 32 (3994), dos
+  caballos 29 → 31 (3860), bambino 27 → 25 (2970). El clásico no es de verdad y se
+  queda en 31. El arnés admite ahora 25-37 px (antes 27-35).
+- **El ancho, de la proporción de cada uno**: la mitad de su ancho de dibujo es
+  11 · ancho / largo · 1,15 (el 15 %, lo mismo a todos: de juguete). Antes todos iban en
+  la caja de 2:1; ahora el tiburón es el más afilado (2,35:1) y el Multiplo el más chato
+  (1,86:1). Todos se dibujan en 22 unidades de cola a morro (`mide` desaparece) y llevan
+  sus `medidas` en mm. Anchos en píxeles: de 12,8 (bambino) a 17,2 (Multiplo).
+- **Rehechos con las cenitales**: el **dos caballos**, con las aletas de delante
+  hasta el morro y los faros encima, el capó acanalado que se estrecha hasta la rejilla
+  y la ventanilla de atrás en la lona (en vez del rollo); el **tiburón**, con el morro
+  redondo, el parabrisas curvo, el techo claro hasta una luna que se estrecha y la cola
+  afilada; el **Multiplo**, con el parabrisas enorme y curvo, los retrovisores a la
+  altura del salpicadero, las ventanillas que abomban y cuatro nervios en el techo.
+- **Y los otros tres**, con las cenitales del 500 y del escarabajo y una foto del
+  monovolumen grande (el de 2006; cenital no la hay). El **escarabajo** deja de ser una
+  burbuja con aletas: las cuatro van casi a todo lo ancho (con el borde marcado), la de
+  delante con el faro en la punta; entre ellas, el capó en gota y la tapa del motor en
+  punta, la luna de atrás partida en dos con las rejillas debajo y parachoques de cromo.
+  El **bambino**: esquinas más redondas delante que detrás, la lona en la mitad de
+  delante del techo, la luna de atrás, la tapa del motor con sus lamas y los
+  parachoques. El **monovolumen**: un capó corto, los faros rasgados hacia atrás por los
+  costados y el techo de cristal con su barra y las barras del techo, con chapa
+  alrededor (todo de cristal, en escritorio no se veía de qué color era).
+- **`simetrico()` gira como las demás piezas**: iba al revés que `roundRect()` y
+  `ellipse()`, y donde un polígono se solapaba con otra pieza de la silueta el relleno
+  (regla nonzero) se anulaba y asomaban las ruedas: cuñas oscuras en el escarabajo y,
+  más sutiles, entre el capó y las aletas del dos caballos.
+- **El largo juega**: dos tiburones chocan a 23,9 px (en paralelo van a 30) y dos
+  bambinos a 16,1, y aun así chocan en cada X, cruce y estrecha. La vuelta no cambia:
+  el largo solo cuenta en los choques, así que los récords siguen valiendo.
+- Arnés: 1041/1041 en verde. Para mirarlos: `_desarrollo/coches.html` (cada uno, a su
+  tamaño en pantalla) y `_desarrollo/escala.html` (todos en fila, a la misma escala).
+
+## Slot Panic 1.4.1 (10/10/2026)
+
+- Los coches, a escala de los de verdad y rehechos con sus vistas cenitales.
+  `pnyk.json`: 1.4.1.
