@@ -452,7 +452,7 @@ cenital, jugable gratis en el navegador (HTML5 Canvas y JavaScript, sin instalac
 y también instalable como app. Un solo control: apretar acelera y soltar frena. Uno
 contra la CPU o dos jugadores en la misma pantalla (cada uno su mitad en el móvil),
 ${VUELTAS_SLOT} vueltas por carrera. Con el móvil en vertical, el modo lupa: la pista
-ampliada alrededor del coche y el mapa del circuito arriba, contra la CPU. Siete coches a
+ampliada alrededor del coche y el mapa del circuito arriba, contra la CPU. Trece coches a
 elegir (caricaturas de clásicos vistos desde arriba): cambian la forma, no la carrera.
 Está en siete idiomas, cada uno con su URL:
 

@@ -100,7 +100,14 @@ export const ANCHO_COCHE = 15.5;
  * El clásico es el coche de siempre (LARGO_COCHE, ×1): los récords de antes
  * se hicieron con él y siguen valiendo. El carácter va con la forma: el
  * bambino, corto, sale disparado; el tiburón, largo y afilado, corre mucho y
- * tarda en coger velocidad; el dos caballos agarra como nadie.
+ * tarda en coger velocidad; el dos caballos agarra como nadie. El ladrillo,
+ * pesado, tarda en arrancar y luego corre; la ranchera (la del turbo) corre
+ * mucho y agarra poco; la rana (motor detrás) sale disparada y se va de cola;
+ * el cuatro latas, de suspensión blanda, es vivo y se inclina; el mínimo, un
+ * kart, agarra más que nadie y le cuesta coger velocidad.
+ *
+ * Mucho agarre pide punta: si punta² < agarre, el coche pasa a tope las
+ * curvas que el de siempre no (la sección 3b del arnés lo mide).
  */
 export const PESO_CARACTER = { acelera: 0.25, agarre: 1, punta: 0.65 };
 export const COCHE_REFERENCIA = 'clasico';
@@ -111,7 +118,13 @@ export const COCHES = {
   tiburon:     { largo: 37, acelera: 0.69, agarre: 1,     punta: 1.12 },    // 4874 mm
   escarabajo:  { largo: 32, acelera: 0.9,  agarre: 1,     punta: 1.04 },    // 4070 mm
   bambino:     { largo: 25, acelera: 1.3,  agarre: 0.94,  punta: 0.975 },   // 2970 mm
-  monovolumen: { largo: 37, acelera: 1,    agarre: 0.975, punta: 1.04 }     // 4856 mm
+  monovolumen: { largo: 37, acelera: 1,    agarre: 0.975, punta: 1.04 },    // 4856 mm
+  ladrillo:    { largo: 36, acelera: 0.8,  agarre: 1.01,  punta: 1.06 },    // 4790 mm
+  ranchera:    { largo: 36, acelera: 0.92, agarre: 0.97,  punta: 1.075 },   // 4709 mm
+  rana:        { largo: 33, acelera: 1.24, agarre: 0.94,  punta: 1 },       // 4245 mm
+  cuatrolatas: { largo: 30, acelera: 1.1,  agarre: 0.975, punta: 1 },       // 3668 mm
+  minimo:      { largo: 26, acelera: 0.83, agarre: 1.02,  punta: 1.035 },   // 3054 mm
+  burbuja:     { largo: 32, acelera: 1.06, agarre: 0.985, punta: 1 }        // 4081 mm
 };
 
 // --- Pianos y escapatorias ----------------------------------------------------
