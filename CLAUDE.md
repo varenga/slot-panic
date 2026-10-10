@@ -132,8 +132,10 @@ demás, en `BITACORA.md`). Mide y comprueba:
    de un cruce (`enCruce`, ±128 px de `s`) quedan exentos.
 2. **Decorado**, en los cinco escenarios: es determinista, caben al menos 40 piezas (en el
    juguete, cosas de la mesa más grandes: hasta 45) y
-   ninguna pieza, neumático, grada ni torre de iluminación pisa la pista, el marcador ni
-   las bandas de texto; hay al menos 8 torres (hoy 20).
+   ninguna pieza, neumático, grada, torre de iluminación ni instalación (boxes, vallas,
+   comisarios, aparcamiento: `instalacionCabe`) pisa la pista, el marcador ni las bandas
+   de texto; hay al menos 8 torres (hoy 20) y, en cada oficial menos en el juguete, unos
+   boxes, un aparcamiento, algún comisario y alguna valla.
 3b. **Los coches** (`COCHES`): cada uno gasta 0 de presupuesto (`PESO_CARACTER`) y mide
    25-37 px, y el clásico es el de siempre (×1, 31 px). En cada oficial, con cada modelo:
    el prudente no se sale y da la vuelta a ±3 % del clásico; a fondo se sale ≥ 1 vez por
@@ -229,7 +231,8 @@ nucleo/cuadricula.js   el constructor, en enteros: el trazado (meta + un paso po
 nucleo/trazo.js        lo que el dedo dibuja: pisar(), cerrar, cambiarVariante()
 nucleo/validar.js      validarCircuito(): la geometría del arnés, para el juego
 nucleo/decorado.js     DÓNDE va cada pieza del decorado: PRNG propio, cabe(),
-                       barreras de neumáticos. No dibuja
+                       barreras de neumáticos, torres y las instalaciones
+                       (boxes, vallas, comisarios, aparcamiento). No dibuja
 nucleo/lienzo.js       `ctx` (enlace vivo), primitivas y capas fuera de pantalla
 
 circuitos/indice.js    CIRCUITOS: la lista, en el orden de la portada (tecla C)

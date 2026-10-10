@@ -1138,3 +1138,52 @@ app en la consola de Play.
 
 - Los coches, a escala de los de verdad y rehechos con sus vistas cenitales.
   `pnyk.json`: 1.4.1.
+
+## El ambiente de circuito (10/10/2026, rama `30-detalle-escenarios`)
+
+> «Vamos con más detalles en los escenarios.» De cuatro tandas propuestas (el ambiente de
+> circuito, piezas propias de cada escenario, más vida en el suelo, más cosas en la mesa
+> del juguete), la primera.
+
+- **Las instalaciones**, un tipo de decorado nuevo: rectángulos girados con la pista
+  hacia su -y local (`nucleo/decorado.js`), con su propia semilla (los árboles de
+  siempre no se mueven, salvo los que quedaban debajo). En todos los escenarios menos en
+  el juguete, que es una mesa:
+  - **Boxes**: garajes con un toldo de color por equipo, el tejado a paneles y la torre
+    de control al final. Tan cerca de la meta como se pueda, en una recta y primero por
+    fuera; de 180 px a 96, el más largo que quepa. Si en la recta de meta no caben (en
+    todos los oficiales, la grada, el marcador o el borde de la mesa la ocupan), en la
+    recta más cerca.
+  - **Vallas de publicidad**: 46 × 3,5 px, dos o tres anuncios de colores de marca, cada
+    150 px de recta, pegadas al muro.
+  - **Comisarios**: una caseta naranja con su bandera amarilla, por fuera y un poco
+    antes de cada curva que sale de una recta.
+  - **Aparcamiento**: asfalto, plazas pintadas y, en dos de cada tres, uno de los coches
+    del juego (al 0,85, de un color al azar) o una caravana. De 168 × 84 (dos filas) a
+    84 × 48 (una), el más grande que quepa, en un sitio a suertes de una rejilla de 12 px.
+- **Sombra y luz**: las que tienen alto (boxes 9, comisario 6, valla 4) dan la sombra
+  del sol como las gradas (`pintarSombras` barre cualquier rectángulo con su `alto`).
+  El aparcamiento es plano y va en la capa del suelo. De noche, los boxes y el
+  aparcamiento se encienden como las gradas.
+- **`instalacionCabe()`**: dentro de la mesa, fuera de las bandas y del hueco del
+  marcador, a 6 px del muro y sin tocar lo ya puesto. Para lo redondo, cada rectángulo
+  es una cadena de círculos (`circulosDe`). Primero lo barato: si el centro queda más
+  lejos de la pista que media diagonal, ya cabe; si no, punto a punto por el contorno.
+- **Coste**: generar el decorado pasa de ≤ 60 ms a ≤ 120 ms en los oficiales. Las dos
+  claves: buscar el punto del eje por `s` con búsqueda binaria, y medir la distancia a
+  la pista de la rejilla del aparcamiento una sola vez para todos los tamaños (con un
+  bucle por tamaño, 320 ms).
+- **Medido** (La horquilla / El ocho / El nudo / El resbalón): boxes de 150 / 120 / 150
+  / 180 px; vallas 6 / 1 / 7 / 1; comisarios 3 / 1 / 3 / 2; aparcamiento de 84 / 168 /
+  84 / 168 px. Las piezas que caben bajan donde el aparcamiento se come el hueco (la
+  nieve de La horquilla, 41: el mínimo es 40).
+- **Arnés**: en cada escenario, las instalaciones son deterministas, ninguna pisa nada
+  (la misma pregunta, contra neumáticos, torres, gradas, las demás y las piezas que
+  crecen) y en la mesa del juguete no hay; en los oficiales, unos boxes, un
+  aparcamiento, algún comisario y alguna valla. 1188/1188 en verde.
+- Visto de día en El ocho, El nudo y El resbalón, y de noche en El nudo.
+
+## Slot Panic 1.5.0 (10/10/2026)
+
+- El ambiente de circuito: boxes, vallas de publicidad, comisarios y aparcamiento en
+  los escenarios realistas. `pnyk.json`: 1.5.0.

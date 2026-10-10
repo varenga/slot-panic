@@ -23,8 +23,12 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
       cruce divierten o frustran?, ¿el peralte y los baches se leen antes de llegar?
 - [ ] Más circuitos oficiales (hoy cuatro).
 - [ ] Más detalle en los escenarios y los circuitos, en la estética de hoy: la mezcla de
-      slot y maqueta realista (la de juguete se probó y se descartó, `BITACORA.md`). Qué
-      detalles, por decidir.
+      slot y maqueta realista. La estética de juguete no sustituyó a esa mezcla, pero
+      quedó como quinto escenario, *juguete* (1.4.0, `BITACORA.md`). Tras el ambiente de
+      circuito, candidatos para la siguiente tanda: piezas propias de cada escenario
+      (flores y un estanque, balas de paja, matojos y huesos, muñecos de nieve), más vida
+      en el suelo (caminos, roderas, ondas de arena, huellas) y más cosas en la mesa del
+      juguete.
 - [ ] Playtest de los récords: ¿el fantasma ayuda o estorba (hoy al 0,3)?, ¿se entiende
       firmar?, ¿el mínimo de vuelta del servidor (el 80 % del mejor piloto automático)
       deja pasar a los buenos?

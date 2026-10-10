@@ -26,7 +26,7 @@ import {
 } from './nucleo/slot.js';
 import { CATALOGOS } from './i18n.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
-import { azar, cabe, distanciaAPista, generarDecorado, torreCabe } from './nucleo/decorado.js';
+import { azar, cabe, circulosDe, distanciaAPista, generarDecorado, instalacionCabe, torreCabe } from './nucleo/decorado.js';
 import { validarCircuito } from './nucleo/validar.js';
 import { aCodigo, aPiezas, COLUMNAS, deCodigo, FILAS, validarTrazado, VARIANTES } from './nucleo/cuadricula.js';
 import { construirDePiezas } from './nucleo/piezas.js';
@@ -112,7 +112,28 @@ function seccionCircuito(circuito, oficial, { decorado: conDecorado = true } = {
       }
       comprobar(peor > 6, `${nombre}: una grada queda a ${peor.toFixed(0)} px de la pista`);
     }
-    console.log(`  ${nombre.padEnd(9)} ${decorado.piezas.length} piezas, ${decorado.neumaticos.length} neumáticos, ${decorado.gradas.length} gradas, ${decorado.torres.length} torres`);
+    // Las instalaciones (boxes, vallas, comisarios, aparcamiento): la misma
+    // pregunta que al colocarlas, contra todo lo demás; y nada crece encima.
+    const { instalaciones } = decorado;
+    comprobar(JSON.stringify(instalaciones) === JSON.stringify(otra.instalaciones), `${nombre}: las instalaciones cambian entre dos generaciones`);
+    const redondo = [
+      ...decorado.neumaticos,
+      ...decorado.torres,
+      ...decorado.gradas.map((g) => ({ x: g.x, y: g.y, r: Math.hypot(g.largo, g.fondo) / 2 }))
+    ];
+    const instalacionesMalas = instalaciones.filter((r, i) =>
+      !instalacionCabe(circuito, r, [...redondo, ...instalaciones.filter((_, j) => j !== i).flatMap(circulosDe)]) ||
+      decorado.piezas.some((p) => circulosDe(r).some((c) => Math.hypot(p.x - c.x, p.y - c.y) < p.r + c.r)));
+    comprobar(instalacionesMalas.length === 0, `${nombre}: ${instalacionesMalas.length} instalaciones pisan la pista, el marcador o algo del decorado`);
+    const cuantas = (tipo) => instalaciones.filter((r) => r.tipo === tipo).length;
+    if (decorado.escenario.juguete) comprobar(instalaciones.length === 0, `${nombre}: la mesa del juguete tiene instalaciones de circuito`);
+    else {
+      calibrar(cuantas('boxes') === 1, `${nombre}: no caben los boxes`);
+      calibrar(cuantas('aparcamiento') === 1, `${nombre}: no cabe el aparcamiento`);
+      calibrar(cuantas('comisario') >= 1 && cuantas('valla') >= 1, `${nombre}: ni un comisario o ni una valla`);
+    }
+    console.log(`  ${nombre.padEnd(9)} ${decorado.piezas.length} piezas, ${decorado.neumaticos.length} neumáticos, ${decorado.gradas.length} gradas, ${decorado.torres.length} torres, ` +
+      `${cuantas('boxes')} boxes, ${cuantas('valla')} vallas, ${cuantas('comisario')} comisarios, ${cuantas('aparcamiento')} aparcamiento`);
   }
 }
 

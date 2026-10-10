@@ -199,7 +199,9 @@ function hornearBase(circuito, decorado) {
     for (const t of torres) pintarMancha(t);
     for (const t of torres) estampar(foco, t.x, t.y, 16);
     ctx.globalAlpha = 0.75;
-    for (const g of decorado.gradas) {
+    // Las gradas, los boxes y el aparcamiento, encendidos.
+    const encendidos = [...decorado.gradas, ...decorado.instalaciones.filter((r) => r.tipo === 'boxes' || r.tipo === 'aparcamiento')];
+    for (const g of encendidos) {
       ctx.save();
       ctx.translate(g.x, g.y);
       ctx.rotate(g.angulo);
