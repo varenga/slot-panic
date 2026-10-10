@@ -1288,3 +1288,9 @@ app en la consola de Play.
   desfases y en el desvío en 7; la mejor vuelta grabada, 8,94 s (el mínimo del
   servidor es su 78 %).
 - Arnés: 1709/1709 en verde.
+
+## Slot Panic 1.7.0 (10/10/2026)
+
+- El quinto oficial, *La bañera*, con una pieza nueva: el desvío (la chicane de
+  Goodwood del juguete). El campeonato pasa a cinco carreras. `servidor/records.php`
+  admite el circuito; la base no cambia. `pnyk.json`: 1.7.0.
