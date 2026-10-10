@@ -1182,3 +1182,8 @@ app en la consola de Play.
   crecen) y en la mesa del juguete no hay; en los oficiales, unos boxes, un
   aparcamiento, algún comisario y alguna valla. 1188/1188 en verde.
 - Visto de día en El ocho, El nudo y El resbalón, y de noche en El nudo.
+
+## Slot Panic 1.5.0 (10/10/2026)
+
+- El ambiente de circuito: boxes, vallas de publicidad, comisarios y aparcamiento en
+  los escenarios realistas. `pnyk.json`: 1.5.0.
