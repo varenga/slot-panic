@@ -1233,3 +1233,64 @@ app en la consola de Play.
 
 - Seis coches más: ladrillo, ranchera, rana, cuatro latas, mínimo y burbuja (trece en
   total). `servidor/records.php` los admite; la base no cambia. `pnyk.json`: 1.6.0.
+
+## La bañera y el desvío (10/10/2026, rama `32-quinto-circuito`)
+
+> «La recta de salida la prefiero limpia, si no se chocan casi siempre; me gustaría
+> meter en algún punto una chicane con más decorado», con la chicane de Goodwood de
+> `_desarrollo/chicanes-varias.webp` y `chicane-grande-2.webp`.
+
+- **El quinto oficial, *La bañera*** (`circuitos/banera.js`, clave `banera`): un
+  rectángulo con un valle por debajo, el primero en el sentido de las agujas del reloj.
+  La recta de meta más larga de todos (750 px), limpia; peraltada r55, bajada r60, la
+  recta de abajo, el valle (r60 a izquierdas, el desvío y la subida), otra peraltada
+  r60 y la de derrape r95 de vuelta a la meta. 2661 px de eje. La X de la recta de
+  meta se propuso y se quitó: a la par al salir chocaban casi siempre (va abajo; ver
+  el final).
+- **El desvío**, pieza nueva (`{ tipo: 'desvio', largo, entrada, lado }`): la placa
+  sigue recta y son los carriles los que se juntan (como en la estrecha), se van
+  juntos `DESVIO` (14 px) a un lado con un coseno en un tercio del largo, se quedan y
+  vuelven. El carril ya no es solo un factor: cada punto del eje lleva `centro`, y
+  `desplazamiento(punto, propio) = centro + propio · carril` es lo que usan
+  `lateralEn`, `trazadoCarril` y `factorCarril`. La guía nota el quiebro: en el
+  desvío, `radioAgarre` usa el radio de la curvatura del carril (`radioDesvio`,
+  1 / |c''|; con 160 px de largo, por debajo de `RADIO_GUIA`), y la cola sale hacia
+  `giroDesvio`. Para el arnés cuenta como estrecha (un encuentro) y como lo que limita
+  (curvas a tope).
+- **Su decorado**, en `pintarDesvios` (`dibujo.js`), dentro de la pista y sin tocar
+  los carriles: una valla blanca con postes a los dos lados, conos naranjas donde los
+  carriles se juntan y una fila de balas de paja en el sitio que dejan libre.
+- **Lo que costó calibrarlo**: las curvas grandes no castigan ir a fondo (el derrape
+  frena el coche hasta que agarra: un óvalo con una de 190 se pasaba a tope), así que
+  todas son cerradas. Y sin X el carril de fuera de las curvas a derechas es siempre
+  el mismo: a fondo, por fuera, solo se salía en la primera peraltada (la mano lo deja
+  parado y ya no llega lanzado a la siguiente). La recta de abajo va **antes** del
+  valle: entra lanzado en la única curva a izquierdas, donde ese carril es el de
+  dentro. Un humano que reacciona 0,25 s tarde se salía por dentro en la primera de la
+  izquierda tras la recta (r60 llana): peraltada, ya no; la de derrape, a la izquierda,
+  aguanta entrar pasado.
+- Medido: prudente 10,07 s por vuelta, el fino le gana un 12 %, a fondo pierde un 46 %
+  (10 y 15 salidas en cinco vueltas), 0 curvas a tope, el humano tardío 0 salidas,
+  carriles a 2,8 %, CPU 1,95 / 1,05 / 0,56 s; en el desvío chocan en 4 de 21 desfases.
+  Con los trece coches, a fondo pierde del 43 al 68 %; el más rápido ahí, el
+  monovolumen. `servidor/records.php`: mínimo 7000 ms (el 76 % de la mejor vuelta
+  grabada), meta en (310, 110).
+- **Tras verlo jugando**: «las balas de paja tienen que seguir la forma del desvío» y
+  «un cambio de carril en la recta después de la segunda curva». Las balas siguen a
+  los carriles, a `ANCHO_COCHE / 2 + 5` px de cada uno y giradas como ellos, por donde
+  caben en la placa: a los dos lados mientras se juntan y por el libre en el quiebro,
+  y dibujan la S; los conos, solo en las dos bocas. La X va en el centro de la recta
+  de abajo (80 + 180 + 80): con una sola, cada vuelta se corre por un carril, y los
+  carriles se igualan (de 2,8 % a 0,3 %). Lo de la recta antes del valle deja de
+  hacer falta para el carril de fuera, pero se queda: con la X, la entrada al valle
+  sigue siendo el sitio de salirse a fondo. Medido: prudente 9,82 s, a fondo pierde
+  un 52 % (12-13 salidas), del 53 al 73 % con los trece; chocan en la X en 5 de 21
+  desfases y en el desvío en 7; la mejor vuelta grabada, 8,94 s (el mínimo del
+  servidor es su 78 %).
+- Arnés: 1709/1709 en verde.
+
+## Slot Panic 1.7.0 (10/10/2026)
+
+- El quinto oficial, *La bañera*, con una pieza nueva: el desvío (la chicane de
+  Goodwood del juguete). El campeonato pasa a cinco carreras. `servidor/records.php`
+  admite el circuito; la base no cambia. `pnyk.json`: 1.7.0.

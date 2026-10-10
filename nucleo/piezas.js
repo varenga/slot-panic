@@ -26,6 +26,14 @@
  *                                            con los carriles juntos: una recta
  *                                            de `entrada` que los acerca, la
  *                                            curva y otra igual que los separa
+ *   { tipo: 'desvio', largo, entrada, lado }   la chicane de Goodwood: una recta
+ *                                            de `entrada` que junta los carriles,
+ *                                            `largo` en que se van juntos DESVIO
+ *                                            px hacia `lado` (1, a la derecha;
+ *                                            -1, a la izquierda) y vuelven, y
+ *                                            otra de `entrada` que los separa.
+ *                                            La pista sigue recta: se mueven los
+ *                                            carriles
  *
  * Por dentro, una recta o una curva puede llevar `estrecha: [desde, hasta]`:
  * el factor del carril al empezar y al acabar (de 1, lo normal, a ESTRECHA).
@@ -37,11 +45,12 @@
  * circuito de juguete que no cierra no se puede montar.
  */
 
-import { ESTRECHA, PASO_EJE } from '../config.js';
+import { DESVIO, ESTRECHA, PASO_EJE } from '../config.js';
 import { completarCircuito } from './circuito.js';
 
 const CIERRE = 0.5;                      // px de descuadre que se admiten al cerrar
 const CIERRE_ANGULO = 0.1 * Math.PI / 180;
+const QUIEBRO = 1 / 3;                   // fracción del desvío en que se van de lado, y otra en que vuelven
 
 /** Las piezas compuestas, en piezas simples. */
 function desplegar(piezas) {
@@ -67,6 +76,14 @@ function desplegar(piezas) {
         { tipo: 'recta', largo: entrada, efecto: 'estrecha', estrecha: [ESTRECHA, 1] }
       ];
     }
+    if (pieza.tipo === 'desvio') {
+      const { largo, entrada, lado } = pieza;
+      return [
+        { tipo: 'recta', largo: entrada, efecto: 'estrecha', estrecha: [1, ESTRECHA], enDesvio: true },
+        { tipo: 'recta', largo, efecto: 'desvio', estrecha: [ESTRECHA, ESTRECHA], desvio: lado * DESVIO, enDesvio: true },
+        { tipo: 'recta', largo: entrada, efecto: 'estrecha', estrecha: [ESTRECHA, 1], enDesvio: true }
+      ];
+    }
     return [pieza];
   });
 }
@@ -81,6 +98,43 @@ function factorEn(pieza, carril, t) {
   if (!pieza.estrecha) return carril;
   const [desde, hasta] = pieza.estrecha;
   return carril * (desde + (hasta - desde) * (1 - Math.cos(Math.PI * t)) / 2);
+}
+
+/*
+ * Lo que se van de lado los carriles juntos en la fracción `t` de un desvío, y
+ * la curvatura de ese quiebro (1/px; positiva, hacia la derecha): se van con
+ * un coseno, se quedan y vuelven con otro.
+ */
+function quiebroEn(pieza, largo, t) {
+  if (!pieza.desvio) return { centro: 0, curvatura: 0 };
+  const d = pieza.desvio, tramo = QUIEBRO * largo;
+  const k = d * Math.PI * Math.PI / (2 * tramo * tramo);
+  if (t < QUIEBRO) {
+    const u = Math.PI * t / QUIEBRO;
+    return { centro: d * (1 - Math.cos(u)) / 2, curvatura: k * Math.cos(u) };
+  }
+  if (t > 1 - QUIEBRO) {
+    const u = Math.PI * (t - 1 + QUIEBRO) / QUIEBRO;
+    return { centro: d * (1 + Math.cos(u)) / 2, curvatura: -k * Math.cos(u) };
+  }
+  return { centro: d, curvatura: 0 };
+}
+
+/*
+ * Lo que el desvío añade a un punto: que es del desvío (el dibujo le pone su
+ * valla y sus balas de paja), el centro de los carriles y el radio y el lado
+ * del quiebro.
+ */
+function desvioEn(pieza, largo, t) {
+  if (!pieza.enDesvio) return {};
+  if (!pieza.desvio) return { enDesvio: true };
+  const { centro, curvatura } = quiebroEn(pieza, largo, t);
+  return {
+    enDesvio: true,
+    centro,
+    radioDesvio: curvatura ? 1 / Math.abs(curvatura) : Infinity,
+    giroDesvio: Math.sign(curvatura)
+  };
 }
 
 export function construirDePiezas(datos) {
@@ -118,7 +172,8 @@ export function construirDePiezas(datos) {
         tipo: pieza.tipo,
         efecto: pieza.efecto || null,
         junta: k === 0,
-        carril: factorEn(pieza, carril, t)
+        carril: factorEn(pieza, carril, t),
+        ...desvioEn(pieza, largo, t)
       });
     }
     if (curva) {

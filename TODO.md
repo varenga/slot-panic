@@ -21,7 +21,9 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 
 - [ ] Playtest de las piezas: ¿se nota la curva de derrape?, ¿los choques en la X y el
       cruce divierten o frustran?, ¿el peralte y los baches se leen antes de llegar?
-- [ ] Más circuitos oficiales (hoy cuatro).
+- [ ] Más circuitos oficiales (hoy cinco).
+- [ ] Playtest de *La bañera*: ¿el desvío se lee antes de llegar?, ¿las balas de paja
+      se ven pequeñas?, ¿14 px de quiebro (`DESVIO`) se notan?
 - [ ] Más detalle en los escenarios y los circuitos, en la estética de hoy: la mezcla de
       slot y maqueta realista. La estética de juguete no sustituyó a esa mezcla, pero
       quedó como quinto escenario, *juguete* (1.4.0, `BITACORA.md`). Tras el ambiente de

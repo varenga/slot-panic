@@ -56,6 +56,7 @@ export function completarCircuito(eje, datos) {
     p.cos = Math.cos(p.angulo);
     // Lo que añaden las piezas; un circuito de vértices no tiene nada de eso.
     p.carril ??= 1;
+    p.centro ??= 0;
     p.efecto ??= null;
     s += p.largo;
   });

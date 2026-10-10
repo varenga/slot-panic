@@ -65,9 +65,18 @@ export function carrilEn(circuito, lateral, s) {
   return lateral * signoVuelta(circuito, s) < 0 ? 0 : 1;
 }
 
+/*
+ * El desplazamiento de un carril en un punto del eje: `propio`, el lateral del
+ * carril (CARRILES), por el factor de la pieza, más lo que el desvío lleva los
+ * dos carriles de lado.
+ */
+function desplazamiento(punto, propio) {
+  return punto.centro + propio * punto.carril;
+}
+
 /** El desplazamiento del carril en la coordenada `s` de un coche que salió por `lateral`. */
 export function lateralEn(circuito, lateral, s) {
-  return lateral * signoVuelta(circuito, s) * circuito.eje[buscar(circuito, s).indice].carril;
+  return desplazamiento(circuito.eje[buscar(circuito, s).indice], lateral * signoVuelta(circuito, s));
 }
 
 /** Radio del carril en un punto del eje, con su desplazamiento ahí: por dentro de la curva, más cerrado. */
@@ -79,12 +88,12 @@ const RADIO_BACHES = VELOCIDAD_BACHES * VELOCIDAD_BACHES / AGARRE_SLOT;
 
 /*
  * El radio con el que se mide el agarre: la guía sujeta más en las cerradas,
- * el peralte agarra más y los baches agarran como una curva. Infinity: ahí no
- * hay límite.
+ * el peralte agarra más, los baches agarran como una curva y en el desvío
+ * cuenta lo que se quiebra el carril. Infinity: ahí no hay límite.
  */
 export function radioAgarre(punto, lateral) {
   if (punto.efecto === 'baches') return RADIO_BACHES;
-  const radio = radioCarril(punto, lateral);
+  const radio = punto.efecto === 'desvio' ? punto.radioDesvio : radioCarril(punto, lateral);
   if (radio === Infinity) return Infinity;
   return Math.max(RADIO_GUIA, radio) * (punto.efecto === 'peralte' ? AGARRE_PERALTE : 1);
 }
@@ -105,7 +114,7 @@ export function trazadoCarril(circuito, lateral) {
     porCarril.set(lateral, eje.map((p, i) => {
       const anterior = eje[(i - 1 + n) % n];
       const medio = anterior.angulo + normalizarAngulo(p.angulo - anterior.angulo) / 2;
-      const d = lateral * p.carril / Math.cos(normalizarAngulo(p.angulo - anterior.angulo) / 2);
+      const d = desplazamiento(p, lateral) / Math.cos(normalizarAngulo(p.angulo - anterior.angulo) / 2);
       return { x: p.x - Math.sin(medio) * d, y: p.y + Math.cos(medio) * d };
     }));
   }
@@ -114,20 +123,20 @@ export function trazadoCarril(circuito, lateral) {
 
 /** Lo que mide la primera vuelta por el carril (con un número impar de X, la segunda es la del otro). */
 export function largoCarril(circuito, lateral) {
-  return circuito.eje.reduce((total, p, i) => total + p.largo * factorCarril(circuito, i, lateral * p.carril), 0);
+  return circuito.eje.reduce((total, p, i) => total + p.largo * factorCarril(circuito, i, lateral), 0);
 }
 
 /*
  * px de carril por px de eje: menos de 1 por dentro de las curvas, y algo más
- * de 1 donde el carril se mueve de lado (la X, la estrecha), que lo recorre
- * en diagonal. `lateral` es el desplazamiento en ese punto.
+ * de 1 donde el carril se mueve de lado (la X, la estrecha, el desvío), que lo
+ * recorre en diagonal. `propio` es el lateral del carril (CARRILES).
  */
-function factorCarril(circuito, i, lateral) {
+function factorCarril(circuito, i, propio) {
   const p = circuito.eje[i];
-  if (p.radio !== Infinity) return radioCarril(p, lateral) / p.radio;
-  if (p.tipo !== 'x' && p.efecto !== 'estrecha') return 1;
+  if (p.radio !== Infinity) return radioCarril(p, desplazamiento(p, propio)) / p.radio;
+  if (p.tipo !== 'x' && p.efecto !== 'estrecha' && p.efecto !== 'desvio') return 1;
   const siguiente = circuito.eje[(i + 1) % circuito.eje.length];
-  const cambio = Math.abs(lateral) * Math.abs(siguiente.carril - p.carril);
+  const cambio = Math.abs(desplazamiento(siguiente, propio) - desplazamiento(p, propio));
   return Math.hypot(1, cambio / p.largo);
 }
 
@@ -354,7 +363,7 @@ function pasoSlot(slot, circuito, acelerar, dt) {
     slot.derrape = Math.max(0, slot.derrape - RECUPERA_DERRAPE * dt);
   }
   // Avanza por el carril: por dentro de una curva, más `s` por cada px.
-  const ds = slot.v * dt / factorCarril(circuito, indice, lateral);
+  const ds = slot.v * dt / factorCarril(circuito, indice, slot.lateral * signoVuelta(circuito, slot.s));
   slot.s += ds;
   slot.progreso += ds;
 
@@ -362,7 +371,7 @@ function pasoSlot(slot, circuito, acelerar, dt) {
   // aviso de que viene. En las rectas vuelve a su sitio.
   const cerca = Math.max(0, Math.min(1, (slot.exigencia - COLETEO_DESDE) / (1 - COLETEO_DESDE)));
   // En los baches la cola va de un lado a otro.
-  const hacia = p.curva || (p.efecto === 'baches' ? (Math.floor(slot.s / 40) % 2 ? 1 : -1) : Math.sign(slot.coleteo));
+  const hacia = p.curva || p.giroDesvio || (p.efecto === 'baches' ? (Math.floor(slot.s / 40) % 2 ? 1 : -1) : Math.sign(slot.coleteo));
   const objetivo = (cerca * COLETEO_MAXIMO + slot.derrape * COLETEO_DERRAPE) * (ancha ? ancha.coleteo : 1) * hacia;
   slot.coleteo += (objetivo - slot.coleteo) * Math.min(1, 10 * dt);
   colocarEnCarril(slot, circuito);

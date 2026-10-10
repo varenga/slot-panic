@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Publicado (v1.0.0): carreras de slot en cuatro circuitos (*La horquilla*, y *El
-ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles que se cambian en cada
+Publicado (v1.0.0): carreras de slot en cinco circuitos (*La horquilla*, y *El
+ocho*, *El nudo*, *El resbalón* y *La bañera*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
-dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
+dosifica a toques), derrape antes de salirse, choques en las X, los cruces, las estrechas y el desvío, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cuatro seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cinco seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
@@ -141,7 +141,7 @@ demás, en `BITACORA.md`). Mide y comprueba:
    el prudente no se sale y da la vuelta a ±3 % del clásico; a fondo se sale ≥ 1 vez por
    vuelta y pierde > 20 %; ninguna curva se pasa a su punta; arrancando en una curva no
    se sale, ni un humano que reacciona 0,2 s tarde; los niveles de la CPU dejan sus
-   márgenes, en orden. Ninguno es el más rápido en los cuatro, y los más cortos y los
+   márgenes, en orden. Ninguno es el más rápido en todos, y los más cortos y los
    más largos chocan en cada encuentro (y en paralelo, nunca).
 3. **Slot**: los carriles van por el asfalto y dentro del lienzo, y sus tramos lejanos a
    > 60 px. El piloto prudente (×1, no pasa del agarre) no se sale nunca y da la vuelta
@@ -241,6 +241,8 @@ circuitos/ocho.js      «El ocho», de piezas: cruce, peralte, chicane, derrape
 circuitos/nudo.js      «El nudo», de piezas: X, baches, horquilla, derrape, chicane
 circuitos/resbalon.js  «El resbalón», de piezas: las estrechas (corta y larga), la
                        curva deslizante y una chicane
+circuitos/banera.js    «La bañera», de piezas: la recta más larga, dos peraltadas,
+                       una X, el valle con el desvío y una de derrape
 dibujo.js              el mundo: suelo, decorado y pista (en una capa que se pinta
                        una vez), carriles y coches
 coches.js              la forma de cada modelo, vista desde arriba: silueta, ruedas
@@ -314,7 +316,8 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   declara: se encuentra.
 - **El carril lo da la pieza**: el desplazamiento real es `lateralEn(circuito, lateral,
   s)`, nunca `slot.lateral` a secas (en la X cambia de lado, y con un número impar de
-  X, cada vuelta; en la estrecha se acerca al eje, a `ESTRECHA`). Lo que agarra cada
+  X, cada vuelta; en la estrecha se acerca al eje, a `ESTRECHA`; en el desvío, además,
+  los dos se van de lado: `centro`). Lo que agarra cada
   punto, `radioAgarre(punto, lateral)`.
 - **Chocar es empezar a tocarse acercándose**: así la mano puede dejar dos coches uno
   encima del otro sin que vuelvan a chocar en bucle. El paso en que la mano posa un
