@@ -1228,3 +1228,8 @@ app en la consola de Play.
 - Arnés: 1464/1464 en verde, ~60 s (antes ~35: la 3b corre los trece en cada oficial).
   Vistos en `_desarrollo/escala.html` (los trece en fila) y en el panel COTXE: QUATRE
   LLAUNES cabe entre las flechas.
+
+## Slot Panic 1.6.0 (10/10/2026)
+
+- Seis coches más: ladrillo, ranchera, rana, cuatro latas, mínimo y burbuja (trece en
+  total). `servidor/records.php` los admite; la base no cambia. `pnyk.json`: 1.6.0.
