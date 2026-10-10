@@ -32,7 +32,8 @@ const RECORDS_CIRCUITOS = [
  * cuál se hizo. Las que llegan sin coche son de antes de que los coches
  * tuvieran carácter (o de una caché vieja): todas con la física del clásico.
  */
-const RECORDS_COCHES = ['clasico', 'escalon', 'patito', 'tiburon', 'escarabajo', 'bambino', 'monovolumen'];
+const RECORDS_COCHES = ['clasico', 'escalon', 'patito', 'tiburon', 'escarabajo', 'bambino', 'monovolumen',
+  'ladrillo', 'ranchera', 'rana', 'cuatrolatas', 'minimo', 'burbuja'];
 const RECORDS_COCHE_ANTIGUO = 'clasico';
 const RECORDS_MAXIMO = 120000;            // ms: más que esto no es una vuelta
 const RECORDS_PASO = 1 / 30;              // s entre muestras (PASO_FANTASMA)

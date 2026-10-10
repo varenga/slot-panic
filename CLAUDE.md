@@ -9,7 +9,7 @@ ocho*, *El nudo* y *El resbalón*, de piezas), dos coches enganchados a carriles
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces y las estrechas, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con siete coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cuatro seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cuatro seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
@@ -116,7 +116,7 @@ node arnes.mjs
 ```
 
 Importa los módulos reales del núcleo (no tocan el DOM) y corre carreras enteras con
-pilotos automáticos en unos segundos (hoy, ~35 s). Si las piezas de un circuito no
+pilotos automáticos en unos segundos (hoy, ~60 s). Si las piezas de un circuito no
 cierran, ni arranca: lo dice `construirDePiezas` al importarlo. Sale con código 1 si algo falla. No admite
 argumentos: siempre corre todas las secciones enteras. Es `.mjs` a propósito: el
 `.htaccess` deniega `*.mjs` (y `*.md`, `pnyk.json`), así que no se publica; por lo

@@ -1187,3 +1187,44 @@ app en la consola de Play.
 
 - El ambiente de circuito: boxes, vallas de publicidad, comisarios y aparcamiento en
   los escenarios realistas. `pnyk.json`: 1.5.0.
+
+## Seis coches más (10/10/2026, rama `31-coches-nuevos`)
+
+> «Vamos a añadir nuevos coches», con las cenitales del familiar sueco de 1993 y el
+> de 1996 (el del turbo), el deportivo del motor detrás, el cuatro latas, el mini y
+> el escarabajo nuevo en `_desarrollo/cenital*`.
+
+- **Trece coches.** Los seis nuevos, con apodo (nunca la marca) en cada idioma:
+  **ladrillo** (BRICK, TOTXO, MATTONE…), **ranchera** (ESTATE, BREAK, GIARDINETTA…),
+  **rana** (FROG, GRANOTA, GRENOUILLE…), **cuatro latas** (QUATRELLE, QUATRE
+  LLAUNES…), **mínimo** (TINY, MINUS…) y **burbuja** (BUBBLE, BULLE…). Los id:
+  `ladrillo`, `ranchera`, `rana`, `cuatrolatas`, `minimo` y `burbuja`; van también en
+  `RECORDS_COCHES` (`servidor/records.php`), y la columna `coche` de la base ya admite
+  16 caracteres: no hay que tocar la base.
+- **El largo**, con la fórmula de siempre (37 · (mm / 4874)^0,79): ladrillo 36 px
+  (4790 mm), ranchera 36 (4709), rana 33 (4245), cuatro latas 30 (3668), mínimo 26
+  (3054) y burbuja 32 (4081). El ancho de dibujo, 11 · ancho / largo · 1,15: de ±4,51
+  (ladrillo) a ±5,84 (mínimo).
+- **El rasgo de cada uno**: el ladrillo, la caja de esquinas vivas con los parachoques
+  negros de punta a punta y los faros cuadrados; la ranchera, el morro en cuña, los
+  nervios del capó, el alerón y los pilotos que suben por las esquinas; la rana, los
+  faros redondos encima de las aletas, la cabina estrecha, la luna tumbada hasta la
+  rejilla del motor y las caderas anchas; el cuatro latas, los parachoques de tubo
+  que doblan por las esquinas y el capó acanalado; el mínimo, el techo blanco
+  flotando sobre los cristales y una rueda en cada esquina; la burbuja, tres arcos: el
+  parabrisas y la luna curvos alrededor de la cúpula.
+- **El carácter** (acelera / agarre / punta, presupuesto 0): ladrillo 0,8 / 1,01 /
+  1,06; ranchera 0,92 / 0,97 / 1,075; rana 1,24 / 0,94 / 1; cuatro latas 1,1 / 0,975 /
+  1; mínimo 0,83 / 1,02 / 1,035; burbuja 1,06 / 0,985 / 1.
+- **Mucho agarre pide punta**: con punta² < agarre el coche pasa a tope curvas que el
+  de siempre no. El primer reparto (ladrillo 1,04 de agarre con punta 1; cuatro latas
+  1,03 / 0,955; mínimo 1,05 / 0,92) se pasaba a tope 8 curvas en los cuatro
+  oficiales; el mínimo con 1,025 / 1,025, justo en el filo, aún pasaba el peralte de
+  El ocho. Apuntado en el comentario de `COCHES`.
+- Medido: el prudente, de −0,9 a +1,4 % del clásico; la ranchera es la más rápida con
+  el mejor piloto automático en La horquilla, El ocho y El nudo (por 0,01-0,02 s por
+  vuelta: con 1,08 de punta también, y se recortó a 1,075), y el escarabajo en El
+  resbalón. El bambino sigue el más lento en los cuatro.
+- Arnés: 1464/1464 en verde, ~60 s (antes ~35: la 3b corre los trece en cada oficial).
+  Vistos en `_desarrollo/escala.html` (los trece en fila) y en el panel COTXE: QUATRE
+  LLAUNES cabe entre las flechas.
