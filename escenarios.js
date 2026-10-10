@@ -10,6 +10,11 @@
  * el color (sin el alfa final) de lo que levanta el coche al derrapar o al
  * pisar la grava. `grava` y `gravaMotas`, el de la escapatoria: tiene que
  * leerse distinta del suelo y del asfalto en todos.
+ *
+ * `tope` limita cuántas puede haber de un tipo (un estanque es una cosa; diez,
+ * una ciénaga). `marcas` es la vida del suelo, debajo de todo lo demás: los
+ * caminos que pisa el público, las roderas de los tractores, las ondas que
+ * deja el viento en la arena o las huellas en la nieve.
  */
 
 export const ORDEN_ESCENARIOS = ['verde', 'tierra', 'desierto', 'nieve', 'juguete'];
@@ -22,8 +27,10 @@ export const ESCENARIOS = {
     polvo: 'rgba(205, 210, 215, ',
     grava: '#a89d84',
     gravaMotas: ['#958a72', '#bdb299', '#8a7f68'],
-    piezas: { arbol: 0.6, arbusto: 0.3, roca: 0.1 },
-    color: { arbol: '#24502b', arbolLuz: '#2f6436', arbusto: '#2b5c31', roca: '#8b9088', rocaLuz: '#a4a8a0' }
+    piezas: { arbol: 0.5, arbusto: 0.25, flores: 0.14, roca: 0.06, estanque: 0.05 },
+    tope: { estanque: 2 },
+    marcas: { tipo: 'caminos', color: 'rgba(122, 112, 74, 0.55)' },
+    color: { arbol: '#24502b', arbolLuz: '#2f6436', arbusto: '#2b5c31', roca: '#8b9088', rocaLuz: '#a4a8a0', hojas: '#2d5f33' }
   },
   tierra: {
     suelo: '#6d5336',
@@ -32,7 +39,8 @@ export const ESCENARIOS = {
     polvo: 'rgba(160, 128, 90, ',
     grava: '#a08a68',
     gravaMotas: ['#8c7656', '#b49e7b', '#7f6a4c'],
-    piezas: { arbusto: 0.45, arbol: 0.2, roca: 0.35 },
+    piezas: { arbusto: 0.4, arbol: 0.18, roca: 0.27, paja: 0.15 },
+    marcas: { tipo: 'roderas', color: 'rgba(70, 52, 32, 0.55)' },
     color: { arbol: '#3f5a2a', arbolLuz: '#4d6b33', arbusto: '#556b33', roca: '#8a7b66', rocaLuz: '#a3927a' }
   },
   desierto: {
@@ -42,7 +50,8 @@ export const ESCENARIOS = {
     polvo: 'rgba(222, 198, 150, ',
     grava: '#a68a62',
     gravaMotas: ['#927752', '#b99d74', '#8a6f4b'],
-    piezas: { cactus: 0.4, roca: 0.45, arbusto: 0.15 },
+    piezas: { cactus: 0.35, roca: 0.35, arbusto: 0.08, matojo: 0.14, huesos: 0.08 },
+    marcas: { tipo: 'ondas', color: 'rgba(150, 115, 65, 0.35)', luz: 'rgba(235, 212, 165, 0.45)' },
     color: { cactus: '#4e7d44', cactusLuz: '#6a9b5c', arbusto: '#8a8a4e', roca: '#9a8160', rocaLuz: '#b79c78' }
   },
   nieve: {
@@ -52,7 +61,8 @@ export const ESCENARIOS = {
     polvo: 'rgba(250, 252, 255, ',
     grava: '#a9b2bc',
     gravaMotas: ['#96a0ab', '#bec6ce', '#8a95a1'],
-    piezas: { pino: 0.75, roca: 0.25 },
+    piezas: { pino: 0.71, roca: 0.24, muneco: 0.05 },
+    marcas: { tipo: 'huellas', color: 'rgba(118, 142, 170, 0.6)' },
     color: { pino: '#244e3f', pinoLuz: '#2f6150', nieve: '#f4f8fb', roca: '#7b8696', rocaLuz: '#98a2b0' }
   },
   /*
@@ -69,7 +79,7 @@ export const ESCENARIOS = {
     polvo: 'rgba(214, 216, 222, ',
     grava: '#9a9ea7',
     gravaMotas: ['#8e929b', '#a6aab2', '#878b94'],
-    piezas: { taza: 0.14, lata: 0.1, lapiz: 0.16, moneda: 0.16, chapa: 0.12, dado: 0.14, ladrillo: 0.18 },
+    piezas: { taza: 0.12, lata: 0.09, lapiz: 0.14, moneda: 0.13, chapa: 0.1, dado: 0.12, ladrillo: 0.16, canica: 0.06, goma: 0.05, clip: 0.03 },
     intentos: 20000,             // son más grandes que lo que crece: cuesta más que quepan
     cuantas: 45,                 // y con más, la mesa parece un cajón vaciado
     color: {}

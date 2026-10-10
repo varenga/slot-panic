@@ -24,13 +24,9 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] Más circuitos oficiales (hoy cinco).
 - [ ] Playtest de *La bañera*: ¿el desvío se lee antes de llegar?, ¿las balas de paja
       se ven pequeñas?, ¿14 px de quiebro (`DESVIO`) se notan?
-- [ ] Más detalle en los escenarios y los circuitos, en la estética de hoy: la mezcla de
-      slot y maqueta realista. La estética de juguete no sustituyó a esa mezcla, pero
-      quedó como quinto escenario, *juguete* (1.4.0, `BITACORA.md`). Tras el ambiente de
-      circuito, candidatos para la siguiente tanda: piezas propias de cada escenario
-      (flores y un estanque, balas de paja, matojos y huesos, muñecos de nieve), más vida
-      en el suelo (caminos, roderas, ondas de arena, huellas) y más cosas en la mesa del
-      juguete.
+- [ ] Playtest de los escenarios: ¿se leen las piezas nuevas (flores, estanques, pacas,
+      matojos, huesos, muñecos de nieve; canicas, gomas y clips en la mesa) y la vida del
+      suelo, o estorban a la pista?
 - [ ] Playtest de los récords: ¿el fantasma ayuda o estorba (hoy al 0,3)?, ¿se entiende
       firmar?, ¿el mínimo de vuelta del servidor (el 80 % del mejor piloto automático)
       deja pasar a los buenos?
