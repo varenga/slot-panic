@@ -1108,13 +1108,26 @@ app en la consola de Play.
   la caja de 2:1; ahora el tiburón es el más afilado (2,35:1) y el Multiplo el más chato
   (1,86:1). Todos se dibujan en 22 unidades de cola a morro (`mide` desaparece) y llevan
   sus `medidas` en mm. Anchos en píxeles: de 12,8 (bambino) a 17,2 (Multiplo).
-- **Tres rehechos con las cenitales**: el **dos caballos**, con las aletas de delante
+- **Rehechos con las cenitales**: el **dos caballos**, con las aletas de delante
   hasta el morro y los faros encima, el capó acanalado que se estrecha hasta la rejilla
   y la ventanilla de atrás en la lona (en vez del rollo); el **tiburón**, con el morro
   redondo, el parabrisas curvo, el techo claro hasta una luna que se estrecha y la cola
   afilada; el **Multiplo**, con el parabrisas enorme y curvo, los retrovisores a la
-  altura del salpicadero, las ventanillas que abomban y cuatro nervios en el techo. El
-  escarabajo, el bambino y el monovolumen conservan su dibujo, a su nueva proporción.
+  altura del salpicadero, las ventanillas que abomban y cuatro nervios en el techo.
+- **Y los otros tres**, con las cenitales del 500 y del escarabajo y una foto del
+  monovolumen grande (el de 2006; cenital no la hay). El **escarabajo** deja de ser una
+  burbuja con aletas: las cuatro van casi a todo lo ancho (con el borde marcado), la de
+  delante con el faro en la punta; entre ellas, el capó en gota y la tapa del motor en
+  punta, la luna de atrás partida en dos con las rejillas debajo y parachoques de cromo.
+  El **bambino**: esquinas más redondas delante que detrás, la lona en la mitad de
+  delante del techo, la luna de atrás, la tapa del motor con sus lamas y los
+  parachoques. El **monovolumen**: un capó corto, los faros rasgados hacia atrás por los
+  costados y el techo de cristal con su barra y las barras del techo, con chapa
+  alrededor (todo de cristal, en escritorio no se veía de qué color era).
+- **`simetrico()` gira como las demás piezas**: iba al revés que `roundRect()` y
+  `ellipse()`, y donde un polígono se solapaba con otra pieza de la silueta el relleno
+  (regla nonzero) se anulaba y asomaban las ruedas: cuñas oscuras en el escarabajo y,
+  más sutiles, entre el capó y las aletas del dos caballos.
 - **El largo juega**: dos tiburones chocan a 23,9 px (en paralelo van a 30) y dos
   bambinos a 16,1, y aun así chocan en cada X, cruce y estrecha. La vuelta no cambia:
   el largo solo cuenta en los choques, así que los récords siguen valiendo.

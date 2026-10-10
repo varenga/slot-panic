@@ -37,6 +37,7 @@ const CRISTAL = COLOR.cocheCabina;
 const FARO = '#fff3c4';
 const PILOTO = '#7a2a30';
 const LONA = '#2e2a26';
+const CROMO = 'rgba(232, 234, 238, 0.8)';
 const CONTORNO = 'rgba(0, 0, 0, 0.35)';
 
 function rect(x0, x1, y0, y1) {
@@ -60,11 +61,16 @@ function rellenar(color, trazar) {
   ctx.fill();
 }
 
-/** Un polígono simétrico respecto al eje: los puntos de un lado (y ≥ 0), de delante atrás. */
+/**
+ * Un polígono simétrico respecto al eje: los puntos de un lado (y ≥ 0), de
+ * delante atrás. Va en el sentido de las agujas del reloj, como roundRect() y
+ * ellipse(): si no, donde se solapa con otra pieza de la silueta el relleno se
+ * anula y asoman las ruedas.
+ */
 function simetrico(puntos) {
-  ctx.moveTo(puntos[0][0], -puntos[0][1]);
-  for (const [x, y] of puntos.slice(1)) ctx.lineTo(x, -y);
-  for (const [x, y] of puntos.slice().reverse()) ctx.lineTo(x, y);
+  ctx.moveTo(puntos[0][0], puntos[0][1]);
+  for (const [x, y] of puntos.slice(1)) ctx.lineTo(x, y);
+  for (const [x, y] of puntos.slice().reverse()) ctx.lineTo(x, -y);
   ctx.closePath();
 }
 
@@ -214,62 +220,82 @@ export const MODELOS = [
     }
   },
   {
-    // El escarabajo (±4,79): una burbuja con cuatro aletas redondas a los
-    // lados.
+    // El escarabajo (±4,79), con la cenital: las cuatro aletas casi a todo lo
+    // ancho, las de delante con los faros en la punta y las de atrás con los
+    // pilotos. Entre las de delante, el capó en gota, con su lomo; entre las
+    // de atrás, la tapa del motor en punta. El parabrisas, estrecho y curvo;
+    // el techo, un óvalo que se afila hacia atrás, con la luna partida en dos
+    // y las rejillas debajo. Parachoques de cromo en las dos puntas.
     id: 'escarabajo',
     medidas: [4070, 1540],
-    ejes: [6.7, -6.7],
+    ejes: [7.2, -5.8],
     via: 3.7,
     silueta() {
-      elipse(0, 0, L, 3.45);
-      elipse(6.7, -3.1, 3.4, 1.65);
-      elipse(6.7, 3.1, 3.4, 1.65);
-      elipse(-6.7, -3.25, 3.6, 1.55);
-      elipse(-6.7, 3.25, 3.6, 1.55);
+      simetrico([[10.4, 0.6], [9.6, 2.2], [7.5, 3.5], [4.2, 4.5], [-4, 4.5], [-7.5, 3.5], [-9.3, 1.8], [-9.7, 0.5]]);
+      aletas(3.8, L, 2, 4.79, 3.2, 1.2);       // las de delante
+      aletas(-L, -3.8, 2, 4.79, 1.2, 3.2);     // y las de atrás
     },
     detalles(techo) {
-      rayas('rgba(0, 0, 0, 0.22)', 4.9, 10, [0], 0.4);   // el lomo del capó
+      ctx.beginPath();                                   // el borde de las aletas
+      aletas(3.8, L, 2, 4.79, 3.2, 1.2);
+      aletas(-L, -3.8, 2, 4.79, 1.2, 3.2);
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.22)';
+      ctx.lineWidth = 0.35;
+      ctx.stroke();
+      rayas('rgba(0, 0, 0, 0.22)', 4.6, 10, [0], 0.4);   // el lomo del capó
       rellenar(CRISTAL, () => {                          // el parabrisas, curvo
-        ctx.moveTo(4.3, -2.85);
-        ctx.quadraticCurveTo(5, 0, 4.3, 2.85);
-        ctx.lineTo(2.6, 2.95);
-        ctx.quadraticCurveTo(3.2, 0, 2.6, -2.95);
+        ctx.moveTo(3.9, -3.2);
+        ctx.quadraticCurveTo(4.5, 0, 3.9, 3.2);
+        ctx.lineTo(2.9, 3.3);
+        ctx.quadraticCurveTo(3.4, 0, 2.9, -3.3);
         ctx.closePath();
       });
-      rellenar(techo, () => elipse(-1.4, 0, 4.1, 2.75));
-      rellenar(CRISTAL, () => caja(-6.4, -5.3, -1.45, 1.45, 0.6));
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      for (const y of [-0.75, 0, 0.75]) rect(-9.2, -7.9, y - 0.15, y + 0.15);   // la rejilla del motor
-      luces(FARO, 9, 3.35, 0.7, 0.65);
-      luces(PILOTO, -9.4, 3.4, 0.45, 0.55);
+      rellenar(techo, () => elipse(-1.6, 0, 4.6, 3.5));
+      rayas(CRISTAL, -4.6, 2.4, [-4, 4], 0.45);           // las ventanillas
+      luces(CRISTAL, -6.6, 0.9, 0.55, 0.78);              // la luna de atrás, partida
+      rellenar('rgba(0, 0, 0, 0.45)', () => caja(-8.3, -7.7, -1.8, 1.8, 0.2));   // las rejillas del motor
+      ctx.fillStyle = CROMO;
+      rect(10.7, 11, -3.9, 3.9);                           // los parachoques
+      rect(-11, -10.7, -3.9, 3.9);
+      luces(FARO, 9.7, 3.2, 0.7, 0.75);
+      luces(PILOTO, -9.9, 3.3, 0.45);
     }
   },
   {
-    // El Cinquecenti (id `bambino`, ±5,62): el más corto y redondo, con la
-    // lona en el techo y la rejilla del motor detrás.
+    // El Cinquecenti (id `bambino`, ±5,62), con la cenital: el más corto, una
+    // caja de esquinas muy redondas, más delante que detrás. El capó corto, el
+    // parabrisas, la lona en la mitad de delante del techo, la luna de atrás
+    // y, detrás, la tapa del motor con su rejilla de lamas. Los bigotes en el
+    // morro y parachoques de cromo en las dos puntas.
     id: 'bambino',
     medidas: [2970, 1320],
-    ejes: [7, -6.3],
+    ejes: [7.3, -6.3],
     via: 4.9,
     silueta() {
-      caja(-L, L, -5.62, 5.62, 5);
+      caja(-L, L, -5.62, 5.62, [3.4, 4.4, 4.4, 3.4]);
     },
     detalles(techo) {
-      rellenar(CRISTAL, () => simetrico([[4.9, 4], [2, 4.55]]));
-      rellenar(techo, () => caja(-6.4, 2, -4.55, 4.55, 1.6));
-      rellenar(LONA, () => caja(-5.2, 2, -2.8, 2.8, 0.9));
-      rellenar(CRISTAL, () => caja(-7.5, -6.4, -3.6, 3.6, 0.6));
+      rayas('rgba(0, 0, 0, 0.18)', 5.6, 9.8, [0], 0.3);   // el lomo del capó
+      rellenar(CRISTAL, () => simetrico([[5, 3.9], [2.6, 4.6]]));
+      rellenar(techo, () => caja(-6.2, 2.6, -4.6, 4.6, 1.6));
+      rellenar(LONA, () => caja(-2.4, 2.4, -2.9, 2.9, 0.9));
+      rellenar(CRISTAL, () => caja(-7.8, -6.2, -2.75, 2.75, 0.6));
       ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-      for (const x of [-10, -9.1, -8.2]) rect(x - 0.2, x + 0.2, -2.6, 2.6);   // la rejilla del motor
-      rayas('rgba(255, 255, 255, 0.35)', 9.5, 10.5, [-1.4, 1.4], 0.35);       // los bigotes
-      luces(FARO, 9.7, 3.9, 0.85);
-      luces(PILOTO, -10.5, 4, 0.4, 0.75);
+      for (const x of [-8.5, -8.9, -9.3, -9.7]) rect(x - 0.12, x + 0.12, -2.3, 2.3);   // las lamas del motor
+      rayas('rgba(255, 255, 255, 0.35)', 9.3, 10.3, [-1.4, 1.4], 0.35);                // los bigotes
+      ctx.fillStyle = CROMO;
+      rect(10.6, 10.95, -4, 4);                            // los parachoques
+      rect(-10.95, -10.6, -4, 4);
+      luces(FARO, 9.8, 4, 0.75);
+      luces(PILOTO, -10.2, 4.3, 0.4, 0.7);
     }
   },
   {
-    // El monovolumen (±4,85): un solo volumen. Sin capó: el parabrisas
-    // arranca casi en el morro, redondo y corto, con los faros rasgados en las
-    // esquinas. Los retrovisores, las barras del techo y la cola recta.
+    // El monovolumen (±4,85; el grande, el de 2006): un solo volumen. Un capó
+    // muy corto y el parabrisas, enorme, que sigue en un techo de cristal
+    // hasta casi la cola, con una barra de chapa en medio y las barras del
+    // techo a los lados. Los faros, rasgados hacia atrás por los costados;
+    // los retrovisores y la cola recta, con los pilotos altos en las esquinas.
     id: 'monovolumen',
     medidas: [4856, 1860],
     ejes: [6.8, -6.8],
@@ -284,26 +310,31 @@ export const MODELOS = [
       ctx.lineTo(-L + 1, h);
       ctx.quadraticCurveTo(-L, h, -L, h - 1);
       ctx.closePath();
-      caja(3.4, 4.8, -h - 0.9, h + 0.9, 0.5);   // los retrovisores
+      caja(3.6, 5, -h - 0.9, h + 0.9, 0.5);   // los retrovisores
     },
     detalles(techo) {
-      rellenar(CRISTAL, () => {                 // el parabrisas, hasta el morro
-        ctx.moveTo(2.4, -4.2);
-        ctx.lineTo(6, -4.2);
-        ctx.bezierCurveTo(8.2, -4, 9.2, -2.3, 9.2, 0);
-        ctx.bezierCurveTo(9.2, 2.3, 8.2, 4, 6, 4.2);
-        ctx.lineTo(2.4, 4.2);
+      rellenar(CRISTAL, () => {               // el parabrisas, del capó al techo
+        ctx.moveTo(2.4, -4.25);
+        ctx.lineTo(6.4, -4);
+        ctx.bezierCurveTo(7.5, -3.4, 7.9, -2, 7.9, 0);
+        ctx.bezierCurveTo(7.9, 2, 7.5, 3.4, 6.4, 4);
+        ctx.lineTo(2.4, 4.25);
         ctx.closePath();
       });
-      rellenar(techo, () => caja(-10.2, 2.4, -4, 4, 1.2));
-      rayas('rgba(0, 0, 0, 0.35)', -9.4, 1.4, [-3.2, 3.2], 0.5);   // las barras
+      rellenar(techo, () => caja(-10.2, 2.4, -4.1, 4.1, 1.2));
+      // El techo de cristal, con chapa alrededor: en escritorio, el color del
+      // coche es lo que dice de quién es.
+      rellenar(CRISTAL, () => caja(-7.6, 1.6, -2.6, 2.6, 0.8));
+      rellenar(techo, () => caja(-0.6, -0.1, -2.7, 2.7, 0));     // y su barra
+      rayas(CROMO, -9.6, 1.9, [-3.75, 3.75], 0.4);               // las barras del techo
       rellenar(CRISTAL, () => caja(-10.8, -10.2, -3.5, 3.5, 0.3));    // la luna de atrás, de canto
-      rellenar(FARO, () => {                    // los faros, rasgados en las esquinas
+      rellenar('rgba(0, 0, 0, 0.4)', () => caja(10.5, 10.85, -1.2, 1.2, 0.2));   // la calandra
+      rellenar(FARO, () => {                  // los faros, rasgados hacia atrás
         for (const lado of [-1, 1]) {
-          ctx.moveTo(9.4, lado * 4.05);
-          ctx.quadraticCurveTo(10.5, lado * 3, 10.7, lado * 1.7);
-          ctx.lineTo(10.2, lado * 1.95);
-          ctx.quadraticCurveTo(9.8, lado * 3.2, 8.6, lado * 4.2);
+          ctx.moveTo(10.75, lado * 1.4);
+          ctx.quadraticCurveTo(10.4, lado * 3.5, 7.2, lado * 4.75);
+          ctx.lineTo(7.5, lado * 4.1);
+          ctx.quadraticCurveTo(9.8, lado * 3.1, 10.15, lado * 1.4);
           ctx.closePath();
         }
       });
