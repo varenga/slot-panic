@@ -9,7 +9,7 @@
  * fotograma a fotograma sería tirar el tiempo.
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, COLOR } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, COCHES, COLOR } from './config.js';
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
@@ -53,9 +53,12 @@ export function dibujarFondo(circuito, decorado, luz = 0) {
       }
       decorado.neumaticos.forEach(juguete ? pintarNeumaticoJuguete : pintarNeumatico);
       pintarPista(circuito, juguete);
+      // El aparcamiento es plano: va con el suelo, debajo de cualquier sombra.
+      decorado.instalaciones.filter((r) => r.tipo === 'aparcamiento').forEach((r) => pintarAparcamiento(r, decorado.semilla));
     });
     capaDecorado = crearCapa(ANCHO, ALTO);
     dibujarEn(capaDecorado, () => {
+      decorado.instalaciones.filter((r) => r.tipo !== 'aparcamiento').forEach((r) => INSTALACION[r.tipo](r, decorado.semilla));
       decorado.gradas.forEach((g) => (juguete ? pintarGradaJuguete : pintarGrada)(g, decorado.semilla));
       const color = decorado.escenario.color;
       decorado.piezas.forEach((p) => PINTAR[p.tipo](p, color));
@@ -385,10 +388,15 @@ function pintarSombras(decorado, luz) {
 
   ctx.fillStyle = `rgba(0, 0, 0, ${0.25 * sol.fuerza})`;
   ctx.beginPath();
-  for (const g of decorado.gradas) {
-    // El sol, en los ejes de la grada.
+  // Las gradas y las instalaciones con algo de alto: rectángulos barridos.
+  const rectangulos = [
+    ...decorado.gradas.map((g) => ({ ...g, alto: ALTO_GRADA })),
+    ...decorado.instalaciones.filter((r) => r.alto > 0)
+  ];
+  for (const g of rectangulos) {
+    // El sol, en los ejes del rectángulo.
     const cos = Math.cos(g.angulo), sin = Math.sin(g.angulo);
-    const u = (dx * cos + dy * sin) * ALTO_GRADA, v = (-dx * sin + dy * cos) * ALTO_GRADA;
+    const u = (dx * cos + dy * sin) * g.alto, v = (-dx * sin + dy * cos) * g.alto;
     const pasos = Math.max(1, Math.ceil(Math.hypot(u, v) / 3));
     for (let k = 1; k <= pasos; k++) {
       const f = k / pasos;
@@ -819,6 +827,147 @@ function pintarGrada(g, semilla) {
   ctx.fillStyle = '#8b93a7';
   ctx.fillRect(-g.largo / 2, g.fondo / 2 - 2, g.largo, 2);
   ctx.restore();
+}
+
+// --- Las instalaciones ----------------------------------------------------------
+
+/*
+ * Lo que tiene un circuito de verdad alrededor (`nucleo/decorado.js`): boxes,
+ * vallas, comisarios y el aparcamiento. Cada una, en sus ejes: el largo a lo
+ * largo de x y la pista hacia -y.
+ */
+const EQUIPOS = ['#d93a3a', '#2f6fd0', '#f2c230', '#3aa055', '#e6e8ee', '#ff8a3a', '#8a4fc0'];
+const MARCAS = [['#d93a3a', '#f6f4ef'], ['#f2c230', '#1c1e23'], ['#2f6fd0', '#f6f4ef'], ['#1c1e23', '#f2c230'], ['#3aa055', '#f6f4ef'], ['#f6f4ef', '#d93a3a']];
+const GARAJE = 15;       // px de cada garaje de los boxes
+const PLAZA = 18;        // px de ancho de cada plaza del aparcamiento
+const FILA = 34;         // px de fondo de cada fila de plazas
+
+function enSusEjes(r, pintar) {
+  ctx.save();
+  ctx.translate(r.x, r.y);
+  ctx.rotate(r.angulo);
+  pintar(r.largo / 2, r.fondo / 2);
+  ctx.restore();
+}
+
+const INSTALACION = {
+  /** El edificio de los garajes: el tejado, un toldo de color por equipo y la torre de control. */
+  boxes(r, semilla) {
+    const tirar = azar(semilla + Math.round(r.x * 7 + r.y));
+    enSusEjes(r, (a, b) => {
+      // El hormigón delante de los garajes.
+      ctx.fillStyle = '#b4b7bd';
+      ctx.fillRect(-a, -b, r.largo, 6);
+      const garajes = Math.floor((r.largo - 20) / GARAJE);
+      const desde = -a + 2;
+      for (let k = 0; k < garajes; k++) {
+        ctx.fillStyle = '#2a2d34';
+        ctx.fillRect(desde + k * GARAJE + 1, -b + 1.5, GARAJE - 2, 3);
+        ctx.fillStyle = EQUIPOS[Math.floor(tirar() * EQUIPOS.length)];
+        ctx.fillRect(desde + k * GARAJE + 1, -b + 4.5, GARAJE - 2, 3);
+      }
+      // El tejado, a paneles.
+      ctx.fillStyle = '#d7d9de';
+      ctx.fillRect(-a, -b + 7.5, r.largo, r.fondo - 7.5);
+      ctx.fillStyle = '#c2c5cc';
+      for (let x = desde + GARAJE; x < a - 18; x += GARAJE) ctx.fillRect(x - 0.5, -b + 7.5, 1, r.fondo - 7.5);
+      ctx.fillStyle = '#9da1aa';
+      ctx.fillRect(-a, b - 1.5, r.largo, 1.5);
+      // La torre de control, al final: más alta, con su cristal mirando a la pista.
+      ctx.fillStyle = '#3f4656';
+      ctx.fillRect(a - 18, -b + 2, 18, r.fondo - 2);
+      ctx.fillStyle = '#86b8de';
+      ctx.fillRect(a - 17, -b + 2, 16, 2.5);
+      ctx.fillStyle = '#596173';
+      ctx.fillRect(a - 14, -b + 8, 10, r.fondo - 13);
+    });
+  },
+  /** Una valla de publicidad: dos o tres anuncios seguidos, de colores de marca. */
+  valla(r, semilla) {
+    const tirar = azar(semilla + Math.round(r.x * 7 + r.y));
+    enSusEjes(r, (a, b) => {
+      const anuncios = tirar() < 0.5 ? 2 : 3;
+      const largo = r.largo / anuncios;
+      for (let k = 0; k < anuncios; k++) {
+        const [fondo, letra] = MARCAS[Math.floor(tirar() * MARCAS.length)];
+        const x = -a + k * largo;
+        ctx.fillStyle = fondo;
+        ctx.fillRect(x, -b, largo, r.fondo);
+        // El «logo»: una franja del otro color, más corta.
+        ctx.fillStyle = letra;
+        ctx.fillRect(x + largo * 0.2, -b + r.fondo * 0.3, largo * 0.6, r.fondo * 0.4);
+      }
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.fillRect(-a, b - 0.8, r.largo, 0.8);
+    });
+  },
+  /** Un puesto de comisario: la caseta naranja y su bandera, hacia la pista. */
+  comisario(r) {
+    enSusEjes(r, (a, b) => {
+      ctx.fillStyle = '#f6f4ef';
+      ctx.fillRect(-a, -b, r.largo, r.fondo);
+      ctx.fillStyle = '#f08a24';
+      ctx.fillRect(-a + 1, -b + 1, r.largo - 2, r.fondo - 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+      ctx.fillRect(-a + 1, 0, r.largo - 2, b - 1);
+      // La bandera, amarilla, en su mástil: asoma por delante.
+      ctx.fillStyle = '#1c1e23';
+      ctx.fillRect(a - 1.5, -b - 1, 1, 2);
+      ctx.fillStyle = '#ffd23a';
+      ctx.fillRect(a - 1, -b - 1, 4, 2.6);
+    });
+  }
+};
+
+/*
+ * El aparcamiento: asfalto, plazas pintadas y, en dos de cada tres, un coche
+ * de los del juego (de su color, un poco más pequeño) o una caravana.
+ */
+function pintarAparcamiento(r, semilla) {
+  const tirar = azar(semilla + Math.round(r.x * 7 + r.y));
+  const modelos = Object.keys(COCHES);
+  enSusEjes(r, (a, b) => {
+    ctx.fillStyle = '#9a9ea5';
+    ctx.fillRect(-a - 1.5, -b - 1.5, r.largo + 3, r.fondo + 3);
+    ctx.fillStyle = '#585c63';
+    ctx.fillRect(-a, -b, r.largo, r.fondo);
+    const filas = r.fondo >= FILA * 2 + 12 ? [-b, b - FILA] : [-b];
+    const plazas = Math.floor(r.largo / PLAZA);
+    const margen = (r.largo - plazas * PLAZA) / 2;
+    for (const y0 of filas) {
+      const morro = y0 === -b ? 1 : -1;   // de cara al pasillo
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      for (let k = 0; k <= plazas; k++) ctx.fillRect(-a + margen + k * PLAZA - 0.5, y0, 1, FILA);
+      for (let k = 0; k < plazas; k++) {
+        const dado = tirar();
+        if (dado > 0.67) continue;   // libre
+        const cx = -a + margen + (k + 0.5) * PLAZA, cy = y0 + FILA / 2;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(morro * Math.PI / 2);
+        if (dado < 0.08) {
+          // Una caravana: blanca, con su franja y la claraboya.
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.fillRect(-14, -6, 30, 14);
+          ctx.fillStyle = '#eceae4';
+          ctx.fillRect(-15, -7, 30, 14);
+          ctx.fillStyle = '#c9c6bd';
+          ctx.fillRect(-4, -3, 6, 6);
+          ctx.fillStyle = EQUIPOS[Math.floor(tirar() * 3)];
+          ctx.fillRect(-15, 5, 30, 1.5);
+        } else {
+          const m = modelo(modelos[Math.floor(tirar() * modelos.length)]);
+          ctx.scale(0.85, 0.85);
+          ctx.save();
+          ctx.translate(SOMBRA_COCHE.x, SOMBRA_COCHE.y);
+          sombraModelo(m, 'rgba(0, 0, 0, 0.3)');
+          ctx.restore();
+          pintarModelo(m, EQUIPOS[Math.floor(tirar() * EQUIPOS.length)]);
+        }
+        ctx.restore();
+      }
+    }
+  });
 }
 
 // --- Los carriles -------------------------------------------------------------

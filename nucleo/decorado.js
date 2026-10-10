@@ -104,6 +104,11 @@ export function generarDecorado(circuito, nombreEscenario) {
     ...torres.map((t) => ({ x: t.x, y: t.y, r: t.r + 6 }))
   ];
 
+  // El ambiente de un circuito de verdad (boxes, vallas, comisarios y el
+  // aparcamiento), en todos menos en la mesa del juguete.
+  const instalaciones = escenario.juguete ? [] : instalacionesDe(circuito, azar(semillaDe(circuito.clave + '/instalaciones')), [...ocupado, ...neumaticos]);
+  instalaciones.forEach((r) => ocupado.push(...circulosDe(r)));
+
   const tipos = Object.entries(escenario.piezas);
   const piezas = [];
   // Lo grande (la mesa del juguete) necesita más intentos, y con menos ya se llena.
@@ -132,7 +137,7 @@ export function generarDecorado(circuito, nombreEscenario) {
   // De arriba abajo: lo de más abajo tapa lo de más arriba, como en una maqueta.
   piezas.sort((a, b) => a.y - b.y);
 
-  return { nombre: nombreEscenario, escenario, piezas, gradas, neumaticos, torres, semilla: semillaDe(circuito.clave + '/' + nombreEscenario + '/suelo') };
+  return { nombre: nombreEscenario, escenario, piezas, gradas, neumaticos, torres, instalaciones, semilla: semillaDe(circuito.clave + '/' + nombreEscenario + '/suelo') };
 }
 
 /*
@@ -219,4 +224,195 @@ function barrerasDeNeumaticos(circuito) {
     }
   }
   return lista;
+}
+
+/*
+ * Las instalaciones: lo que tiene un circuito de verdad alrededor de la pista.
+ * Cada una es un rectángulo girado { tipo, x, y, largo, fondo, angulo, alto }
+ * con la pista hacia su -y local (así el dibujo sabe qué lado le da la cara).
+ *
+ * - `boxes`: el edificio de los garajes, junto a la recta de meta.
+ * - `valla`: publicidad a lo largo de las rectas, pegada al muro.
+ * - `comisario`: un puesto con su bandera un poco antes de cada curva.
+ * - `aparcamiento`: coches y caravanas, en un hueco libre grande.
+ *
+ * Como el resto del decorado: con su propia semilla y sin pisar nada que
+ * juegue (`instalacionCabe`, la misma pregunta que hace el arnés).
+ */
+const HOLGURA_INSTALACION = 6;     // px entre el muro y una instalación
+const BOXES = { largos: [180, 150, 120, 96], fondo: 26, alto: 9 };
+const VALLA = { largo: 46, fondo: 3.5, alto: 4, cada: 150, recta: 120 };
+const COMISARIO = { lado: 9, alto: 6 };
+const APARCAMIENTO = { medidas: [[168, 84], [132, 84], [108, 60], [84, 48]], alto: 0, paso: 12 };
+
+/** Los puntos del contorno de un rectángulo girado, cada `paso` px, y su centro. */
+export function contornoDe(r, paso = 6) {
+  const cos = Math.cos(r.angulo), sin = Math.sin(r.angulo);
+  const puntos = [{ x: r.x, y: r.y }];
+  const a = r.largo / 2, b = r.fondo / 2;
+  const lado = (x0, y0, x1, y1) => {
+    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / paso));
+    for (let k = 0; k < n; k++) {
+      const lx = x0 + (x1 - x0) * k / n, ly = y0 + (y1 - y0) * k / n;
+      puntos.push({ x: r.x + lx * cos - ly * sin, y: r.y + lx * sin + ly * cos });
+    }
+  };
+  lado(-a, -b, a, -b); lado(a, -b, a, b); lado(a, b, -a, b); lado(-a, b, -a, -b);
+  return puntos;
+}
+
+/** Una cadena de círculos que cubre el rectángulo: para no solaparse con lo redondo. */
+export function circulosDe(r) {
+  const n = Math.max(1, Math.ceil(r.largo / r.fondo));
+  const radio = Math.hypot(r.largo / n, r.fondo) / 2;
+  const cos = Math.cos(r.angulo), sin = Math.sin(r.angulo);
+  const lista = [];
+  for (let k = 0; k < n; k++) {
+    const u = -r.largo / 2 + r.largo * (k + 0.5) / n;
+    lista.push({ x: r.x + u * cos, y: r.y + u * sin, r: radio });
+  }
+  return lista;
+}
+
+/**
+ * ¿Cabe una instalación aquí? Dentro de la mesa, fuera de las bandas y del
+ * hueco del marcador, a HOLGURA_INSTALACION del muro y sin tocar `otras`
+ * (círculos { x, y, r }). El arnés hace la misma pregunta.
+ */
+export function instalacionCabe(circuito, r, otras = []) {
+  const contorno = contornoDe(r);
+  if (contorno.some(({ x, y }) => x < 0 || y < 0 || x > ANCHO || y > ALTO)) return false;
+  const zonas = zonasVetadas(circuito);
+  if (contorno.some(({ x, y }) => zonas.some((z) => enZona(x, y, 0, z)))) return false;
+  const propios = circulosDe(r);
+  if (!otras.every((o) => propios.every((c) => Math.hypot(o.x - c.x, o.y - c.y) > o.r + c.r + 2))) return false;
+  // Lo caro, al final: con el centro bien lejos ya basta; si no, punto a punto.
+  if (distanciaAPista(circuito, r) >= Math.hypot(r.largo, r.fondo) / 2 + HOLGURA_INSTALACION) return true;
+  return contorno.every((p) => distanciaAPista(circuito, p) >= HOLGURA_INSTALACION);
+}
+
+function instalacionesDe(circuito, tirar, ocupado) {
+  const lista = [];
+  const poner = (r) => {
+    if (!instalacionCabe(circuito, r, [...ocupado, ...lista.flatMap(circulosDe)])) return false;
+    lista.push(r);
+    return true;
+  };
+  boxesJuntoAMeta(circuito, poner);
+  comisariosEnCurvas(circuito, poner);
+  vallasEnRectas(circuito, poner);
+  aparcamiento(circuito, tirar, poner);
+  return lista;
+}
+
+/*
+ * Un rectángulo pegado al muro junto al punto `p` del eje, por el lado `lado`
+ * (-1 o 1, como `muro`), `extra` px más allá de la holgura, mirando a la pista.
+ */
+function junto(p, lado, tipo, largo, fondo, alto, extra = 0) {
+  const d = p.muro[lado < 0 ? 0 : 1] + HOLGURA_INSTALACION + 1 + extra + fondo / 2;
+  const nx = -Math.sin(p.angulo) * lado, ny = Math.cos(p.angulo) * lado;
+  // La pista, hacia el -y local: con lado 1 el +y local es la normal; con -1, al revés.
+  return { tipo, x: p.x + nx * d, y: p.y + ny * d, largo, fondo, alto, angulo: p.angulo + (lado < 0 ? Math.PI : 0) };
+}
+
+/** El punto del eje más cerca de `s` (que da la vuelta). */
+function puntoDelEje(circuito, s) {
+  const { eje, largo } = circuito;
+  const buscada = ((s % largo) + largo) % largo;
+  // `s` crece a lo largo del eje: el primero que no queda antes, o el de antes.
+  let bajo = 0, alto = eje.length - 1;
+  while (bajo < alto) {
+    const medio = (bajo + alto) >> 1;
+    if (eje[medio].s < buscada) bajo = medio + 1; else alto = medio;
+  }
+  const antes = eje[Math.max(0, bajo - 1)];
+  return Math.abs(antes.s - buscada) < Math.abs(eje[bajo].s - buscada) ? antes : eje[bajo];
+}
+
+/** ¿Es recta la pista `largo` px alrededor de `s`? */
+function esRecta(circuito, s, largo) {
+  for (let d = -largo / 2; d <= largo / 2; d += 6) {
+    if (puntoDelEje(circuito, s + d).radio !== Infinity) return false;
+  }
+  return true;
+}
+
+/** Los dos lados de `p`, primero el de fuera: el que se aleja del centro del circuito. */
+function ladosPorFuera(circuito, p) {
+  const { eje } = circuito;
+  const cx = eje.reduce((t, q) => t + q.x, 0) / eje.length;
+  const cy = eje.reduce((t, q) => t + q.y, 0) / eje.length;
+  const nx = -Math.sin(p.angulo), ny = Math.cos(p.angulo);
+  return (p.x - cx) * nx + (p.y - cy) * ny > 0 ? [1, -1] : [-1, 1];
+}
+
+/*
+ * Los boxes: tan cerca de la meta como se pueda, en una recta, primero por
+ * fuera; si junto a la meta no caben, en la recta más cerca. Los más largos
+ * antes; si no cabe ni el más corto en ninguna, no hay boxes.
+ */
+function boxesJuntoAMeta(circuito, poner) {
+  for (const largo of BOXES.largos) {
+    for (let k = 0; k <= circuito.largo / 24; k++) {
+      for (const d of k ? [k * 12, -k * 12] : [0]) {
+        if (!esRecta(circuito, d, largo)) continue;
+        const p = puntoDelEje(circuito, d);
+        for (const lado of ladosPorFuera(circuito, p)) {
+          if (poner(junto(p, lado, 'boxes', largo, BOXES.fondo, BOXES.alto, 3))) return;
+        }
+      }
+    }
+  }
+}
+
+/*
+ * Un puesto de comisario por curva, por fuera y un poco antes de que empiece:
+ * desde ahí se ve venir el coche.
+ */
+function comisariosEnCurvas(circuito, poner) {
+  const { eje } = circuito;
+  for (let i = 0; i < eje.length; i++) {
+    const p = eje[i], antes = eje[(i - 1 + eje.length) % eje.length];
+    if (p.radio === Infinity || antes.radio !== Infinity) continue;
+    for (let d = 10; d <= 120; d += 10) {
+      const q = puntoDelEje(circuito, p.s - d);
+      if (poner(junto(q, -p.curva, 'comisario', COMISARIO.lado, COMISARIO.lado, COMISARIO.alto, 2))) break;
+    }
+  }
+}
+
+/** Las vallas de publicidad: en las rectas largas, cada tanto, primero por fuera. */
+function vallasEnRectas(circuito, poner) {
+  for (let s = VALLA.cada / 2; s < circuito.largo; s += VALLA.cada) {
+    if (!esRecta(circuito, s, VALLA.recta)) continue;
+    const p = puntoDelEje(circuito, s);
+    ladosPorFuera(circuito, p).some((lado) => poner(junto(p, lado, 'valla', VALLA.largo, VALLA.fondo, VALLA.alto)));
+  }
+}
+
+/*
+ * El aparcamiento: de una rejilla de sitios, los del tamaño más grande que
+ * quepa en alguno; de ellos, uno a suertes (con la semilla).
+ */
+function aparcamiento(circuito, tirar, poner) {
+  // Cuánto dista de la pista cada sitio, una vez para todos los tamaños.
+  const rejilla = [];
+  for (let y = BANDA_TEXTO; y <= ALTO - BANDA_TEXTO; y += APARCAMIENTO.paso) {
+    for (let x = 0; x <= ANCHO; x += APARCAMIENTO.paso) {
+      rejilla.push({ x, y, d: distanciaAPista(circuito, { x, y }) });
+    }
+  }
+  for (const [largo, fondo] of APARCAMIENTO.medidas) {
+    // Lejos de la pista por el centro: sin mirar punto a punto.
+    const radio = Math.hypot(largo, fondo) / 2 + HOLGURA_INSTALACION;
+    const lejos = rejilla
+      .filter(({ x, y, d }) => d >= radio && x >= largo / 2 && x <= ANCHO - largo / 2 &&
+        y >= BANDA_TEXTO + fondo / 2 && y <= ALTO - BANDA_TEXTO - fondo / 2)
+      .map(({ x, y }) => ({ tipo: 'aparcamiento', x, y, largo, fondo, alto: APARCAMIENTO.alto, angulo: 0 }));
+    while (lejos.length) {
+      const [r] = lejos.splice(Math.floor(tirar() * lejos.length), 1);
+      if (poner(r)) return;
+    }
+  }
 }
