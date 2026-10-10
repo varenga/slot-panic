@@ -135,7 +135,7 @@ demás, en `BITACORA.md`). Mide y comprueba:
    ninguna pieza, neumático, grada ni torre de iluminación pisa la pista, el marcador ni
    las bandas de texto; hay al menos 8 torres (hoy 20).
 3b. **Los coches** (`COCHES`): cada uno gasta 0 de presupuesto (`PESO_CARACTER`) y mide
-   27-35 px, y el clásico es el de siempre (×1, 31 px). En cada oficial, con cada modelo:
+   25-37 px, y el clásico es el de siempre (×1, 31 px). En cada oficial, con cada modelo:
    el prudente no se sale y da la vuelta a ±3 % del clásico; a fondo se sale ≥ 1 vez por
    vuelta y pierde > 20 %; ninguna curva se pasa a su punta; arrancando en una curva no
    se sale, ni un humano que reacciona 0,2 s tarde; los niveles de la CPU dejan sus

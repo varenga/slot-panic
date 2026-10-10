@@ -78,9 +78,14 @@ export const ANCHO_COCHE = 15.5;
 
 /*
  * Cada modelo (coches.js), con su tamaño y su carácter. El `largo` (px) es lo
- * que mide de morro a cola; el ancho sale de su forma y apenas cambia (de 13 a
- * 17 px): dos coches en paralelo, a 2 · CARRIL, no se tocan nunca. Más largo es
- * más fácil de alcanzar en una X: el CHOQUE crece con el largo de los dos.
+ * que mide de morro a cola, y sale del coche de verdad: 37 · (mm / 4874)^0,79,
+ * el tiburón en 37. Con la proporción exacta el bambino mediría 22 px al lado
+ * de 37, demasiado pequeño para verlo en escritorio y para alcanzarlo en una
+ * X; el exponente conserva el orden y aprieta las diferencias a todos por
+ * igual. El ancho sale de su forma (de 13 a 17 px): dos coches en paralelo, a
+ * 2 · CARRIL, no se tocan nunca. Más largo es más fácil de alcanzar en una X:
+ * el CHOQUE crece con el largo de los dos. El clásico no es de verdad: se
+ * queda en el de siempre.
  *
  * Y tres multiplicadores sobre el coche de siempre: `acelera` (el motor gana
  * velocidad tantas veces más deprisa: divide INERCIA_MOTOR), `agarre`
@@ -101,12 +106,12 @@ export const PESO_CARACTER = { acelera: 0.25, agarre: 1, punta: 0.65 };
 export const COCHE_REFERENCIA = 'clasico';
 export const COCHES = {
   clasico:     { largo: 31, acelera: 1,    agarre: 1,     punta: 1 },
-  escalon:     { largo: 29, acelera: 1.16, agarre: 0.96,  punta: 1 },
-  patito:      { largo: 29, acelera: 0.8,  agarre: 1.02,  punta: 1.04 },
-  tiburon:     { largo: 35, acelera: 0.69, agarre: 1,     punta: 1.12 },
-  escarabajo:  { largo: 30, acelera: 0.9,  agarre: 1,     punta: 1.04 },
-  bambino:     { largo: 27, acelera: 1.3,  agarre: 0.94,  punta: 0.975 },
-  monovolumen: { largo: 33, acelera: 1,    agarre: 0.975, punta: 1.04 }
+  escalon:     { largo: 32, acelera: 1.16, agarre: 0.96,  punta: 1 },       // 3994 mm
+  patito:      { largo: 31, acelera: 0.8,  agarre: 1.02,  punta: 1.04 },    // 3860 mm
+  tiburon:     { largo: 37, acelera: 0.69, agarre: 1,     punta: 1.12 },    // 4874 mm
+  escarabajo:  { largo: 32, acelera: 0.9,  agarre: 1,     punta: 1.04 },    // 4070 mm
+  bambino:     { largo: 25, acelera: 1.3,  agarre: 0.94,  punta: 0.975 },   // 2970 mm
+  monovolumen: { largo: 37, acelera: 1,    agarre: 0.975, punta: 1.04 }     // 4856 mm
 };
 
 // --- Pianos y escapatorias ----------------------------------------------------

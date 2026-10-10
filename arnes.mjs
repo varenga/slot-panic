@@ -537,7 +537,7 @@ console.log('\nLos coches');
     const gasto = Object.entries(PESO_CARACTER).reduce((total, [k, peso]) => total + peso * (f[k] - 1), 0);
     console.log(`  ${id.padEnd(12)} ${f.largo} px, acelera ×${f.acelera}, agarre ×${f.agarre}, punta ×${f.punta}: gasta ${gasto >= 0 ? '+' : ''}${gasto.toFixed(3)}`);
     comprobar(Math.abs(gasto) < 0.006, `el ${id} se sale del presupuesto (${gasto.toFixed(3)})`);
-    comprobar(f.largo >= 27 && f.largo <= 35, `el ${id} mide ${f.largo} px`);
+    comprobar(f.largo >= 25 && f.largo <= 37, `el ${id} mide ${f.largo} px`);
   }
   // Dos coches en paralelo no se tocan: ni los dos más largos llegan a chocar a 2 · CARRIL.
   const largos = [...ids].sort((a, b) => COCHES[b].largo - COCHES[a].largo);
