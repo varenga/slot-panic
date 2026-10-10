@@ -9,7 +9,7 @@
  * fotograma a fotograma sería tirar el tiempo.
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, COCHES, COLOR } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR } from './config.js';
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
@@ -242,6 +242,7 @@ function pintarPista(circuito, juguete) {
   pintarPianos(circuito, juguete);
   if (juguete) pintarFiloPianos(circuito);
   pintarPiezas(circuito);
+  pintarDesvios(circuito);
   pintarSectores(circuito);
   pintarMeta(circuito);
 }
@@ -285,6 +286,85 @@ function pintarPiezas(circuito) {
       ctx.moveTo(u.x, u.y);
       ctx.lineTo(v.x, v.y);
       ctx.stroke();
+    }
+  }
+}
+
+const PAJA = { cara: '#d8ac48', sombra: 'rgba(0, 0, 0, 0.28)', hebra: 'rgba(120, 82, 20, 0.55)' };
+
+/*
+ * El desvío, como la chicane de Goodwood del juguete: una valla blanca a los
+ * dos lados de la placa, conos en las dos bocas y balas de paja que siguen a
+ * los carriles, pegadas a ellos por donde caben: a los dos lados mientras se
+ * juntan y por el lado libre en el quiebro, así que dibujan la S. Nada pisa
+ * los carriles: los coches pasan junto a las balas.
+ */
+function pintarDesvios(circuito) {
+  const { eje, ancho } = circuito;
+  const n = eje.length;
+  const a = (p, d) => ({ x: p.x - Math.sin(p.angulo) * d, y: p.y + Math.cos(p.angulo) * d });
+  // Del carril de cada lado a la bala: medio coche, media bala y un poco de aire.
+  const aparte = ANCHO_COCHE / 2 + 5;
+  const cabe = ancho / 2 - 5;
+  let ultimaBala = -Infinity, ultimoPoste = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const p = eje[i], q = eje[(i + 1) % n];
+    if (!p.enDesvio) continue;
+    // La valla, por fuera del borde: un larguero y sus postes.
+    ctx.strokeStyle = '#f2f3f5';
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'butt';
+    for (const lado of [-1, 1]) {
+      const [u, v] = [a(p, lado * (ancho / 2 + 3)), a(q, lado * (ancho / 2 + 3))];
+      ctx.beginPath();
+      ctx.moveTo(u.x, u.y);
+      ctx.lineTo(v.x, v.y);
+      ctx.stroke();
+    }
+    if (p.s - ultimoPoste >= 14) {
+      ultimoPoste = p.s;
+      ctx.fillStyle = '#f2f3f5';
+      for (const lado of [-1, 1]) {
+        const c = a(p, lado * (ancho / 2 + 3));
+        ctx.fillRect(c.x - 1.5, c.y - 1.5, 3, 3);
+      }
+    }
+    // Los conos, en las dos bocas: pegados al borde, por fuera de los coches.
+    const antes = eje[(i - 1 + n) % n];
+    if (!antes.enDesvio || !q.enDesvio) {
+      for (const lado of [-1, 1]) {
+        const c = a(p, lado * (ancho / 2 - 4));
+        ctx.fillStyle = '#f28a1e';
+        circulo(c.x, c.y, 2.6);
+        ctx.fillStyle = '#fff4e0';
+        circulo(c.x, c.y, 1);
+      }
+    }
+    // Las balas, a lo largo de los carriles, giradas como ellos.
+    if (p.s - ultimaBala < 12) continue;
+    ultimaBala = p.s;
+    const abierto = CARRIL * Math.abs(p.carril);
+    for (const lado of [-1, 1]) {
+      const d = p.centro + lado * (abierto + aparte);
+      const dq = q.centro + lado * (CARRIL * Math.abs(q.carril) + aparte);
+      if (Math.abs(d) > cabe) continue;
+      const c = a(p, d);
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(p.angulo + Math.atan2(dq - d, p.largo));
+      ctx.fillStyle = PAJA.sombra;
+      ctx.fillRect(-4, -2.5, 10, 7);
+      ctx.fillStyle = PAJA.cara;
+      ctx.fillRect(-5, -3.5, 10, 7);
+      ctx.strokeStyle = PAJA.hebra;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      for (const y of [-1.2, 1.2]) {
+        ctx.moveTo(-5, y);
+        ctx.lineTo(5, y);
+      }
+      ctx.stroke();
+      ctx.restore();
     }
   }
 }

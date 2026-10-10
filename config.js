@@ -235,6 +235,10 @@ export const FUERA_MAXIMO = 2.2;        // s fuera, como mucho, antes de que lle
  * - La CURVA DESLIZANTE es amplia, resbaladiza y estrecha: se toma derrapando.
  *   Hasta `tolera` veces el agarre de más, la cola sale mucho y frena, pero el
  *   derrape no se acumula; pasado eso, sí, y a fondo se sale como en todas.
+ * - El DESVÍO es la chicane de Goodwood del juguete: una placa recta en que
+ *   los carriles se juntan (como en la estrecha), se van juntos DESVIO px a un
+ *   lado, vuelven y se separan. La guía nota el quiebro como una curva: el
+ *   radio con que agarra es el de la curvatura del carril.
  * - El CHOQUE: dos coches en el carril a menos de esto (en una X, un cruce o una estrecha)
  *   salen los dos. Menos que los 2 · CARRIL de dos carriles en paralelo, y
  *   crece con el coche: se chocan cuando se ve que se tocan (era 14 con el
@@ -244,6 +248,7 @@ export const AGARRE_PERALTE = 1.4;
 export const CURVA_DERRAPE = { acumula: 0.4, freno: 0.5, limite: 1, coleteo: 1.6, tolera: 0 };
 export const CURVA_DESLIZANTE = { acumula: 2, freno: 0.1, limite: 1, coleteo: 2.2, tolera: 0.25 };
 export const ESTRECHA = 0.4;            // fracción de CARRIL a la que se acercan los carriles
+export const DESVIO = 14;               // px que se van de lado los carriles juntos en el desvío
 export const VELOCIDAD_BACHES = 330;    // px/s
 export const CHOQUE = 20;               // px entre los centros de los dos coches
 /*

@@ -90,6 +90,7 @@ export const CATALOGOS = {
     'circuito.ocho': 'EL OCHO',
     'circuito.nudo': 'EL NUDO',
     'circuito.resbalon': 'EL RESBALÓN',
+    'circuito.banera': 'LA BAÑERA',
     // Los nombres de los circuitos públicos: un adjetivo y un sustantivo (palabra|género;
     // el adjetivo, masculino|femenino), en el orden de `nombre.formato`.
     'nombre.formato': '{s} {a}',
@@ -283,9 +284,9 @@ export const CATALOGOS = {
     'page.how5': 'En el móvil en vertical, el modo lupa: la pista ampliada alrededor de tu coche y el mapa del circuito arriba, contra la CPU.',
     'page.how6': 'Trece coches a elegir en la portada, de un dos caballos a un monovolumen: cambian la forma, no la carrera.',
     'page.how7': 'Dibuja tu propio circuito con el dedo en una cuadrícula: pruébalo contra la CPU, guárdalo y comparte el enlace.',
-    'page.how8': 'Campeonato: los cuatro circuitos seguidos. Gana quien gane más carreras y, si empatan, el menor tiempo total.',
+    'page.how8': 'Campeonato: los cinco circuitos seguidos. Gana quien gane más carreras y, si empatan, el menor tiempo total.',
     'page.how9': 'Galería: publica tus circuitos con un alias de tres letras y corre los de los demás, los nuevos o los más jugados.',
-    'page.how10': 'Récords de vuelta en los cuatro circuitos oficiales: firma la tuya con tres letras y corre contra tu fantasma o contra el del récord.',
+    'page.how10': 'Récords de vuelta en los cinco circuitos oficiales: firma la tuya con tres letras y corre contra tu fantasma o contra el del récord.',
     'page.controlsTitle': 'Controles',
     'page.colWho': 'Coche',
     'page.colKeys': 'Teclado',
@@ -300,6 +301,7 @@ export const CATALOGOS = {
     'page.circ.ocho': 'un ocho con cruce, una horquilla peraltada, una chicane y dos curvas de derrape.',
     'page.circ.nudo': 'una X en la que los coches cambian de carril, una recta de baches, una horquilla y una chicane.',
     'page.circ.resbalon': 'dos estrechas en las que los carriles se juntan (a la par, los coches se tocan) y una curva deslizante que se toma derrapando.',
+    'page.circ.banera': 'la recta de meta más larga, dos peraltadas, una X en la recta de abajo y, en el valle, un desvío en que los carriles se juntan y se quiebran de lado entre balas de paja.',
     'page.langTitle': 'Idiomas',
     "page.privacy": "Privacidad"
   },
@@ -363,6 +365,7 @@ export const CATALOGOS = {
     'circuito.ocho': 'THE FIGURE EIGHT',
     'circuito.nudo': 'THE KNOT',
     'circuito.resbalon': 'THE SKID',
+    'circuito.banera': 'THE BATHTUB',
     // Los nombres de los circuitos públicos: un adjetivo y un sustantivo (palabra|género;
     // el adjetivo, masculino|femenino), en el orden de `nombre.formato`.
     'nombre.formato': '{a} {s}',
@@ -556,9 +559,9 @@ export const CATALOGOS = {
     'page.how5': 'On a phone held upright, magnifier mode: the track zoomed in around your car and the circuit map on top, against the CPU.',
     'page.how6': 'Thirteen cars to pick on the title screen, from a tin snail to a people carrier: they change the shape, not the race.',
     'page.how7': 'Draw your own circuit with your finger on a grid: try it against the CPU, save it and share the link.',
-    'page.how8': 'Championship: the four circuits in a row. Whoever wins the most races takes it; on a tie, the lowest total time.',
+    'page.how8': 'Championship: the five circuits in a row. Whoever wins the most races takes it; on a tie, the lowest total time.',
     'page.how9': 'Gallery: publish your circuits with a three-letter alias and race everyone else’s, the newest or the most played.',
-    'page.how10': 'Lap records on the four official circuits: sign yours with three letters and race against your ghost or the record holder’s.',
+    'page.how10': 'Lap records on the five official circuits: sign yours with three letters and race against your ghost or the record holder’s.',
     'page.controlsTitle': 'Controls',
     'page.colWho': 'Car',
     'page.colKeys': 'Keyboard',
@@ -573,6 +576,7 @@ export const CATALOGOS = {
     'page.circ.ocho': 'a figure eight with a crossing, a banked hairpin, a chicane and two drift bends.',
     'page.circ.nudo': 'a crossover where the cars swap lanes, a bumpy straight, a hairpin and a chicane.',
     'page.circ.resbalon': 'two narrow sections where the lanes squeeze together (side by side, the cars touch) and a skid bend you take sliding.',
+    'page.circ.banera': 'the longest home straight, two banked bends, a crossover on the bottom straight and, down in the dip, a chicane where the lanes squeeze together and jink sideways between straw bales.',
     'page.langTitle': 'Languages',
     "page.privacy": "Privacy"
   },
@@ -636,6 +640,7 @@ export const CATALOGOS = {
     'circuito.ocho': 'O OITO',
     'circuito.nudo': 'O NÓ',
     'circuito.resbalon': 'O ESCORREGÃO',
+    'circuito.banera': 'A BANHEIRA',
     // Los nombres de los circuitos públicos: un adjetivo y un sustantivo (palabra|género;
     // el adjetivo, masculino|femenino), en el orden de `nombre.formato`.
     'nombre.formato': '{s} {a}',
@@ -829,9 +834,9 @@ export const CATALOGOS = {
     'page.how5': 'No telemóvel na vertical, o modo lupa: a pista ampliada à volta do teu carro e o mapa do circuito em cima, contra o CPU.',
     'page.how6': 'Treze carros à escolha no ecrã inicial, de um dois cavalos a um monovolume: mudam a forma, não a corrida.',
     'page.how7': 'Desenha o teu próprio circuito com o dedo numa grelha: experimenta-o contra o CPU, guarda-o e partilha a ligação.',
-    'page.how8': 'Campeonato: os quatro circuitos seguidos. Ganha quem vencer mais corridas e, em caso de empate, o menor tempo total.',
+    'page.how8': 'Campeonato: os cinco circuitos seguidos. Ganha quem vencer mais corridas e, em caso de empate, o menor tempo total.',
     'page.how9': 'Galeria: publica os teus circuitos com um alias de três letras e corre os dos outros, os novos ou os mais jogados.',
-    'page.how10': 'Recordes de volta nos quatro circuitos oficiais: assina a tua com três letras e corre contra o teu fantasma ou o do recorde.',
+    'page.how10': 'Recordes de volta nos cinco circuitos oficiais: assina a tua com três letras e corre contra o teu fantasma ou o do recorde.',
     'page.controlsTitle': 'Controlos',
     'page.colWho': 'Carro',
     'page.colKeys': 'Teclado',
@@ -846,6 +851,7 @@ export const CATALOGOS = {
     'page.circ.ocho': 'um oito com cruzamento, um gancho inclinado, uma chicane e duas curvas de derrapagem.',
     'page.circ.nudo': 'um X onde os carros trocam de pista, uma reta de lombas, um gancho e uma chicane.',
     'page.circ.resbalon': 'duas estreitas onde as pistas se juntam (lado a lado, os carros tocam-se) e uma curva deslizante que se faz a derrapar.',
+    'page.circ.banera': 'a reta da meta mais longa, duas curvas inclinadas, um X na reta de baixo e, no vale, um desvio onde as pistas se juntam e se desviam de lado entre fardos de palha.',
     'page.langTitle': 'Idiomas',
     "page.privacy": "Privacidade"
   },
@@ -909,6 +915,7 @@ export const CATALOGOS = {
     'circuito.ocho': 'O OITO',
     'circuito.nudo': 'O NÓ',
     'circuito.resbalon': 'O ESVARÓN',
+    'circuito.banera': 'A BAÑEIRA',
     // Los nombres de los circuitos públicos: un adjetivo y un sustantivo (palabra|género;
     // el adjetivo, masculino|femenino), en el orden de `nombre.formato`.
     'nombre.formato': '{s} {a}',
@@ -1102,9 +1109,9 @@ export const CATALOGOS = {
     'page.how5': 'No móbil en vertical, o modo lupa: a pista ampliada arredor do teu coche e o mapa do circuíto arriba, contra a CPU.',
     'page.how6': 'Trece coches para escoller na portada, dun dous cabalos a un monovolume: cambian a forma, non a carreira.',
     'page.how7': 'Debuxa o teu propio circuíto co dedo nunha cuadrícula: próbao contra a CPU, gárdao e comparte a ligazón.',
-    'page.how8': 'Campionato: os catro circuítos seguidos. Gaña quen gañe máis carreiras e, se empatan, o menor tempo total.',
+    'page.how8': 'Campionato: os cinco circuítos seguidos. Gaña quen gañe máis carreiras e, se empatan, o menor tempo total.',
     'page.how9': 'Galería: publica os teus circuítos cun alias de tres letras e corre os dos demais, os novos ou os máis xogados.',
-    'page.how10': 'Récords de volta nos catro circuítos oficiais: asina a túa con tres letras e corre contra a túa pantasma ou a do récord.',
+    'page.how10': 'Récords de volta nos cinco circuítos oficiais: asina a túa con tres letras e corre contra a túa pantasma ou a do récord.',
     'page.controlsTitle': 'Controis',
     'page.colWho': 'Coche',
     'page.colKeys': 'Teclado',
@@ -1119,6 +1126,7 @@ export const CATALOGOS = {
     'page.circ.ocho': 'un oito con cruzamento, unha gancha peraltada, unha chicane e dúas curvas de derrape.',
     'page.circ.nudo': 'unha X na que os coches cambian de carril, unha recta de fochancas, unha gancha e unha chicane.',
     'page.circ.resbalon': 'dúas estreitas nas que os carrís se xuntan (á par, os coches tócanse) e unha curva escorregadiza que se colle derrapando.',
+    'page.circ.banera': 'a recta de meta máis longa, dúas peraltadas, unha X na recta de abaixo e, no val, un desvío no que os carrís se xuntan e se quebran de lado entre pacas de palla.',
     'page.langTitle': 'Idiomas',
     "page.privacy": "Privacidade"
   },
@@ -1182,6 +1190,7 @@ export const CATALOGOS = {
     'circuito.ocho': 'EL VUIT',
     'circuito.nudo': 'EL NUS',
     'circuito.resbalon': 'LA RELLISCADA',
+    'circuito.banera': 'LA BANYERA',
     // Los nombres de los circuitos públicos: un adjetivo y un sustantivo (palabra|género;
     // el adjetivo, masculino|femenino), en el orden de `nombre.formato`.
     'nombre.formato': '{s} {a}',
@@ -1375,9 +1384,9 @@ export const CATALOGOS = {
     'page.how5': 'Al mòbil en vertical, el mode lupa: la pista ampliada al voltant del teu cotxe i el mapa del circuit a dalt, contra la CPU.',
     'page.how6': "Tretze cotxes per triar a la portada, d'un dos cavalls a un monovolum: canvien la forma, no la cursa.",
     'page.how7': "Dibuixa el teu propi circuit amb el dit en una quadrícula: prova'l contra la CPU, desa'l i comparteix l'enllaç.",
-    'page.how8': 'Campionat: els quatre circuits seguits. Guanya qui guanyi més curses i, si empaten, el menor temps total.',
+    'page.how8': 'Campionat: els cinc circuits seguits. Guanya qui guanyi més curses i, si empaten, el menor temps total.',
     'page.how9': 'Galeria: publica els teus circuits amb un àlies de tres lletres i corre els dels altres, els nous o els més jugats.',
-    'page.how10': 'Rècords de volta als quatre circuits oficials: signa la teva amb tres lletres i corre contra el teu fantasma o el del rècord.',
+    'page.how10': 'Rècords de volta als cinc circuits oficials: signa la teva amb tres lletres i corre contra el teu fantasma o el del rècord.',
     'page.controlsTitle': 'Controls',
     'page.colWho': 'Cotxe',
     'page.colKeys': 'Teclat',
@@ -1392,6 +1401,7 @@ export const CATALOGOS = {
     'page.circ.ocho': 'un vuit amb encreuament, una forquilla peraltada, una xicana i dos revolts de derrapada.',
     'page.circ.nudo': 'una X on els cotxes canvien de carril, una recta de sots, una forquilla i una xicana.',
     'page.circ.resbalon': "dos estrets on els carrils s'ajunten (de costat, els cotxes es toquen) i una corba lliscant que es pren derrapant.",
+    'page.circ.banera': "la recta de meta més llarga, dues peraltades, una X a la recta de baix i, a la vall, un desviament on els carrils s'ajunten i es trenquen de costat entre bales de palla.",
     'page.langTitle': 'Idiomes',
     "page.privacy": "Privadesa"
   },
@@ -1455,6 +1465,7 @@ export const CATALOGOS = {
     'circuito.ocho': "L'OTTO",
     'circuito.nudo': 'IL NODO',
     'circuito.resbalon': 'LA SCIVOLATA',
+    'circuito.banera': 'LA VASCA',
     // Los nombres de los circuitos públicos: un adjetivo y un sustantivo (palabra|género;
     // el adjetivo, masculino|femenino), en el orden de `nombre.formato`.
     'nombre.formato': '{s} {a}',
@@ -1648,9 +1659,9 @@ export const CATALOGOS = {
     'page.how5': 'Sul telefono in verticale, la modalità lente: la pista ingrandita intorno alla tua auto e la mappa del circuito in alto, contro la CPU.',
     'page.how6': 'Tredici auto da scegliere nella schermata iniziale, da una due cavalli a una monovolume: cambiano la forma, non la gara.',
     'page.how7': 'Disegna il tuo circuito con il dito su una griglia: provalo contro la CPU, salvalo e condividi il link.',
-    'page.how8': 'Campionato: i quattro circuiti di fila. Vince chi vince più gare e, in caso di parità, il tempo totale minore.',
+    'page.how8': 'Campionato: i cinque circuiti di fila. Vince chi vince più gare e, in caso di parità, il tempo totale minore.',
     'page.how9': 'Galleria: pubblica i tuoi circuiti con un alias di tre lettere e corri quelli degli altri, i nuovi o i più giocati.',
-    'page.how10': 'Record sul giro nei quattro circuiti ufficiali: firma il tuo con tre lettere e corri contro il tuo fantasma o quello del record.',
+    'page.how10': 'Record sul giro nei cinque circuiti ufficiali: firma il tuo con tre lettere e corri contro il tuo fantasma o quello del record.',
     'page.controlsTitle': 'Comandi',
     'page.colWho': 'Auto',
     'page.colKeys': 'Tastiera',
@@ -1665,6 +1676,7 @@ export const CATALOGOS = {
     'page.circ.ocho': 'un otto con incrocio, un tornante sopraelevato, una chicane e due curve di derapata.',
     'page.circ.nudo': 'una X dove le auto cambiano corsia, un rettilineo di dossi, un tornante e una chicane.',
     'page.circ.resbalon': 'due strettoie dove le corsie si avvicinano (affiancate, le auto si toccano) e una curva scivolosa da prendere in derapata.',
+    'page.circ.banera': 'il rettilineo d’arrivo più lungo, due curve sopraelevate, una X sul rettilineo in basso e, nella valle, una deviazione dove le corsie si avvicinano e scartano di lato tra balle di paglia.',
     'page.langTitle': 'Lingue',
     "page.privacy": "Privacy"
   },
@@ -1728,6 +1740,7 @@ export const CATALOGOS = {
     'circuito.ocho': 'LE HUIT',
     'circuito.nudo': 'LE NŒUD',
     'circuito.resbalon': 'LA GLISSADE',
+    'circuito.banera': 'LA BAIGNOIRE',
     // Los nombres de los circuitos públicos: un adjetivo y un sustantivo (palabra|género;
     // el adjetivo, masculino|femenino), en el orden de `nombre.formato`.
     'nombre.formato': '{s} {a}',
@@ -1921,9 +1934,9 @@ export const CATALOGOS = {
     'page.how5': 'Sur téléphone en portrait, le mode loupe : la piste agrandie autour de ta voiture et le plan du circuit en haut, contre le CPU.',
     'page.how6': "Treize voitures au choix sur l'écran d'accueil, d'une deuche à un monospace : elles changent la forme, pas la course.",
     'page.how7': 'Dessine ton propre circuit au doigt sur une grille : essaie-le contre le CPU, enregistre-le et partage le lien.',
-    'page.how8': "Championnat : les quatre circuits d'affilée. Celui qui gagne le plus de courses l'emporte ; en cas d'égalité, le meilleur temps total.",
+    'page.how8': "Championnat : les cinq circuits d'affilée. Celui qui gagne le plus de courses l'emporte ; en cas d'égalité, le meilleur temps total.",
     'page.how9': 'Galerie : publie tes circuits avec un pseudo de trois lettres et cours ceux des autres, les nouveaux ou les plus joués.',
-    'page.how10': 'Records du tour sur les quatre circuits officiels : signe le tien en trois lettres et cours contre ton fantôme ou celui du record.',
+    'page.how10': 'Records du tour sur les cinq circuits officiels : signe le tien en trois lettres et cours contre ton fantôme ou celui du record.',
     'page.controlsTitle': 'Commandes',
     'page.colWho': 'Voiture',
     'page.colKeys': 'Clavier',
@@ -1938,6 +1951,7 @@ export const CATALOGOS = {
     'page.circ.ocho': 'un huit avec croisement, une épingle relevée, une chicane et deux virages de dérapage.',
     'page.circ.nudo': 'un X où les voitures changent de rail, une ligne droite à bosses, une épingle et une chicane.',
     'page.circ.resbalon': 'deux rétrécissements où les rails se rapprochent (côte à côte, les voitures se touchent) et un virage glissant à prendre en dérapage.',
+    'page.circ.banera': "la ligne droite d'arrivée la plus longue, deux virages relevés, un X dans la ligne droite du bas et, dans le creux, une déviation où les rails se rapprochent et se décalent de côté entre des bottes de paille.",
     'page.langTitle': 'Langues',
     "page.privacy": "Confidentialité"
   }

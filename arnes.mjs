@@ -218,14 +218,14 @@ function cocheSolo(circuito, turno, modelo) {
   return c;
 }
 
-/** Dónde empieza cada estrecha (también la de una curva deslizante), en s. */
-const estrecho = (p) => p.efecto === 'estrecha' || p.efecto === 'deslizante';
+/** Dónde empieza cada estrecha (también la de una curva deslizante o un desvío), en s. */
+const estrecho = (p) => p.efecto === 'estrecha' || p.efecto === 'deslizante' || p.efecto === 'desvio';
 function estrechas(circuito) {
   return circuito.eje.filter((p, i, eje) => estrecho(p) && !estrecho(eje[(i - 1 + eje.length) % eje.length])).map((p) => p.s);
 }
 
-/** Lo que limita la velocidad: una curva o una recta de baches. */
-const limita = (p) => p.radio !== Infinity || p.efecto === 'baches';
+/** Lo que limita la velocidad: una curva, una recta de baches o el quiebro de un desvío. */
+const limita = (p) => p.radio !== Infinity || p.efecto === 'baches' || p.radioDesvio < Infinity;
 
 /** La ficha de un modelo (COCHES); sin modelo, la del de siempre. */
 const ficha = (modelo) => COCHES[modelo ?? COCHE_REFERENCIA];
@@ -295,7 +295,7 @@ function curvasATope(circuito, modelo) {
         avanzarSlot(c, [{ acelerar: true }], DT);
         sale = c.eventos.some((e) => e.tipo === 'sale');
       }
-      const nombre = p.efecto === 'baches' ? 'los baches' : `la de ${p.radio}${p.efecto ? ' (' + p.efecto + ')' : ''}`;
+      const nombre = p.efecto === 'baches' ? 'los baches' : p.efecto === 'desvio' ? 'el desvío' : `la de ${p.radio}${p.efecto ? ' (' + p.efecto + ')' : ''}`;
       if (!sale) pasan.push(`${nombre} por el carril ${k}`);
     }
   }
