@@ -1133,3 +1133,8 @@ app en la consola de Play.
   el largo solo cuenta en los choques, así que los récords siguen valiendo.
 - Arnés: 1041/1041 en verde. Para mirarlos: `_desarrollo/coches.html` (cada uno, a su
   tamaño en pantalla) y `_desarrollo/escala.html` (todos en fila, a la misma escala).
+
+## Slot Panic 1.4.1 (10/10/2026)
+
+- Los coches, a escala de los de verdad y rehechos con sus vistas cenitales.
+  `pnyk.json`: 1.4.1.
