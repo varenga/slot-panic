@@ -1529,3 +1529,8 @@ app en la consola de Play.
   siempre). Playtest en el móvil: el hueco gusta, pero dosificar con la altura cuesta,
   se va más lento o más rápido de lo que se quiere y hay que entrenarlo; a toques se
   juega desde el primer momento. Se quedó el hueco, sin gatillo (`IDEAS.md`).
+
+## Slot Panic 1.11.2 (11/10/2026)
+
+- En el modo lupa, el sitio del dedo: una franja abajo con el pedal del acelerador, y
+  la vista encima, sin el dedo. `pnyk.json`: 1.11.2.
