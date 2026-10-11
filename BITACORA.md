@@ -1515,3 +1515,22 @@ app en la consola de Play.
 - El ladrillo, berlina (el Bolvo 244), y seis apodos nuevos: PORCHETA, ESPACIO,
   BOLVO 244, BOLVO 850R, MINIC y BITLE. Los récords siguen valiendo.
   `pnyk.json`: 1.11.1.
+
+## El sitio del dedo en la lupa (11/10/2026, rama `38-gatillo-lupa`)
+
+- En el modo lupa el dedo a veces tapaba por donde iba el coche. Durante la carrera,
+  abajo, una franja de 120 px (`ALTO_ACELERADOR`, `lupa.js`) para el pulgar: la vista
+  acaba encima, así que el coche nunca queda bajo el dedo. Dentro, un pedal con el
+  rótulo ACELERADOR (`slot.acelerador`, siete idiomas) que se enciende al pulsar y se
+  llena con la potencia que lleva el coche (en rojo si derrapa): los toques se ven. Se
+  sigue acelerando pulsando en cualquier parte; la franja solo dice dónde.
+- **Se probó antes como gatillo analógico** (una franja de 240 px: abajo nada, a partir
+  del 15 % más, a fondo desde el 88 %; la potencia seguía a lo pedido con el retraso de
+  siempre). Playtest en el móvil: el hueco gusta, pero dosificar con la altura cuesta,
+  se va más lento o más rápido de lo que se quiere y hay que entrenarlo; a toques se
+  juega desde el primer momento. Se quedó el hueco, sin gatillo (`IDEAS.md`).
+
+## Slot Panic 1.11.2 (11/10/2026)
+
+- En el modo lupa, el sitio del dedo: una franja abajo con el pedal del acelerador, y
+  la vista encima, sin el dedo. `pnyk.json`: 1.11.2.

@@ -35,6 +35,10 @@ Cada idea pasa por el mismo filtro:
 - **Niveles de CPU** (hoy una, `CPU_SLOT`).
 - **Gatillo analógico en el móvil**: la altura del dedo como potencia. El teclado
   seguiría con el de toques.
+  Probado en la lupa (11/10/2026, una franja de 240 px: abajo nada, arriba a fondo):
+  cuesta dosificar, se va más lento o más rápido de lo que se quiere y hay que
+  entrenarlo; a toques se juega desde el primer momento. Se quedó el hueco del dedo,
+  sin gatillo. Si vuelve, quizá como opción para quien ya domina los toques.
 - **Récords y fantasma** por circuito y carril.
 
 # 3. Plataforma
