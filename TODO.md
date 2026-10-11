@@ -41,9 +41,6 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
       el rótulo?, ¿el zoom (1,6, `ZOOM_REPETICION`) y la cámara lenta (×0,35) marean o
       se ven borrosos? La salvada (derrape > 0,5 sin salirse) casi no sale: ¿lo consigue
       alguien?
-- [ ] Playtest del modo lupa: ¿qué zoom (hoy 1,2, `?lupa=1.5` para probar otro)?, ¿se ven
-      a tiempo las curvas que vienen? Si tuviera que bajar de lo que llena la mesa (0,93),
-      algo barato más allá de ella: el suelo del escenario estirado o un patrón.
 
 # Fase 2b — El constructor de circuitos
 
