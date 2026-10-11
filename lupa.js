@@ -296,15 +296,17 @@ export function dibujarPortadaLupa({ circuito, carrera, tiempo, duracion, modo, 
 export function botonesFinLupa(ids = ['repetir', 'menu'], y = altoLienzo / 2 + 150) {
   const ancho = 220, alto = 56, hueco = 20;
   const x0 = ANCHO_LUPA / 2 - ancho - hueco / 2;
-  // De dos en dos: el tercero (denunciar), en otra fila debajo, centrado.
-  return ids.map((id, i) => i < 2
-    ? { id, x: x0 + i * (ancho + hueco), y, ancho, alto }
-    : { id, x: ANCHO_LUPA / 2 - ancho / 2, y: y + alto + hueco, ancho, alto });
+  // De dos en dos (debajo, momentos y denunciar); el último, si queda solo, centrado.
+  return ids.map((id, i) => {
+    const solo = i === ids.length - 1 && i % 2 === 0;
+    const x = solo ? ANCHO_LUPA / 2 - ancho / 2 : x0 + (i % 2) * (ancho + hueco);
+    return { id, x, y: y + Math.floor(i / 2) * (alto + hueco), ancho, alto };
+  });
 }
 
 /** Los del campeonato van más abajo: encima va la tabla. */
-export function botonesFinCampeonatoLupa(campeonato) {
-  return botonesFinLupa(idsFinCampeonato(campeonato), altoLienzo / 2 + 230);
+export function botonesFinCampeonatoLupa(campeonato, ids = idsFinCampeonato(campeonato)) {
+  return botonesFinLupa(ids, altoLienzo / 2 + 230);
 }
 
 export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null, ids = undefined) {
@@ -314,7 +316,7 @@ export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null, 
   if (campeonato) {
     pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y - 230, 40);
     pintarTablaCampeonato(campeonato, carrera, humanos, { x, y: y - 150, mitad: 230, tam: 18, fila: 40 });
-    for (const caja of botonesFinCampeonatoLupa(campeonato)) boton(caja, t(ETIQUETA_BOTON[caja.id]), caja.id !== 'menu', 20);
+    for (const caja of botonesFinCampeonatoLupa(campeonato, ids)) boton(caja, t(ETIQUETA_BOTON[caja.id]), DESTACADO.has(caja.id), 20);
     confeti(particulas);
     return;
   }

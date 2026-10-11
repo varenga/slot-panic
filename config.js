@@ -279,6 +279,23 @@ export const CONTROLES_SLOT = [
 ];
 export const TECLAS_BLOQUEADAS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'];
 
+// --- Los mejores momentos ----------------------------------------------------
+
+/*
+ * Al acabar, se repite lo mejor de la carrera (nucleo/momentos.js lo graba y
+ * lo elige; repeticion.js lo enseña): solo el mejor y, con el botón MOMENTOS,
+ * los tres.
+ */
+export const PASO_REPETICION = 1 / 60;  // s mínimos entre dos cuadros grabados
+export const GRABA_REPETICION = 1800;   // s como mucho de carrera grabada (una de 10 vueltas, ~150)
+export const TRAS_META = 1.2;           // s que se sigue grabando tras la meta antes de repetir
+export const NUMERO_MOMENTOS = 3;
+export const LENTA_REPETICION = 0.35;   // la velocidad de la repetición en el instante del momento
+export const LENTA_ANCHO = 0.5;         // s a cada lado del instante a cámara lenta
+export const LENTA_RAMPA = 0.7;         // s en que vuelve a velocidad normal
+export const ZOOM_REPETICION = 1.6;     // px del lienzo por px del mundo, en la mesa y en la lupa
+export const SALTAR_REPETICION = 0.35;  // s antes de aceptar el toque que la salta
+
 // --- Paleta -----------------------------------------------------------------
 
 // La de Race Panic (y Rail Panic), para que se lean como hermanos.

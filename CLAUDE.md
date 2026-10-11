@@ -9,7 +9,7 @@ ocho*, *El nudo*, *El resbalón* y *La bañera*, de piezas), dos coches engancha
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces, las estrechas y el desvío, una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cinco seguidos), de 3, 5 o 10 vueltas, y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cinco seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
@@ -176,6 +176,12 @@ demás, en `BITACORA.md`). Mide y comprueba:
    fina con el coche más rápido y su meta, los mismos coches que `COCHES`, acepta la
    vuelta de verdad (también sin coche: la de una caché vieja) y rechaza las trucadas
    (y un coche cambiado).
+8. **Los mejores momentos**: en carreras grabadas de cada oficial hay momentos, los
+   elegidos (≤ 3) no se pisan y caben en lo grabado, la repetición pinta las poses
+   grabadas, un momento repetido dura ≤ 7,5 s y los tres ≤ 20 s, con la misma semilla
+   salen los mismos y una carrera de 10 vueltas graba < 2 MB. En cada encuentro, cada
+   choque es un momento en su sitio (X, cruce o estrecha); los demás (salvada,
+   adelantamiento, llegada, salida, vuelta rápida) se prueban con carreras de mentira.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).
@@ -226,6 +232,8 @@ nucleo/campeonato.js   el campeonato: los oficiales en orden, victorias, tiempos
                        del que no acaba, a su ritmo) y el desempate
 nucleo/fantasma.js     cada vuelta grabada a 1/30 s y reproducida con su reloj;
                        codificar() / decodificar() para guardarla y enviarla
+nucleo/momentos.js     los mejores momentos: el búfer de poses de la carrera, los
+                       momentos que se encuentran en él y elegirMomentos()
 nucleo/cuadricula.js   el constructor, en enteros: el trazado (meta + un paso por
                        casilla), validarTrazado(), el código (?c=) y aPiezas()
 nucleo/trazo.js        lo que el dedo dibuja: pisar(), cerrar, cambiarVariante()
@@ -257,6 +265,8 @@ pantalla.js            lo que va encima: marcador, avisos, portada, cartel de fi
 menu.js                el menú de la portada: los cuatro grupos (CARRERA, COCHE,
                        COMUNIDAD, AJUSTES) y el panel de cada uno, en la mesa y en
                        la lupa; cajasGrupos() y cajasMenu() dibujan Y se pulsan
+repeticion.js          la repetición de los momentos: cámara, cámara lenta, bandas
+                       y rótulo. Presentación, como lupa.js
 lupa.js                el modo lupa (móvil en vertical): la cámara que sigue al J1,
                        el mapa y su marcador, portada y fin. Presentación, como
                        pantalla.js
