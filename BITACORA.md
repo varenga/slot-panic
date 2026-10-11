@@ -1447,3 +1447,9 @@ app en la consola de Play.
   alcanza al otro y le vuelve a dar). 1742/1742 en verde. Visto en El ocho: el golpe en
   el cruce cruza la cola del golpeado y siguen los dos; a más velocidad, el de detrás
   se queda frenado contra el costado del otro.
+
+## Slot Panic 1.10.0 (11/10/2026)
+
+- Choques más realistas: el golpe se suma al derrape (siguen los dos, se sale uno o los
+  dos), el roce en las estrechas y el que se sale se lleva por delante al otro.
+  `pnyk.json`: 1.10.0.
