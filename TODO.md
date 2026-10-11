@@ -24,7 +24,10 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
 - [ ] Playtest de los choques: ¿se entiende por qué uno sigue y el otro no?, ¿frustra que
       te saque el que se sale a tu lado?, ¿el roce de la estrecha saca demasiado o poco
       (`ROCE` 12, `GOLPE_SALE` 90)?
-- [ ] Más circuitos oficiales (hoy cinco).
+- [ ] Más circuitos oficiales (hoy seis).
+- [ ] Playtest de *La diagonal*: ¿el cruce a 60° se ve venir desde la diagonal?, ¿se
+      chocan en él lo bastante (en la misma pista, la CPU y el mejor piloto casi nunca)?,
+      ¿la estrecha del lazo antes de la horquilla sirve de algo?
 - [ ] Playtest de *La bañera*: ¿el desvío se lee antes de llegar?, ¿las balas de paja
       se ven pequeñas?, ¿14 px de quiebro (`DESVIO`) se notan?
 - [ ] Playtest de los escenarios: ¿se leen las piezas nuevas (flores, estanques, pacas,

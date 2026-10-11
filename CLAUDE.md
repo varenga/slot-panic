@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Publicado (v1.0.0): carreras de slot en cinco circuitos (*La horquilla*, y *El
-ocho*, *El nudo*, *El resbalón* y *La bañera*, de piezas), dos coches enganchados a carriles que se cambian en cada
+Publicado (v1.0.0): carreras de slot en seis circuitos (*La horquilla*, y *El
+ocho*, *El nudo*, *El resbalón*, *La bañera* y *La diagonal*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, choques en las X, los cruces, las estrechas y el desvío (el golpe se
 suma al derrape: siguen los dos, se sale uno o los dos; y uno que se sale se lleva por delante al
 otro), una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cinco seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los seis seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
@@ -257,6 +257,9 @@ circuitos/resbalon.js  «El resbalón», de piezas: las estrechas (corta y larga
                        curva deslizante y una chicane
 circuitos/banera.js    «La bañera», de piezas: la recta más larga, dos peraltadas,
                        una X, el valle con el desvío y una de derrape
+circuitos/diagonal.js  «La diagonal», de piezas: un ocho torcido que se cruza a
+                       60°, un valle de baches, una peraltada y un lazo estrecho
+                       con su estrecha
 dibujo.js              el mundo: suelo, decorado y pista (en una capa que se pinta
                        una vez), carriles y coches
 coches.js              la forma de cada modelo, vista desde arriba: silueta, ruedas

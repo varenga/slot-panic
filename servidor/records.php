@@ -27,6 +27,7 @@ const RECORDS_CIRCUITOS = [
   'nudo'     => ['minimo' => 8700, 'meta' => [420, 620]],
   'resbalon' => ['minimo' => 6500, 'meta' => [600, 620]],
   'banera'   => ['minimo' => 7000, 'meta' => [310, 110]],
+  'diagonal' => ['minimo' => 9000, 'meta' => [330, 100]],
 ];
 /*
  * Los coches (COCHES en config.js). Una tabla con todos: cada vuelta dice con

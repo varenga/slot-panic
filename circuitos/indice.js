@@ -9,5 +9,6 @@ import { OCHO } from './ocho.js';
 import { NUDO } from './nudo.js';
 import { RESBALON } from './resbalon.js';
 import { BANERA } from './banera.js';
+import { DIAGONAL } from './diagonal.js';
 
-export const CIRCUITOS = [PRIMERO, OCHO, NUDO, RESBALON, BANERA];
+export const CIRCUITOS = [PRIMERO, OCHO, NUDO, RESBALON, BANERA, DIAGONAL];
