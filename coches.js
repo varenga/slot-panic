@@ -342,36 +342,41 @@ export const MODELOS = [
     }
   },
   {
-    // El ladrillo, el familiar sueco de 1993 (±4,51): una caja de esquinas
-    // vivas. Los parachoques negros, gordos, de punta a punta; los faros
-    // cuadrados y la calandra en medio. El techo, recto hasta la cola, con
-    // sus barras, y los pilotos altos en las esquinas de atrás.
+    // El ladrillo, la berlina sueca de 1978 (±4,41): una caja de esquinas
+    // vivas, de tres volúmenes. Los parachoques negros, gordos, de punta a
+    // punta; los faros cuadrados y la calandra, ancha, entre ellos. El capó,
+    // largo y plano; el techo, corto, con su techo solar; detrás de la luna,
+    // el maletero, y los pilotos grandes doblando las esquinas de atrás. Lo
+    // que lo separa de la ranchera es eso: el techo no llega a la cola.
     id: 'ladrillo',
-    medidas: [4790, 1707],
+    medidas: [4898, 1707],
     ejes: [6.6, -5.5],
-    via: 3.6,
+    via: 3.5,
     silueta() {
-      caja(-L, L, -4.51, 4.51, 0.7);
-      caja(3.4, 4.3, -5.3, 5.3, 0.3);   // los retrovisores
+      caja(-L, L, -4.41, 4.41, 0.7);
+      caja(3, 3.9, -5.2, 5.2, 0.3);     // los retrovisores
     },
     detalles(techo) {
       rellenar('#22242a', () => {        // los parachoques, de goma
-        caja(10.2, 11, -4.3, 4.3, 0.4);
-        caja(-11, -10.3, -4.3, 4.3, 0.4);
+        caja(10.2, 11, -4.25, 4.25, 0.4);
+        caja(-11, -10.3, -4.25, 4.25, 0.4);
       });
-      rayas('rgba(0, 0, 0, 0.2)', 4.6, 9.9, [-2.6, 2.6], 0.3);   // el capó, plano
-      rellenar(CRISTAL, () => simetrico([[4.4, 3.6], [2.6, 3.9]]));
-      rellenar(techo, () => caja(-10, 2.6, -3.9, 3.9, 0.6));
-      rayas(CRISTAL, -9.7, 2.3, [-4.15, 4.15], 0.4);          // las ventanillas
-      rayas('#22242a', -9, 1.4, [-3.1, 3.1], 0.45);           // las barras del techo
-      rellenar(CRISTAL, () => caja(-10.3, -10, -3.4, 3.4, 0.1));   // el portón, de canto
-      rellenar('rgba(0, 0, 0, 0.45)', () => caja(9.6, 10.2, -1.5, 1.5, 0.1));   // la calandra
+      rayas('rgba(0, 0, 0, 0.2)', 4.4, 9.9, [-2.5, 2.5], 0.3);     // el capó, plano
+      rayas('rgba(0, 0, 0, 0.18)', -10, -7, [-3, 3], 0.3);         // y el maletero
+      rellenar(CRISTAL, () => simetrico([[4.2, 3.5], [2.4, 3.8]]));
+      rellenar(techo, () => caja(-4.8, 2.4, -3.8, 3.8, 0.6));
+      rayas(CRISTAL, -4.6, 2.2, [-4.05, 4.05], 0.4);               // las ventanillas
+      rellenar('rgba(0, 0, 0, 0.3)', () => caja(-2.2, 0.9, -1.7, 1.7, 0.3));   // el techo solar
+      rellenar(CRISTAL, () => simetrico([[-4.8, 3.8], [-6.6, 3.3]]));         // la luna
+      rellenar('rgba(0, 0, 0, 0.45)', () => caja(9.6, 10.2, -2, 2, 0.1));     // la calandra
       ctx.fillStyle = FARO;              // los faros, cuadrados
-      rect(9.6, 10.2, -3.9, -1.9);
-      rect(9.6, 10.2, 1.9, 3.9);
-      ctx.fillStyle = PILOTO;            // y los pilotos, altos
-      rect(-10.3, -9.7, -4.4, -2.9);
-      rect(-10.3, -9.7, 2.9, 4.4);
+      rect(9.6, 10.2, -3.9, -2.2);
+      rect(9.6, 10.2, 2.2, 3.9);
+      ctx.fillStyle = PILOTO;            // y los pilotos, que doblan la esquina
+      rect(-10.3, -9.6, -4.3, -2.2);
+      rect(-10.3, -9.6, 2.2, 4.3);
+      rect(-10.3, -8.9, -4.3, -3.8);
+      rect(-10.3, -8.9, 3.8, 4.3);
     }
   },
   {
