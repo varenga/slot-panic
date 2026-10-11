@@ -19,9 +19,9 @@ modo). Antes de crecer, que esté en su sitio:
 
 Por decidir el orden, con el filtro de siempre («¿hace la carrera más divertida?»):
 
-- [ ] El peralte y los baches no se leen: el peralte «no se entiende tanto» y los
-      baches «no se notan mucho» (la curva de derrape, perfecta). Que se vean antes de
-      llegar y se sientan al pasar.
+- [ ] Playtest del peralte y los baches (1.12.0): ¿se entiende ya el peralte (la rampa
+      y las flechas) o hace falta que se note al pasar?, ¿los baches se notan (bote,
+      golpe, vibración, polvo)?, ¿el freno (`FRENO_BACHES` 0,15) se queda corto?
 - [ ] Más circuitos oficiales (hoy seis).
 - [ ] Playtest de *La diagonal*: ¿el cruce a 60° se ve venir desde la diagonal?, ¿se
       chocan en él lo bastante (en la misma pista, la CPU y el mejor piloto casi nunca)?,

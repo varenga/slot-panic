@@ -228,7 +228,9 @@ export const FUERA_MAXIMO = 2.2;        // s fuera, como mucho, antes de que lle
  *   el propio derrape frena el coche hasta que agarra. Por eso son cerradas
  *   (radio 95).
  * - Los BACHES sacuden la guía: en la recta agarra como en una curva, y por
- *   encima de VELOCIDAD_BACHES derrapa.
+ *   encima de VELOCIDAD_BACHES derrapa. Y frenan: cada bache (uno cada
+ *   PASO_BACHES px) quita velocidad, FRENO_BACHES por segundo a VELOCIDAD_BACHES
+ *   (más cuanto más rápido), y el coche bota.
  * - En la ESTRECHA los carriles se acercan al eje hasta ESTRECHA veces su
  *   distancia: a la par, dos coches se tocan (a 2 · CARRIL · ESTRECHA, menos
  *   que el ancho de un coche). Es la chicane del juguete: adelantar ahí es arriesgarse.
@@ -246,6 +248,8 @@ export const CURVA_DESLIZANTE = { acumula: 2, freno: 0.1, limite: 1, coleteo: 2.
 export const ESTRECHA = 0.4;            // fracción de CARRIL a la que se acercan los carriles
 export const DESVIO = 14;               // px que se van de lado los carriles juntos en el desvío
 export const VELOCIDAD_BACHES = 330;    // px/s
+export const FRENO_BACHES = 0.15;       // 1/s de velocidad que se pierde en los baches, a VELOCIDAD_BACHES
+export const PASO_BACHES = 40;          // px de un bache al siguiente
 /*
  * Los CHOQUES entre coches. Cada coche es una cápsula: un segmento a lo largo
  * de su pose (con la cola que haya sacado) y ANCHO_COCHE / 2 alrededor. Dos

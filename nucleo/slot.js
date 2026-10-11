@@ -28,7 +28,7 @@
 import {
   ACUMULA_DERRAPE, AGARRE_PERALTE, AGARRE_SLOT, RADIO_GUIA, ALTO, ANCHO, ANCHO_COCHE, BAJA_POTENCIA, CARRIL,
   COCHE_REFERENCIA, COCHES, COLETEO_DERRAPE, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, CURVA_DESLIZANTE, DURACION_MANO, ESPERA_MANO,
-  FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, GOLPE_SALE, INERCIA_MOTOR, INERCIA_SOLTAR, LIMITE_SLOT, PALANCA_MORRO, PASO_FISICA,
+  FRENO_BACHES, FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, GOLPE_SALE, INERCIA_MOTOR, INERCIA_SOLTAR, LIMITE_SLOT, PALANCA_MORRO, PASO_BACHES, PASO_FISICA,
   PENETRA, REBOTE_COCHES, RECUPERA_DERRAPE, ROCE, ROZA, SUBE_POTENCIA, TOQUE, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from '../config.js';
 import { normalizarAngulo } from './geometria.js';
@@ -188,7 +188,7 @@ function crearSlot(circuito, lateral, color, modelo) {
     giro: 0,            // rad/s de trompo, fuera del carril
     tFuera: 0, tQuieto: 0, tMano: 0,
     desde: null,        // la pose en que la mano lo recoge
-    altura: 0,          // [0, 1]: levantado por la mano (para el dibujo)
+    altura: 0,          // [0, 1]: levantado por la mano, o botando en los baches (para el dibujo)
     posado: false,      // la mano lo ha dejado en este paso: no empieza a tocarse con nadie
     completadas: 0,
     vueltas: [],
@@ -237,7 +237,7 @@ export function crearCarreraSlot(circuito, colores, turno = 0, { vueltas = VUELT
     tiempoSalida: 0,
     ganador: null,      // índice del primero en terminar
     toque: null,        // si los dos coches se están tocando: { tregua, choque } (ver `comprobarChoque`)
-    eventos: []         // { tipo, coche } del último avance: cuenta, salida, sale, clac, vuelta, fin
+    eventos: []         // { tipo, coche } del último avance: cuenta, salida, sale, clac, bache, vuelta, fin
   };
   // La primera vuelta empieza en la parrilla, parado.
   if (grabarVueltas) for (const slot of carrera.coches) grabar(slot.grabacion, slot.coche, 0);
@@ -275,7 +275,8 @@ function pasoCarreraSlot(carrera, mandos, dt) {
     // Acabada la carrera, nadie acelera: los coches frenan hasta pararse.
     const acelerar = carrera.fase === 'carrera' && slot.terminado === null && !!mandos[i]?.acelerar;
     const evento = pasoSlot(slot, carrera.circuito, acelerar, dt);
-    if (evento) carrera.eventos.push({ tipo: evento, coche: i });
+    if (evento === 'bache') carrera.eventos.push({ tipo: evento, coche: i, fuerza: slot.v / VELOCIDAD_BACHES });
+    else if (evento) carrera.eventos.push({ tipo: evento, coche: i });
     if (carrera.grabar && carrera.fase === 'carrera' && slot.terminado === null) {
       grabar(slot.grabacion, slot.coche, carrera.tiempo - slot.inicioVuelta);
     }
@@ -515,7 +516,7 @@ function rozar(carrera, c, toca, acercan) {
 
 const ANCHAS = { derrape: CURVA_DERRAPE, deslizante: CURVA_DESLIZANTE };
 
-/** Un paso de un coche. Devuelve 'sale' o 'clac' si se ha salido o ha vuelto al carril. */
+/** Un paso de un coche. Devuelve 'sale' o 'clac' si se ha salido o ha vuelto al carril, y 'bache' en cada uno. */
 function pasoSlot(slot, circuito, acelerar, dt) {
   if (slot.estado === 'fuera') return pasoFuera(slot, dt);
   if (slot.estado === 'mano') return pasoMano(slot, circuito, dt);
@@ -546,16 +547,21 @@ function pasoSlot(slot, circuito, acelerar, dt) {
   } else {
     slot.derrape = Math.max(0, slot.derrape - RECUPERA_DERRAPE * dt);
   }
+  // Los baches frenan, más cuanto más rápido, y el coche bota en cada uno.
+  const baches = p.efecto === 'baches';
+  if (baches) slot.v *= Math.exp(-FRENO_BACHES * Math.min(1.5, slot.v / VELOCIDAD_BACHES) * dt);
   // Avanza por el carril: por dentro de una curva, más `s` por cada px.
   const ds = slot.v * dt / factorCarril(circuito, indice, slot.lateral * signoVuelta(circuito, slot.s));
+  const bache = baches && Math.floor((slot.s + ds) / PASO_BACHES) !== Math.floor(slot.s / PASO_BACHES);
   slot.s += ds;
   slot.progreso += ds;
+  slot.altura = baches ? 0.12 * Math.min(1, slot.v / VELOCIDAD_BACHES) * Math.abs(Math.sin(Math.PI * slot.s / PASO_BACHES)) : 0;
 
   // La cola sale hacia fuera al acercarse al límite, y más derrapando: el
   // aviso de que viene. En las rectas vuelve a su sitio.
   const cerca = Math.max(0, Math.min(1, (slot.exigencia - COLETEO_DESDE) / (1 - COLETEO_DESDE)));
   // En los baches la cola va de un lado a otro.
-  const hacia = p.curva || p.giroDesvio || (p.efecto === 'baches' ? (Math.floor(slot.s / 40) % 2 ? 1 : -1) : Math.sign(slot.coleteo));
+  const hacia = p.curva || p.giroDesvio || (baches ? (Math.floor(slot.s / PASO_BACHES) % 2 ? 1 : -1) : Math.sign(slot.coleteo));
   const objetivo = (cerca * COLETEO_MAXIMO + slot.derrape * COLETEO_DERRAPE) * (ancha ? ancha.coleteo : 1) * hacia;
   slot.coleteo += (objetivo - slot.coleteo) * Math.min(1, 10 * dt);
   colocarEnCarril(slot, circuito);
@@ -564,7 +570,7 @@ function pasoSlot(slot, circuito, acelerar, dt) {
     soltar(slot, hacia || 1);
     return 'sale';
   }
-  return null;
+  return bache ? 'bache' : null;
 }
 
 /** La pose sale del carril, con la cola fuera que diga el coleteo. */
@@ -596,6 +602,7 @@ function soltar(slot, curva) {
   slot.exigencia = 0;
   slot.derrape = 0;
   slot.coleteo = 0;
+  slot.altura = 0;
   slot.salidas++;
   coche.frenando = false;
 }

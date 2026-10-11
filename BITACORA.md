@@ -1545,11 +1545,38 @@ app en la consola de Play.
 ## Playtests: momentos, piezas, choques y escenarios (11/10/2026)
 
 - **Los mejores momentos**: bien. No alargan el fin («duración perfecta») y eligen
-  momentos adecuados. Se quedan el zoom (1,6) y la cámara lenta (×0,35). Sigue sin
-  saberse si alguien consigue la salvada.
+  momentos adecuados. Se quedan el zoom (1,6) y la cámara lenta (×0,35). La salvada
+  sí sale y se ve: el coche pasa echando chispas sin salirse, y se siente al pasar.
 - **Las piezas**: la curva de derrape, «perfecta». El peralte «no se entiende tanto» y
   los baches «no se notan mucho»: pasa a `TODO.md`.
 - **Los choques**: «se entiende siempre por qué se sigue o por qué te vas fuera, le
   dan más realismo al juego». No se ha encontrado ninguno que no se entienda. Se quedan
   `ROCE` 12 y `GOLPE_SALE` 90.
 - **Los escenarios**: las piezas nuevas del decorado están bien y no estorban al juego.
+
+## El peralte y los baches, que se lean (11/10/2026, rama `41-peralte-baches`)
+
+- Del playtest: el peralte «no se entiende tanto» y los baches «no se notan mucho».
+- **Los baches, al pasar**: frenan (`FRENO_BACHES`, 0,15 por segundo a 330 px/s, más
+  cuanto más rápido, hasta ×1,5), el coche bota en cada uno (`altura`, la de la mano, hasta
+  0,12: se graba en la repetición) y cada bache (uno cada `PASO_BACHES`, 40 px) es un
+  evento `bache`: un golpe hueco (`sfxBache`, el de la CPU a la mitad), vibración en el
+  móvil y, rápido, polvo. No se graba en la repetición: son muchos y el bote ya va en
+  la pose. **Antes de llegar**: una cresta a lo ancho en cada bache (sombra y luz),
+  donde bota el coche; antes eran rayas flojas que no casaban con nada.
+- **El freno, medido**: con 0,5 los baches frenaban tanto antes de la curva que ir a
+  fondo dejaba de castigarse (*El nudo*: a fondo no perdía un 30 % ni se salía dos veces
+  por vuelta, y la CPU no se equivocaba; *La diagonal*: el patito y el mínimo a fondo,
+  5 salidas y un 15 %). Con 0,15, todo en verde. La mejor vuelta automática apenas se
+  mueve (*El nudo* 11,38 → 11,40 s, *La diagonal* igual): quien va fino ya los pasa
+  despacio; pierde el que va rápido. Los récords siguen valiendo.
+- **El peralte, antes de llegar**: la pista inclinada, oscura por dentro y clara por
+  fuera (`RAMPA`), la banda rayada del borde más marcada y flechas en el sentido de la
+  marcha cada 44 px por la parte alta: ahí se pasa más rápido. Al pasar no cambia nada:
+  primero, ver si con el dibujo se entiende.
+
+## Slot Panic 1.12.0 (11/10/2026)
+
+- Los baches se notan: frenan, el coche bota, suenan, vibran y levantan polvo; y se ven
+  antes de llegar. El peralte se ve inclinado, con flechas. Los récords siguen valiendo.
+  `pnyk.json`: 1.12.0.
