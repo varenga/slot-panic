@@ -14,7 +14,7 @@
 
 import {
   AGARRE_SLOT, ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, CARRERAS, CARRIL, COCHE_REFERENCIA, COCHES, CPU_SLOT, DURACION_MANO, FUERA_MAXIMO,
-  LARGO_COCHE, NIVELES_CPU, PESO_CARACTER, VELOCIDAD_SLOT, VUELTAS_SLOT
+  GRABA_REPETICION, LARGO_COCHE, NIVELES_CPU, NUMERO_MOMENTOS, PASO_REPETICION, PESO_CARACTER, TRAS_META, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from './config.js';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -34,6 +34,10 @@ import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucle
 import { luzDeCarrera, sombraSol, sombraTorre } from './luz.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato, tiempoFinal } from './nucleo/campeonato.js';
 import { codificar, decodificar, posar } from './nucleo/fantasma.js';
+import {
+  crearRepeticion, duracionMomento, elegirMomentos, eventosEntre, grabarCuadro, numerosGrabados, poseEn, TIPOS_MOMENTO
+} from './nucleo/momentos.js';
+import { claveRotulo } from './repeticion.js';
 
 const DT = 1 / 60;
 let aserciones = 0;
@@ -1068,6 +1072,212 @@ console.log('\nEl fantasma');
   comprobar(sinGrabar.grabar === false && sinGrabar.coches[0].grabadas.length === 0, 'una carrera sin grabar graba');
   comprobar(['', '{}', '{"v":1}', 'nada', JSON.stringify({ v: 1, paso: 1 / 30, tiempo: 9, d: [1, 2] })].every((t) => decodificar(t) === null),
     'decodificar acepta un fantasma malformado');
+}
+
+// --- 8. Los mejores momentos ----------------------------------------------------
+
+/*
+ * Lo grabado y lo elegido (nucleo/momentos.js). Carreras como las del juego
+ * (un piloto que falla, de «humano», contra la CPU normal), grabadas hasta
+ * TRAS_META s tras la meta: hay momentos, los elegidos no se pisan y caben en
+ * lo grabado, el búfer es finito y no pesa, la repetición dura lo que debe y
+ * con la misma semilla sale lo mismo. Los choques, lanzados en cada
+ * encuentro, dicen bien dónde han sido; los demás momentos se prueban con
+ * carreras de mentira, donde se ve exactamente qué tiene que encontrarse.
+ */
+console.log('\nLos mejores momentos');
+{
+  function carreraGrabada(circuito, semilla, vueltas = 3) {
+    const carrera = crearCarreraSlot(circuito, ['#f00', '#00f'], semilla % 2, { vueltas });
+    const rep = crearRepeticion(circuito, 2);
+    const pilotos = [crearPiloto({ prudencia: 1.25, variacion: 0.3, fallo: 0.1, semilla: semilla * 7 }), crearPiloto({ ...CPU_SLOT, semilla })];
+    let tras = null;
+    for (let k = 0; k < 600 / DT; k++) {
+      avanzarSlot(carrera, carrera.fase === 'carrera' ? carrera.coches.map((s, i) => decidirSlot(pilotos[i], s, circuito)) : [], DT);
+      grabarCuadro(rep, carrera, DT, [true, false]);
+      if (carrera.fase === 'fin' && tras === null) tras = TRAS_META;
+      if (tras !== null && (tras -= DT) <= 0) break;
+    }
+    return { carrera, rep };
+  }
+
+  const SEMILLAS = 6;
+  const tipos = {};
+  let peorDuracion = 0, peorTotal = 0;
+  for (const circuito of CIRCUITOS) {
+    let conMomentos = 0, mal = [];
+    for (let semilla = 1; semilla <= SEMILLAS; semilla++) {
+      const { rep } = carreraGrabada(circuito, semilla);
+      const elegidos = elegirMomentos(rep);
+      const { lista, mejor } = elegidos;
+      if (lista.length) conMomentos++;
+      for (const m of lista) tipos[m.tipo] = (tipos[m.tipo] || 0) + 1;
+      if (lista.length > NUMERO_MOMENTOS) mal.push(`${lista.length} momentos`);
+      if (lista.some((m, i) => i > 0 && m.desde < lista[i - 1].hasta)) mal.push('momentos que se pisan o desordenados');
+      if (lista.some((m) => m.desde < 0 || m.hasta > rep.t + 1e-9 || m.t < m.desde || m.t > m.hasta)) mal.push('un momento fuera de lo grabado');
+      if (lista.length && lista.some((m) => m.valor > lista[mejor].valor)) mal.push('el mejor no es el que más vale');
+      if (lista.some((m) => m.tipo === 'vuelta' && !m.humano)) mal.push('una vuelta rápida de la CPU');
+      // Lugares que el circuito no tiene.
+      for (const c of rep.candidatos.filter((c) => c.tipo === 'choque')) {
+        const tiene = { cruce: circuito.cruces.length > 0, x: circuito.cambiosCarril > 0, estrecha: estrechas(circuito).length > 0 }[c.lugar];
+        if (!tiene) mal.push(`un choque en ${c.lugar}`);
+      }
+      // El búfer: finito, un cuadro cada PASO_REPETICION como mucho (más los de los eventos) y el ángulo sin saltos.
+      const finito = rep.cuadros.every((q) => q.every(Number.isFinite));
+      const salto = rep.cuadros.some((q, i) => i > 0 && [0, 1].some((c) => Math.abs(q[3 + c * 7] - rep.cuadros[i - 1][3 + c * 7]) > Math.PI));
+      if (!finito || salto) mal.push(!finito ? 'un cuadro no finito' : 'el ángulo salta');
+      if (rep.cuadros.length > Math.ceil(rep.t / PASO_REPETICION) + rep.eventos.length + 1) mal.push(`${rep.cuadros.length} cuadros en ${rep.t.toFixed(1)} s`);
+      // La repetición: en cada cuadro, la pose es la del cuadro; entre dos, entre ellos.
+      for (let i = 1; i < rep.cuadros.length; i += 97) {
+        const q = rep.cuadros[i], antes = rep.cuadros[i - 1];
+        const [p] = poseEn(rep, q[0]);
+        const [medio] = poseEn(rep, (q[0] + antes[0]) / 2);
+        const entre = (v, a, b) => v >= Math.min(a, b) - 1e-6 && v <= Math.max(a, b) + 1e-6;
+        if (Math.hypot(p.x - q[1], p.y - q[2]) > 1e-6 || !entre(medio.x, antes[1], q[1]) || !entre(medio.y, antes[2], q[2])) {
+          mal.push(`la pose de la repetición no es la grabada a ${q[0].toFixed(2)} s`);
+          break;
+        }
+      }
+      if (eventosEntre(rep, -1, rep.t).length !== rep.eventos.length) mal.push('eventosEntre pierde eventos');
+      const duraciones = lista.map((m) => duracionMomento(m));
+      peorDuracion = Math.max(peorDuracion, ...duraciones);
+      peorTotal = Math.max(peorTotal, duraciones.reduce((a, b) => a + b, 0));
+      if (lista.some((m, i) => duraciones[i] < m.hasta - m.desde - 1e-6)) mal.push('una repetición más corta que su momento');
+      // Con la misma semilla, los mismos momentos.
+      if (semilla === 1) {
+        const otra = elegirMomentos(carreraGrabada(circuito, semilla).rep);
+        if (JSON.stringify(otra) !== JSON.stringify(elegidos)) mal.push('con la misma semilla, otros momentos');
+      }
+    }
+    console.log(`  «${circuito.clave}»: ${conMomentos} de ${SEMILLAS} carreras con momentos${mal.length ? ' · ' + [...new Set(mal)].join(', ') : ''}`);
+    comprobar(conMomentos >= SEMILLAS - 2, `«${circuito.clave}»: solo ${conMomentos} de ${SEMILLAS} carreras tienen algún momento`);
+    comprobar(!mal.length, `«${circuito.clave}»: ${[...new Set(mal)].join(', ')}`);
+  }
+  console.log(`  los elegidos: ${Object.entries(tipos).map(([k, n]) => `${n} ${k}`).join(', ')}`);
+  console.log(`  repetido, un momento dura hasta ${peorDuracion.toFixed(1)} s y los ${NUMERO_MOMENTOS}, hasta ${peorTotal.toFixed(1)} s`);
+  comprobar(peorDuracion <= 7.5, `un momento repetido dura ${peorDuracion.toFixed(1)} s (más de 7,5)`);
+  comprobar(peorTotal <= 20, `los ${NUMERO_MOMENTOS} momentos duran ${peorTotal.toFixed(1)} s (más de 20)`);
+
+  // Lo que pesa una carrera larga, la de resistencia.
+  const larga = CARRERAS.at(-1).vueltas;
+  const { rep: repLarga } = carreraGrabada(CIRCUITOS[0], 1, larga);
+  const megas = numerosGrabados(repLarga) * 8 / 1e6;
+  console.log(`  una carrera de ${larga} vueltas (${repLarga.t.toFixed(0)} s) graba ${repLarga.cuadros.length} cuadros: ~${megas.toFixed(1)} MB`);
+  comprobar(megas < 2, `una carrera de ${larga} vueltas ocupa ${megas.toFixed(1)} MB grabada`);
+  const llena = crearRepeticion(CIRCUITOS[0], 2);
+  llena.t = GRABA_REPETICION;
+  grabarCuadro(llena, crearCarreraSlot(CIRCUITOS[0], ['#f00', '#00f']), DT);
+  comprobar(llena.cuadros.length === 0, `pasados ${GRABA_REPETICION} s se sigue grabando`);
+
+  /*
+   * Los choques, en cada encuentro (como en la sección 3: los dos lanzados
+   * con 21 desfases): cada uno es un momento, y en su sitio.
+   */
+  for (const circuito of CIRCUITOS) {
+    const lista = [
+      ...circuito.cruces.map((c) => [...c.s, 'cruce']),
+      ...circuito.eje.filter((p, i, eje) => p.tipo === 'x' && eje[(i - 1 + eje.length) % eje.length].tipo !== 'x').map((p) => [p.s, p.s, 'x']),
+      ...estrechas(circuito).map((s) => [s, s, 'estrecha'])
+    ];
+    const resultado = lista.map(([sa, sb, lugar]) => {
+      let choques = 0, momentos = 0, bien = 0;
+      for (let desfase = -80; desfase <= 80; desfase += 8) {
+        const c = crearCarreraSlot(circuito, ['#f00', '#00f'], 0);
+        c.fase = 'carrera';
+        c.coches[0].s = sa - 150;
+        c.coches[1].s = sb - 150 + desfase;
+        for (const slot of c.coches) Object.assign(slot, { v: 200, potencia: 200 / VELOCIDAD_SLOT });
+        const rep = crearRepeticion(circuito, 2);
+        for (let k = 0; k < 3 / DT; k++) {
+          avanzarSlot(c, c.coches.map((slot) => ({ acelerar: slot.v < 200 })), DT);
+          choques += c.eventos.filter((e) => e.tipo === 'choque').length;
+          grabarCuadro(rep, c, DT);
+        }
+        const suyos = rep.candidatos.filter((m) => m.tipo === 'choque');
+        momentos += suyos.length;
+        bien += suyos.filter((m) => m.lugar === lugar).length;
+      }
+      return { lugar, choques, momentos, bien };
+    });
+    if (!resultado.length) continue;
+    console.log(`  «${circuito.clave}»: ${resultado.map((r) => `${r.lugar} ${r.bien}/${r.choques}`).join(', ')} choques con su momento, en su sitio`);
+    comprobar(resultado.every((r) => r.choques > 0 && r.momentos === r.choques && r.bien === r.choques),
+      `«${circuito.clave}»: choques sin momento o en otro sitio: ${resultado.map((r) => `${r.lugar} ${r.bien}/${r.momentos}/${r.choques}`).join(', ')}`);
+  }
+
+  /*
+   * Carreras de mentira: dos coches en una recta de La horquilla, movidos a
+   * mano, para ver que cada momento se encuentra cuando toca y solo entonces.
+   */
+  const circuito = CIRCUITOS[0];
+  function deMentira() {
+    const coche = (s) => ({
+      estado: 'carril', s, progreso: s, v: 300, derrape: 0, altura: 0, vueltas: [], terminado: null, humanoDesde: 0,
+      coche: { x: 100 + s, y: 100, angulo: 0, vx: 300, vy: 0 }
+    });
+    const carrera = { circuito, fase: 'carrera', tiempo: 10, vueltas: 3, eventos: [], coches: [coche(200), coche(150)] };
+    return { carrera, rep: crearRepeticion(circuito, 2) };
+  }
+  function correrMentira(pasos) {
+    const { carrera, rep } = deMentira();
+    for (let k = 0; k < pasos.length; k++) {
+      carrera.eventos = [];
+      pasos[k](carrera, k);
+      carrera.tiempo += DT;
+      grabarCuadro(rep, carrera, DT, [true, false]);
+    }
+    return rep.candidatos.map((m) => m.tipo + (m.lugar ? ':' + m.lugar : '')).join(',');
+  }
+  const durante = (n, paso) => Array.from({ length: n }, () => paso);
+  // La salvada: un derrape de 0,7 que vuelve a 0 en el carril; si acaba fuera, nada.
+  const derrape = (k) => Math.max(0, 0.7 - Math.abs(k - 30) * 0.7 / 30);
+  const salvada = correrMentira(durante(90, (c, k) => { c.coches[0].derrape = derrape(k); }));
+  const fuera = correrMentira(durante(90, (c, k) => { c.coches[0].derrape = k < 30 ? derrape(k) : 0; if (k >= 30) c.coches[0].estado = 'fuera'; }));
+  // El adelantamiento: el segundo pasa y aguanta; si devuelve el puesto, o el otro estaba fuera, nada.
+  const pasa = (hasta) => (c, k) => { c.coches[1].progreso = 150 + k * 2; c.coches[1].s = c.coches[1].progreso; if (k > hasta) c.coches[1].progreso = 190; };
+  const adelanta = correrMentira(durante(150, pasa(Infinity)));
+  const devuelve = correrMentira(durante(150, pasa(50)));
+  const alSalirse = correrMentira(durante(150, (c, k) => { pasa(Infinity)(c, k); c.coches[0].estado = 'fuera'; }));
+  // La llegada: el primero gana con el segundo a 0,1 s (por su ritmo); a 1 s, nada.
+  const llega = (hueco) => [(c) => {
+    c.coches[0].vueltas = [9];
+    c.coches[1].progreso = c.vueltas * circuito.largo - hueco * c.coches[1].v;
+    c.tiempo = c.coches[1].progreso / c.coches[1].v;   // a su ritmo de siempre
+    c.eventos = [{ tipo: 'fin', coche: 0 }];
+  }];
+  // La salida: lanzada, sí; despacio, o por un choque, no (es el choque).
+  const sale = (v, choque = false) => [(c) => {
+    Object.assign(c.coches[0].coche, { vx: v, vy: 0 });
+    c.eventos = [...(choque ? [{ tipo: 'choque', coche: 0, x: 0, y: 0 }] : []), { tipo: 'sale', coche: 0 }];
+  }];
+  const mentiras = [
+    ['una salvada', salvada, 'salvada'], ['salvada que acaba fuera', fuera, ''],
+    ['un adelantamiento', adelanta, 'adelanta'], ['uno que devuelve el puesto', devuelve, ''], ['pasar al que se ha salido', alSalirse, ''],
+    ['llegar a 0,1 s', correrMentira(llega(0.1)), 'llegada'], ['llegar a 1 s', correrMentira(llega(1)), ''],
+    ['salirse lanzado', correrMentira(sale(420)), 'salida'], ['salirse despacio', correrMentira(sale(200)), ''],
+    ['salirse por un choque', correrMentira(sale(420, true)), 'choque:']
+  ];
+  const fallan = mentiras.filter(([, hallado, esperado]) => !(esperado.endsWith(':') ? hallado.startsWith(esperado) && !hallado.includes('salida') : hallado === esperado));
+  console.log(`  de mentira: ${mentiras.length - fallan.length} de ${mentiras.length} momentos encontrados cuando tocaba`);
+  comprobar(!fallan.length, `momentos de mentira: ${fallan.map(([n, h, e]) => `${n} da «${h}» y se esperaba «${e}»`).join('; ')}`);
+  // La vuelta rápida de una persona entra; la de la CPU, no.
+  const conVuelta = (humano) => {
+    const rep = crearRepeticion(circuito, 2);
+    rep.t = 20;
+    rep.vueltas.push({ t: 15, coche: 0, tiempo: 9, humano }, { t: 16, coche: 1, tiempo: 9.5, humano: false });
+    return elegirMomentos(rep).lista.map((m) => m.tipo).join();
+  };
+  comprobar(conVuelta(true) === 'vuelta' && conVuelta(false) === '', `la vuelta rápida: de una persona da «${conVuelta(true)}» y de la CPU «${conVuelta(false)}»`);
+  comprobar(Object.keys(TIPOS_MOMENTO).every((k) => TIPOS_MOMENTO[k].antes > 0 && TIPOS_MOMENTO[k].despues > 0), 'un momento sin ventana');
+  // Cada momento, en cada sitio, tiene su rótulo.
+  const posibles = [
+    ...['x', 'cruce', 'estrecha'].map((lugar) => ({ tipo: 'choque', lugar })),
+    ...[null, 'deslizante'].map((lugar) => ({ tipo: 'salvada', lugar })),
+    ...[null, 'estrecha'].map((lugar) => ({ tipo: 'adelanta', lugar })),
+    ...['salida', 'llegada', 'vuelta'].map((tipo) => ({ tipo, lugar: null }))
+  ];
+  const sinRotulo = posibles.map(claveRotulo).filter((k) => !CATALOGOS.es[k]);
+  comprobar(!sinRotulo.length && posibles.every((m) => Object.hasOwn(TIPOS_MOMENTO, m.tipo)), `momentos sin rótulo: ${sinRotulo.join(', ')}`);
 }
 
 // --- 4. Los idiomas -----------------------------------------------------------

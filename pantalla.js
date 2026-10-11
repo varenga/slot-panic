@@ -195,7 +195,7 @@ export function botonesFin(ids = ['repetir', 'menu'], y = ALTO / 2 + 130) {
 
 export const ETIQUETA_BOTON = {
   repetir: 'fin.botonRepetir', siguiente: 'fin.botonSiguiente', menu: 'fin.botonMenu',
-  denunciar: 'fin.botonDenunciar', confirmarDenuncia: 'fin.botonConfirmarDenuncia', denunciado: 'fin.botonDenunciado'
+  momentos: 'fin.botonMomentos', denunciar: 'fin.botonDenunciar', confirmarDenuncia: 'fin.botonConfirmarDenuncia', denunciado: 'fin.botonDenunciado'
 };
 // Los que van destacados (en ámbar).
 export const DESTACADO = new Set(['repetir', 'siguiente', 'confirmarDenuncia']);
@@ -321,7 +321,7 @@ export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null, ids 
   ctx.fillStyle = COLOR.velo;
   ctx.fillRect(0, 0, ANCHO, ALTO);
   if (campeonato) {
-    dibujarFinCampeonato(carrera, humanos, tactil, campeonato);
+    dibujarFinCampeonato(carrera, humanos, tactil, campeonato, ids);
     return;
   }
   const x = ANCHO / 2, y = ALTO / 2;
@@ -343,11 +343,11 @@ export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null, ids 
  * El fin de una carrera del campeonato: quién la ha ganado (o, en la última,
  * el campeón) y la tabla de cómo va.
  */
-function dibujarFinCampeonato(carrera, humanos, tactil, campeonato) {
+function dibujarFinCampeonato(carrera, humanos, tactil, campeonato, ids = idsFinCampeonato(campeonato)) {
   const x = ANCHO / 2, y = ALTO / 2;
   pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y - 165, 40);
   pintarTablaCampeonato(campeonato, carrera, humanos, { x, y: y - 90, mitad: 280, tam: 16, fila: 30 });
-  botones(botonesFin(idsFinCampeonato(campeonato)));
+  botones(botonesFin(ids));
   if (!tactil) {
     const pista = clasificacion(campeonato).acabado ? 'fin.otroCampeonato' : 'fin.siguiente';
     texto(t(pista), x, y + 205, { tam: 14, color: COLOR.texto, peso: 500 });

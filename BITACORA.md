@@ -1335,3 +1335,53 @@ app en la consola de Play.
 - Lo propio de cada escenario (flores y estanques, pacas, matojos y huesos, muñecos
   de nieve, y canicas, gomas y clips en la mesa) y la vida del suelo (caminos,
   roderas, ondas de arena y huellas). `pnyk.json`: 1.8.0.
+
+## Los mejores momentos (11/10/2026, rama `34-mejores-momentos`)
+
+> De `IDEAS.md` › 4. Decidido lo abierto: al acabar se repite **solo el mejor**, y el
+> botón MOMENTOS del cartel repite los tres; compartir el vídeo, en una fase propia.
+
+- **Un búfer de poses, no volver a simular** (`nucleo/momentos.js`): cada fotograma, como
+  mucho cada 1/60 s (`PASO_REPETICION`), de cada coche x, y, ángulo (desenrollado),
+  altura de la mano, estado, derrape y velocidad; y los eventos (choque, sale, clac,
+  vuelta, fin) con su instante. Las chispas y el humo se vuelven a emitir de los
+  eventos y del derrape grabado. Así la repetición no se ata a la versión de la física
+  ni al `dt` de cada fotograma. Una carrera de 10 vueltas (139 s), 8320 cuadros: ~1 MB.
+  Deja de grabar a los 1800 s (`GRABA_REPETICION`).
+- **Los momentos** se buscan mientras se graba: el **choque** (dice dónde: X, cruce o
+  estrecha), la **salida** lanzada (a más de 0,75 · `VELOCIDAD_SLOT`, ~350 px/s; las
+  salidas van de 310 a 410, así que entra una de cada tres), la **salvada** (un derrape
+  de más de 0,5 que vuelve a menos de 0,15 en el carril), el **adelantamiento** (cambia
+  quién va delante, el otro sigue en el carril y aguanta 1 s; en una estrecha vale más),
+  la **llegada** (el segundo a menos de 0,3 s por su ritmo) y la **vuelta rápida** de la
+  carrera si es de una persona. Cada uno vale unos puntos (×1,5 si es de una persona) y
+  se eligen los tres mejores que no se pisan, con su ventana (de 2 s antes y 1,5 después
+  en el choque a 3 y 1 en la llegada).
+- **La salvada de 0,8 de la idea no salía nunca**: el piloto automático no pasa de 0,4
+  de derrape (0,8 una vez, en la deslizante), y forzando el derrape y soltando, casi
+  siempre acaba fuera. Se queda en 0,5: es una hazaña, y pregunta del playtest.
+- **Cómo se ve** (`repeticion.js`): una cámara que sigue al protagonista (o al punto
+  medio si son dos y caben), a 1,6× (`ZOOM_REPETICION`), acotada a la mesa como la de la
+  lupa; a cámara lenta (×0,35) medio segundo a cada lado del instante, volviendo a
+  velocidad normal en 0,7 s; bandas de cine con el rótulo («¡CHOQUE EN LA X!»), quién y
+  cuál, un punto rojo que parpadea y cómo saltarlo. Sirve igual a la mesa que a la
+  lupa, donde ocupa toda la pantalla (sin mapa). Suenan los choques, las salidas, el
+  clac y los motores, a la velocidad de la imagen.
+- **El flujo**: tras la meta se sigue grabando 1,2 s (`TRAS_META`, para que la llegada
+  se vea entera), con la carrera aún en pantalla; luego el mejor momento, la firma si
+  toca y el cartel. Un toque o una tecla salta el momento (no en los primeros 0,35 s: el
+  dedo de la meta), ESC salta todos. Sin momentos, al cartel directamente. En el
+  campeonato, igual tras cada carrera. La analítica cuenta `ver_momentos` (el botón) y
+  `saltar_momento` (saltar el que sale solo, y cuánto se vio): ¿alarga el fin?
+- **El botón MOMENTOS** (o la tecla O) va tras REPETIR y MENÚ; en la lupa los botones
+  van de dos en dos y el último, si queda solo, centrado.
+- **Medido** (arnés, sección 8 nueva; tres vueltas, un piloto que falla contra la CPU
+  normal, 6 carreras por oficial): 29 de 30 carreras con algún momento; de los elegidos,
+  18 adelantamientos, 15 choques, 12 salidas, 8 vueltas rápidas, 3 llegadas y 1
+  salvada. Un momento repetido dura hasta 6,7 s y los tres, hasta 18,7. En cada
+  encuentro, los choques son momentos en su sitio (El ocho, 6 en el cruce; El resbalón,
+  15 en sus estrechas…). Los demás, con carreras de mentira: 10 de 10.
+- **Tras verlo**: en la lupa el rótulo pisaba «REPETICIÓN»: va en una línea propia.
+  CPU contra CPU muchas carreras no tienen nada (sin salidas ni adelantamientos): sale
+  el cartel sin el botón.
+- Arnés: 1731/1731 en verde. Visto en la mesa y en la lupa (?lupa), en El ocho.

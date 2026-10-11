@@ -257,7 +257,7 @@ export function aceptarNormas() {
 }
 
 export const estado = {
-  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'constructor' | 'circuitos' | 'galeria'
+  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'momentos' | 'constructor' | 'circuitos' | 'galeria'
   circuito: null,      // el que se corre, de CIRCUITOS (circuitos/indice.js)
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario
@@ -287,5 +287,9 @@ export const estado = {
   fantasma: null,      // la vuelta contra la que corre el J1 ahora (nucleo/fantasma.js), o null
   firma: null,         // firmando un récord: { vuelta, letras, cursor, enviando }
   avisoFin: null,      // un aviso en el cartel de fin (la firma que no se pudo enviar)
+  repeticion: null,    // lo grabado de la carrera (nucleo/momentos.js)
+  trasMeta: 0,         // s que quedan de grabar tras la meta antes de elegir los momentos
+  momentos: null,      // los elegidos al acabar: { lista, mejor }
+  reproduccion: null,  // la repetición que se ve (repeticion.js)
   fps: 0
 };

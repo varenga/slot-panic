@@ -7,7 +7,7 @@
 
 import {
   ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, NIVELES_CPU,
-  SITE_ORIGIN, TECLAS_BLOQUEADAS, VELOCIDAD_SLOT
+  SITE_ORIGIN, TECLAS_BLOQUEADAS, TRAS_META, VELOCIDAD_SLOT
 } from './config.js';
 import {
   aceptarNormas, estado, guardarAlias, guardarColores, guardarDuracion, guardarJugadores, guardarModo, guardarNivel, guardarMejorVuelta,
@@ -29,6 +29,11 @@ import { construirDePiezas } from './nucleo/piezas.js';
 import { validarCircuito } from './nucleo/validar.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato } from './nucleo/campeonato.js';
 import { posar } from './nucleo/fantasma.js';
+import { crearRepeticion, elegirMomentos, grabarCuadro, ritmoRepeticion } from './nucleo/momentos.js';
+import {
+  acabarReproduccion, avanzarReproduccion, cochesRepeticion, conCamaraRepeticion, crearReproduccion, dibujarRotuloRepeticion, momentoActual,
+  reproduccionAcabada, saltarMomento
+} from './repeticion.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
 import { dibujarCarriles, dibujarCocheSlot, dibujarFantasma, dibujarFondo, dibujarTorres } from './dibujo.js';
 import { formatearTiempo } from './nucleo/slot.js';
@@ -624,6 +629,10 @@ function empezarCarrera() {
   estado.fantasma = fantasmaElegido();
   if (conRecords()) cargarRecords(estado.circuito.clave);
   estado.ultimaAvisada = false;
+  estado.repeticion = crearRepeticion(estado.circuito, estado.carrera.coches.length);
+  estado.trasMeta = 0;
+  estado.momentos = null;
+  estado.reproduccion = null;
   limpiarPista();
 }
 
@@ -779,18 +788,77 @@ function terminarCarrera() {
   }
   sfxFin(gana);
   if (gana) emitirConfeti(estado.particulas);
-  pedirFirma();
+  // Se sigue grabando un poco (la llegada se ve también después de la meta) y luego, el mejor momento.
+  estado.trasMeta = TRAS_META;
+}
+
+// --- Los mejores momentos ------------------------------------------------------
+
+/*
+ * Pasado TRAS_META, se eligen los momentos (nucleo/momentos.js) y el mejor
+ * se repite solo; después, la firma (si toca) y el cartel. Sin momentos, al
+ * cartel directamente.
+ */
+function elegirYRepetir() {
+  estado.trasMeta = 0;
+  estado.momentos = elegirMomentos(estado.repeticion);
+  const { mejor } = estado.momentos;
+  if (mejor < 0) pedirFirma();
+  else verMomentos([mejor], true);
+}
+
+/** Repetir unos momentos (sus índices en la lista): solo el mejor al acabar, o todos con el botón. */
+function verMomentos(indices, auto) {
+  estado.reproduccion = crearReproduccion(estado.repeticion, estado.momentos, indices, auto);
+  estado.fase = 'momentos';
+  punteros.clear();
+  if (!auto) evento('ver_momentos', { ...datosCarrera(), n: indices.length });
+}
+
+function acabarMomentos() {
+  const { auto } = estado.reproduccion;
+  estado.reproduccion = null;
+  estado.fase = 'fin';
+  estado.esperaReinicio = ESPERA_REINICIO;
+  if (auto) pedirFirma();
+}
+
+/** Un toque salta el momento; ESC, todos. Saltar el que sale solo se apunta: ¿alarga el fin? */
+function saltarRepeticion(todos) {
+  const rp = estado.reproduccion;
+  const m = momentoActual(rp);
+  if (todos) acabarReproduccion(rp);
+  else saltarMomento(rp);
+  if (momentoActual(rp) !== m && rp.auto) evento('saltar_momento', { tipo: m.tipo, visto: Math.round(rp.reloj * 10) / 10 });
+  if (reproduccionAcabada(rp)) acabarMomentos();
+}
+
+/** Lo que suena en la repetición: los coches a la velocidad de la imagen, y su chirrido. */
+function sonidoRepeticion(rp) {
+  const m = momentoActual(rp);
+  const ritmo = m ? ritmoRepeticion(m, rp.t) : 1;
+  const coches = cochesRepeticion(rp, estado.carrera.coches);
+  actualizarZumbidos(coches.map((slot) => (slot.estado === 'carril' ? Math.hypot(slot.coche.vx, slot.coche.vy) * ritmo : 0)), VELOCIDAD_SLOT, true);
+  actualizarChirrido(0, false);
 }
 
 /*
  * Los botones del fin fuera del campeonato. En un circuito público ajeno,
  * también denunciarlo: el primer toque pregunta y el segundo lo envía.
  */
-function idsFin() {
+function idsFinSuelta() {
   const { publico } = estado.circuito;
   if (!publico || propios().has(publico.id) || estado.probando) return ['repetir', 'menu'];
   return ['repetir', 'menu', { null: 'denunciar', pendiente: 'confirmarDenuncia', hecha: 'denunciado' }[estado.denuncia]];
 }
+
+/** Los botones del fin; si hay momentos, MOMENTOS tras los dos primeros. */
+function idsFin() {
+  const ids = estado.campeonato ? idsFinCampeonato(estado.campeonato) : idsFinSuelta();
+  return estado.momentos?.lista.length ? [...ids.slice(0, 2), 'momentos', ...ids.slice(2)] : ids;
+}
+
+const verTodos = () => verMomentos(estado.momentos.lista.map((_, i) => i), false);
 
 function denunciarDesdeFin() {
   estado.denuncia = 'hecha';
@@ -1013,18 +1081,22 @@ function pintarFantasma() {
   if (pose) dibujarFantasma(pose, { ...slot.coche, modelo: fantasma.coche });
 }
 
-function pintarMundo() {
+/*
+ * El mundo con los coches de la carrera o, en la repetición, con los de lo
+ * grabado y sus partículas (y sin fantasma).
+ */
+function pintarMundo(cochesCarrera = estado.carrera.coches, particulas = estado.particulas, repeticion = false) {
   const luz = luzAhora();
   dibujarFondo(estado.circuito, estado.decorado, luz);
   dibujarCarriles(estado.circuito, estado.decorado);
   dibujarTorres(estado.decorado, luz);
-  dibujarHumo(estado.particulas);
-  pintarFantasma();
+  dibujarHumo(particulas);
+  if (!repeticion) pintarFantasma();
   // El que va por el aire, encima.
-  const coches = [...estado.carrera.coches].sort((a, b) => a.altura - b.altura);
+  const coches = [...cochesCarrera].sort((a, b) => a.altura - b.altura);
   coches.forEach(dibujarCocheSlot);
   pintarHora(luz, estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
-  dibujarChispas(estado.particulas);
+  dibujarChispas(particulas);
 }
 
 /*
@@ -1272,6 +1344,7 @@ const ESCENAS = {
     actualizar(dt) {
       const { carrera } = estado;
       avanzarMundo(mandos(), dt);
+      grabarCuadro(estado.repeticion, carrera, dt, estado.humanos);
       for (const evento of carrera.eventos) {
         if (evento.tipo === 'cuenta') sfxCuenta();
         else if (evento.tipo === 'salida') sfxSalida();
@@ -1320,11 +1393,24 @@ const ESCENAS = {
     actualizar(dt) {
       // Los coches frenan hasta pararse, detrás del cartel.
       avanzarMundo([], dt);
+      if (estado.trasMeta > 0) {
+        // Aún sin cartel: se graba lo que pasa justo tras la meta.
+        grabarCuadro(estado.repeticion, estado.carrera, dt, estado.humanos);
+        estado.trasMeta -= dt;
+        if (estado.trasMeta <= 0) elegirYRepetir();
+        sonido(false);
+        return;
+      }
       estado.esperaReinicio = Math.max(0, estado.esperaReinicio - dt);
       if (estado.avisoFin && (estado.avisoFin.vida -= dt) <= 0) estado.avisoFin = null;
       sonido(false);
     },
     dibujar() {
+      // Justo tras la meta, aún la carrera: el cartel sale después del mejor momento.
+      if (estado.trasMeta > 0) {
+        ESCENAS.carrera.dibujar();
+        return;
+      }
       dibujarMundo();
       if (estado.lupa) {
         dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas, estado.campeonato, idsFin());
@@ -1336,22 +1422,61 @@ const ESCENAS = {
       dibujarConfeti(estado.particulas);
     },
     teclear(codigo) {
+      if (estado.trasMeta > 0) return;
       if (codigo === 'Escape') alMenu();
-      else if ((empezar(codigo) || codigo === 'KeyR') && estado.esperaReinicio === 0) seguir();
+      else if (estado.esperaReinicio > 0) return;
+      else if (empezar(codigo) || codigo === 'KeyR') seguir();
+      else if (codigo === 'KeyO' && estado.momentos?.lista.length) verTodos();
     },
     pulsar(p) {
-      if (estado.esperaReinicio > 0) return;
+      if (estado.esperaReinicio > 0 || estado.trasMeta > 0) return;
       const { campeonato } = estado;
       const cajas = estado.lupa
-        ? (campeonato ? botonesFinCampeonatoLupa(campeonato) : botonesFinLupa(idsFin()))
-        : botonesFin(campeonato ? idsFinCampeonato(campeonato) : idsFin());
+        ? (campeonato ? botonesFinCampeonatoLupa(campeonato, idsFin()) : botonesFinLupa(idsFin()))
+        : botonesFin(idsFin());
       const boton = cajas.find((caja) => dentro(p, caja));
       if (boton?.id === 'repetir') repetir();
       else if (boton?.id === 'siguiente') correrSiguiente();
       else if (boton?.id === 'menu') alMenu();
+      else if (boton?.id === 'momentos') verTodos();
       else if (boton?.id === 'denunciar') estado.denuncia = 'pendiente';
       else if (boton?.id === 'confirmarDenuncia') denunciarDesdeFin();
       punteros.clear();
+    }
+  },
+
+  /*
+   * Los mejores momentos (repeticion.js): el mundo por la cámara de la
+   * repetición, con los coches de lo grabado. Detrás, la carrera acabada
+   * queda quieta.
+   */
+  momentos: {
+    actualizar(dt) {
+      const rp = estado.reproduccion;
+      for (const e of avanzarReproduccion(rp, dt, estado.decorado.escenario.polvo)) {
+        if (e.tipo === 'choque') sfxChoque();
+        else if (e.tipo === 'sale') sfxSale();
+        else if (e.tipo === 'clac') sfxClac();
+      }
+      if (reproduccionAcabada(rp)) {
+        acabarMomentos();
+        sonido(false);
+      } else sonidoRepeticion(rp);
+    },
+    dibujar() {
+      const rp = estado.reproduccion;
+      const vista = vistaGaleria();
+      const coches = cochesRepeticion(rp, estado.carrera.coches);
+      conCamaraRepeticion(rp, vista, () => pintarMundo(coches, rp.particulas, true));
+      dibujarRotuloRepeticion(rp, vista, { coches: estado.carrera.coches, humanos: estado.humanos, tactil: estado.tactil, reloj });
+    },
+    teclear(codigo) {
+      if (codigo === 'KeyM') return;   // el sonido, no saltar
+      saltarRepeticion(codigo === 'Escape');
+    },
+    pulsar() {
+      punteros.clear();
+      saltarRepeticion(false);
     }
   }
 };
