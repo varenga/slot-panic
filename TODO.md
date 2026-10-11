@@ -19,28 +19,18 @@ modo). Antes de crecer, que esté en su sitio:
 
 Por decidir el orden, con el filtro de siempre («¿hace la carrera más divertida?»):
 
-- [ ] Playtest de las piezas: ¿se nota la curva de derrape?, ¿el peralte y los baches se
-      leen antes de llegar?
-- [ ] Playtest de los choques: ¿se entiende por qué uno sigue y el otro no?, ¿frustra que
-      te saque el que se sale a tu lado?, ¿el roce de la estrecha saca demasiado o poco
-      (`ROCE` 12, `GOLPE_SALE` 90)?
+- [ ] El peralte y los baches no se leen: el peralte «no se entiende tanto» y los
+      baches «no se notan mucho» (la curva de derrape, perfecta). Que se vean antes de
+      llegar y se sientan al pasar.
 - [ ] Más circuitos oficiales (hoy seis).
 - [ ] Playtest de *La diagonal*: ¿el cruce a 60° se ve venir desde la diagonal?, ¿se
       chocan en él lo bastante (en la misma pista, la CPU y el mejor piloto casi nunca)?,
       ¿la estrecha del lazo antes de la horquilla sirve de algo?
 - [ ] Playtest de *La bañera*: ¿el desvío se lee antes de llegar?, ¿las balas de paja
       se ven pequeñas?, ¿14 px de quiebro (`DESVIO`) se notan?
-- [ ] Playtest de los escenarios: ¿se leen las piezas nuevas (flores, estanques, pacas,
-      matojos, huesos, muñecos de nieve; canicas, gomas y clips en la mesa) y la vida del
-      suelo, o estorban a la pista?
 - [ ] Playtest de los récords: ¿el fantasma ayuda o estorba (hoy al 0,3)?, ¿se entiende
       firmar?, ¿el mínimo de vuelta del servidor (el 80 % del mejor piloto automático)
       deja pasar a los buenos?
-- [ ] Playtest de los mejores momentos: ¿el que sale solo alarga el fin o se ve con
-      gusto (la analítica cuenta `saltar_momento`)?, ¿elige lo que uno recordaría?, ¿se lee
-      el rótulo?, ¿el zoom (1,6, `ZOOM_REPETICION`) y la cámara lenta (×0,35) marean o
-      se ven borrosos? La salvada (derrape > 0,5 sin salirse) casi no sale: ¿lo consigue
-      alguien?
 
 # Fase 2b — El constructor de circuitos
 
