@@ -1541,3 +1541,15 @@ app en la consola de Play.
   de pequeño ni de que las cosas vengan pronto». Las curvas se ven a tiempo también con
   la vista más baja por la franja del acelerador (1.11.2). No hace falta pintar nada
   más allá de la mesa.
+
+## Playtests: momentos, piezas, choques y escenarios (11/10/2026)
+
+- **Los mejores momentos**: bien. No alargan el fin («duración perfecta») y eligen
+  momentos adecuados. Se quedan el zoom (1,6) y la cámara lenta (×0,35). Sigue sin
+  saberse si alguien consigue la salvada.
+- **Las piezas**: la curva de derrape, «perfecta». El peralte «no se entiende tanto» y
+  los baches «no se notan mucho»: pasa a `TODO.md`.
+- **Los choques**: «se entiende siempre por qué se sigue o por qué te vas fuera, le
+  dan más realismo al juego». No se ha encontrado ninguno que no se entienda. Se quedan
+  `ROCE` 12 y `GOLPE_SALE` 90.
+- **Los escenarios**: las piezas nuevas del decorado están bien y no estorban al juego.
