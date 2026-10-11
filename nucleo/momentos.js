@@ -74,7 +74,8 @@ export function crearRepeticion(circuito, coches) {
 export function grabarCuadro(rep, carrera, dt, humanos = []) {
   if (rep.t >= GRABA_REPETICION) return;
   rep.t += dt;
-  const { eventos } = carrera;
+  // Los baches no se graban: son muchos y la pose ya lleva el bote (`altura`).
+  const eventos = carrera.eventos.filter((e) => e.tipo !== 'bache');
   const ultimo = rep.cuadros.at(-1);
   if (!ultimo || rep.t - ultimo[0] >= PASO_REPETICION - 1e-9 || eventos.length) {
     const cuadro = [rep.t];

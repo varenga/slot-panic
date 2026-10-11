@@ -47,7 +47,7 @@ import {
   marcoMenu, nombreCircuito
 } from './pantalla.js';
 import {
-  actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
+  actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxBache, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
   sfxSalida, sfxVuelta, vibrar
 } from './audio.js';
 import { cambiarIdioma, idiomaActual, t } from './i18n.js';
@@ -1034,6 +1034,11 @@ function avanzarMundo(mandosCoches, dt) {
   const { carrera } = estado;
   avanzarSlot(carrera, mandosCoches, dt);
   for (const evento of carrera.eventos) {
+    // Rápido por los baches, cada uno levanta polvo.
+    if (evento.tipo === 'bache' && evento.fuerza > 0.7) {
+      const { coche } = carrera.coches[evento.coche];
+      emitirHumo(estado.particulas, coche.x, coche.y, estado.decorado.escenario.polvo);
+    }
     if (evento.tipo === 'choque') {
       const chispas = chispasChoque(evento.fuerza);
       for (const [nx, ny] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -1357,6 +1362,12 @@ const ESCENAS = {
         }
         else if (evento.tipo === 'choque') sfxChoque(evento.fuerza);
         else if (evento.tipo === 'clac') sfxClac();
+        else if (evento.tipo === 'bache') {
+          // El del humano, más fuerte que el de la CPU; y, en el móvil, en la mano.
+          const humano = estado.humanos[evento.coche];
+          sfxBache(evento.fuerza * (humano ? 1 : 0.5));
+          if (estado.tactil && humano) vibrar(60 * evento.fuerza);
+        }
         else if (evento.tipo === 'vuelta' || evento.tipo === 'fin') apuntarVuelta(evento.coche);
         if (evento.tipo === 'vuelta') {
           sfxVuelta();

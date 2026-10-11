@@ -181,6 +181,16 @@ export function sfxChoque(fuerza = 1) {
   noiseBurst({ dur: 0.22, gain: 0.25 * f, filterFreq: 1400 });
 }
 
+/*
+ * Un bache: un golpe corto y hueco de la guía contra la pista. Más fuerte
+ * cuanto más rápido (`fuerza`, la velocidad entre la de los baches).
+ */
+export function sfxBache(fuerza = 1) {
+  const f = Math.min(1.2, Math.max(0.3, fuerza));
+  tone({ type: 'sine', freq: 110, freqEnd: 55, dur: 0.07, gain: 0.16 * f });
+  noiseBurst({ dur: 0.05, gain: 0.1 * f, filterFreq: 700, q: 1.5 });
+}
+
 /** La pieza encaja en el carril: un clic seco de plástico. */
 export function sfxClac() {
   noiseBurst({ dur: 0.03, gain: 0.25, filterFreq: 5000, q: 2 });

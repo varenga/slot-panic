@@ -9,7 +9,7 @@
  * fotograma a fotograma sería tirar el tiempo.
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR, PASO_BACHES } from './config.js';
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
@@ -377,11 +377,16 @@ function pintarPista(circuito, juguete) {
 
 /*
  * Las marcas de las piezas especiales (`nucleo/piezas.js`), para que se lean
- * antes de llegar: el peralte, una banda clara rayada por fuera (la pista sube);
+ * antes de llegar: el peralte, la pista que sube hacia fuera (oscura por dentro,
+ * clara por fuera), una banda rayada en el borde y flechas en el sentido de la
+ * marcha (ahí se pasa más rápido);
  * la curva de derrape, su arcén plano y gris por fuera del piano; la
  * deslizante, franjas ámbar a los dos lados de los carriles juntos; los baches,
- * franjas oscuras a lo ancho. La estrecha no lleva marca: se ven los carriles.
+ * una cresta a lo ancho en cada uno (PASO_BACHES), donde bota el coche. La estrecha no lleva marca: se ven los carriles.
  */
+const RAMPA = ['rgba(0, 0, 0, 0.16)', 'rgba(0, 0, 0, 0.07)', 'rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.11)'];
+const FLECHAS_PERALTE = 44;   // px de pista entre flecha y flecha
+
 function pintarPiezas(circuito) {
   const { eje, ancho } = circuito;
   const n = eje.length;
@@ -393,7 +398,13 @@ function pintarPiezas(circuito) {
     if (!p.efecto || p.efecto === 'chicane' || p.efecto === 'estrecha') continue;
     const fuera = -p.curva;
     if (p.efecto === 'peralte') {
-      ctx.fillStyle = i % 2 ? 'rgba(230, 232, 238, 0.10)' : 'rgba(230, 232, 238, 0.22)';
+      // La rampa: de dentro a fuera, de la sombra a la luz.
+      for (let k = 0; k < RAMPA.length; k++) {
+        const d0 = -ancho / 2 + ancho * k / RAMPA.length, d1 = -ancho / 2 + ancho * (k + 1) / RAMPA.length;
+        ctx.fillStyle = RAMPA[k];
+        poligono([a(p, fuera, d0), a(q, fuera, d0), a(q, fuera, d1), a(p, fuera, d1)]);
+      }
+      ctx.fillStyle = i % 2 ? 'rgba(230, 232, 238, 0.14)' : 'rgba(230, 232, 238, 0.32)';
       poligono([a(p, fuera, ancho / 2 - 12), a(q, fuera, ancho / 2 - 12), a(q, fuera, ancho / 2), a(p, fuera, ancho / 2)]);
     } else if (p.efecto === 'derrape') {
       const k = fuera < 0 ? 0 : 1;
@@ -406,15 +417,35 @@ function pintarPiezas(circuito) {
       for (const lado of [-1, 1]) {
         poligono([a(p, lado, 14), a(q, lado, 14), a(q, lado, ancho / 2 - 3), a(p, lado, ancho / 2 - 3)]);
       }
-    } else if (p.efecto === 'baches' && i % 2 === 0) {
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
-      ctx.lineWidth = 3;
-      const [u, v] = [a(p, -1, ancho / 2), a(p, 1, ancho / 2)];
-      ctx.beginPath();
-      ctx.moveTo(u.x, u.y);
-      ctx.lineTo(v.x, v.y);
-      ctx.stroke();
+    } else if (p.efecto === 'baches' && Math.floor(q.s / PASO_BACHES) !== Math.floor(p.s / PASO_BACHES)) {
+      // Cada bache, donde bota el coche: una cresta con su sombra y su luz.
+      const ux = Math.cos(p.angulo), uy = Math.sin(p.angulo);
+      for (const [d, color, grosor] of [[-3.5, 'rgba(0, 0, 0, 0.5)', 6], [2.5, 'rgba(255, 255, 255, 0.35)', 3]]) {
+        const [u, v] = [a(p, -1, ancho / 2), a(p, 1, ancho / 2)];
+        ctx.strokeStyle = color;
+        ctx.lineWidth = grosor;
+        ctx.beginPath();
+        ctx.moveTo(u.x + ux * d, u.y + uy * d);
+        ctx.lineTo(v.x + ux * d, v.y + uy * d);
+        ctx.stroke();
+      }
     }
+  }
+  // Las flechas del peralte, por la parte alta, en el sentido de la marcha.
+  ctx.strokeStyle = 'rgba(230, 232, 238, 0.55)';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'miter';
+  for (let i = 0; i < n; i++) {
+    const p = eje[i], q = eje[(i + 1) % n];
+    if (p.efecto !== 'peralte' || Math.floor(q.s / FLECHAS_PERALTE) === Math.floor(p.s / FLECHAS_PERALTE)) continue;
+    const c = a(p, -p.curva, ancho / 2 - 5);
+    const ux = Math.cos(p.angulo), uy = Math.sin(p.angulo);
+    const nx = -uy, ny = ux;
+    ctx.beginPath();
+    ctx.moveTo(c.x - ux * 4 + nx * 5, c.y - uy * 4 + ny * 5);
+    ctx.lineTo(c.x + ux * 3, c.y + uy * 3);
+    ctx.lineTo(c.x - ux * 4 - nx * 5, c.y - uy * 4 - ny * 5);
+    ctx.stroke();
   }
 }
 
