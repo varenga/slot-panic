@@ -108,18 +108,20 @@ export function seguirCamara(camara, slot, circuito, dt) {
  * 720): se acota, y el zoom no baja de lo que la llena (`zoomLupa`). Así no
  * hay que pintar nada más allá de la mesa, ni cuesta nada.
  */
-export function conCamara(camara, zoomPedido, dibujar) {
+export function conCamara(camara, zoomPedido, dibujar, conAcelerador = false) {
   const zoom = zoomEfectivo(zoomPedido);
+  // Con el acelerador, la vista acaba donde empieza su franja: el dedo no la tapa.
+  const bajo = altoLienzo - (conAcelerador ? ALTO_ACELERADOR : 0);
   ctx.fillStyle = COLOR.fondo;
   ctx.fillRect(0, 0, ANCHO_LUPA, BAJO_MAPA);
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, BAJO_MAPA, ANCHO_LUPA, altoLienzo - BAJO_MAPA);
+  ctx.rect(0, BAJO_MAPA, ANCHO_LUPA, bajo - BAJO_MAPA);
   ctx.clip();
-  const medioAncho = ANCHO_LUPA / 2 / zoom, medioAlto = (altoLienzo - BAJO_MAPA) / 2 / zoom;
+  const medioAncho = ANCHO_LUPA / 2 / zoom, medioAlto = (bajo - BAJO_MAPA) / 2 / zoom;
   const x = acotar(camara.x + Math.cos(camara.angulo) * LUPA_MIRA, medioAncho, ANCHO - medioAncho);
   const y = acotar(camara.y + Math.sin(camara.angulo) * LUPA_MIRA, medioAlto, ALTO - medioAlto);
-  ctx.translate(ANCHO_LUPA / 2, (BAJO_MAPA + altoLienzo) / 2);
+  ctx.translate(ANCHO_LUPA / 2, (BAJO_MAPA + bajo) / 2);
   ctx.scale(zoom, zoom);
   ctx.translate(-x, -y);
   dibujar();
@@ -143,6 +145,46 @@ export function zoomLupa(parametro) {
  */
 export function zoomEfectivo(zoom) {
   return Math.max(zoom, ANCHO_LUPA / ANCHO, (altoLienzo - BAJO_MAPA) / ALTO);
+}
+
+// --- El acelerador -------------------------------------------------------------
+
+/*
+ * Abajo, en la carrera, el sitio del dedo: la vista acaba encima y el dedo
+ * ya no tapa el coche. Se acelera igual pulsando en cualquier parte; la
+ * franja solo dice dónde. Dentro, la potencia que lleva el coche.
+ *
+ * Se probó como gatillo analógico (la altura del dedo, cuánto): costaba
+ * dosificar y a toques se juega desde el primer momento (IDEAS.md).
+ */
+const ALTO_ACELERADOR = 120;       // px de la franja
+
+/** La franja: el pedal, que se enciende con el dedo y se llena con la potencia. */
+export function dibujarAcelerador(slot, pulsado) {
+  const arriba = altoLienzo - ALTO_ACELERADOR;
+  ctx.fillStyle = COLOR.banda;
+  ctx.fillRect(0, arriba, ANCHO_LUPA, ALTO_ACELERADOR);
+  const ancho = 340, alto = 64;
+  const x = (ANCHO_LUPA - ancho) / 2, y = arriba + (ALTO_ACELERADOR - alto) / 2;
+  ctx.fillStyle = pulsado ? 'rgba(230, 232, 238, 0.16)' : 'rgba(230, 232, 238, 0.07)';
+  rectanguloRedondo(x, y, ancho, alto, 14);
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(x, y, ancho, alto, 14);
+  ctx.clip();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = slot.derrape > 0 ? COLOR.rojo : slot.coche.color;
+  ctx.fillRect(x, y, ancho * slot.potencia, alto);
+  ctx.restore();
+  ctx.strokeStyle = pulsado ? slot.coche.color : 'rgba(230, 232, 238, 0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x, y, ancho, alto, 14);
+  ctx.stroke();
+  // Las estrías del pedal, a la izquierda del rótulo.
+  ctx.fillStyle = pulsado ? COLOR.hud : COLOR.texto;
+  for (let k = 0; k < 3; k++) rectanguloRedondo(x + 26, y + 18 + k * 11, 34, 6, 3);
+  texto(t('slot.acelerador'), x + ancho / 2 + 22, y + alto / 2 + 1, { tam: 22, color: pulsado ? COLOR.hud : COLOR.texto, peso: 800 });
 }
 
 // --- El mapa -------------------------------------------------------------------

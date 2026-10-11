@@ -60,7 +60,7 @@ import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaR
 import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
   altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
-  dibujarMarcadorLupa, dibujarPortadaLupa, empezarFotogramaLupa, marcoMenuLupa, prepararLupa, seguirCamara, zoomLupa
+  dibujarMarcadorLupa, dibujarAcelerador, dibujarPortadaLupa, empezarFotogramaLupa, marcoMenuLupa, prepararLupa, seguirCamara, zoomLupa
 } from './lupa.js';
 
 const lienzo = document.getElementById('lienzo');
@@ -78,6 +78,8 @@ let reloj = 0;                // s desde que se cargó la página (parpadeos)
 const parametros = new URLSearchParams(location.search);
 const LUPA_FORZADA = parametros.has('lupa');
 const ZOOM = zoomLupa(parametros.get('lupa'));
+// En la carrera de la lupa, abajo, el sitio del dedo: la vista acaba encima.
+const conAcelerador = () => estado.lupa && estado.fase === 'carrera';
 const VERTICAL = typeof matchMedia !== 'undefined' ? matchMedia('(orientation: portrait) and (max-width: 900px)') : null;
 const camara = crearCamara();
 
@@ -1060,7 +1062,7 @@ function avanzarMundo(mandosCoches, dt) {
 
 function dibujarMundo() {
   if (estado.lupa) {
-    conCamara(camara, ZOOM, pintarMundo);
+    conCamara(camara, ZOOM, pintarMundo, conAcelerador());
     return;
   }
   pintarMundo();
@@ -1375,6 +1377,7 @@ const ESCENAS = {
         dibujarMapa(estado.circuito, estado.carrera.coches);
         dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCampeonato());
         dibujarAvisosLupa(estado.avisos);
+        if (conAcelerador()) dibujarAcelerador(estado.carrera.coches[0], punteros.size > 0);
         return;
       }
       dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCampeonato());
