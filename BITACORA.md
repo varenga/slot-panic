@@ -1391,3 +1391,59 @@ app en la consola de Play.
 - Los mejores momentos: al acabar se repite el mejor (choque, salida, salvada,
   adelantamiento, llegada o vuelta rápida) a cámara lenta, y MOMENTOS repite los tres.
   `pnyk.json`: 1.9.0.
+
+## Choques más realistas (11/10/2026, rama `35-choques`)
+
+> Hasta ahora, dos coches que se tocaban (centros a menos de `CHOQUE`, 20 px) salían
+> los dos, siempre: un roce a 50 px/s igual que un golpe a 470. Y uno que se salía
+> atravesaba al otro como si no estuviera. Se quería que a veces uno siga y el otro
+> no, que el que se sale a la par se lleve al otro por delante, y que en las chicanes
+> uno pueda empujar al otro y hacerle derrapar.
+
+- **Cada coche es una cápsula** (`capsula`, `contacto` en `nucleo/slot.js`): un
+  segmento a lo largo de su pose, con la cola que haya sacado, y `ANCHO_COCHE / 2`
+  alrededor. Dos carriles en paralelo no se tocan sin derrapar (los dos tiburones, con
+  la cola a `COLETEO_MAXIMO`, quedan a 7,1 px); derrapando a tope, sí pueden (hasta
+  3 px): es lo que se arriesga al límite. Paralelos y solapados, el contacto va al medio
+  de lo que se solapan: si no, siempre llevaba el golpe en la cola el primero.
+- **El choque no decide: da un golpe.** Lo que se acercan por la normal se lo reparten
+  (`REBOTE_COCHES` 0,3). A lo largo del carril cambia la velocidad (el de detrás frena,
+  el de delante gana); de lado se suma al derrape, `GOLPE_SALE` (90 px/s) en la cola
+  sacan a un coche agarrado, y la cola sale hacia donde la empujan. La guía va en el
+  morro: ahí cuenta `PALANCA_MORRO` (0,35). Así sale lo que se pedía sin dados: el que
+  ya derrapaba se sale con un toque; al que le dan en la cola (el de delante) se cruza
+  y el de detrás solo frena; en el cruce, el que da con el morro sigue frenado y el
+  golpeado de costado se sale.
+- **El roce**, mientras siguen tocándose: el que empuja a lo largo frena (no se
+  atraviesan), la cola metida en el otro rebota hacia fuera, y cada uno suma `ROCE`
+  (12) de derrape por segundo con su palanca, según aprieta (velocidad o gatillo) y lo
+  metidos que estén (`PENETRA`, 4 px), que tiene que ganarle a `RECUPERA_DERRAPE` (2,5):
+  un roce suave no saca a nadie. `ROZA` iguala sus velocidades. Sin el rebote de la
+  cola, en la deslizante (estrecha, y con la cola del de dentro saliendo hacia el de
+  fuera) se metían cada vez más y salían los dos a 128 px/s.
+- **Metidos más de medio coche, salen los dos** (lo de antes, como último recurso): en
+  la X, a la par, los carriles se cortan y no hay otra. Sin eso se atravesaban.
+- **Uno fuera choca con uno en el carril**: se aparta de él, rebota y le da su golpe
+  (cada paso que se le echa encima). Lanzado de lado a 400 px/s lo saca; a 80, no. Dos
+  fuera, o uno en la mano, no chocan.
+- **La tregua**: si la mano posa un coche tocando al otro, no se chocan ni se rozan
+  hasta que se separen (antes bastaba con no contar el paso de posarlo, pero ahora el
+  roce seguía). `carrera.toque` (`{ tregua, choque }`) sustituye a `solapados`.
+- **Por debajo de `TOQUE` (30 px/s) tocarse no es un choque**: ni suena ni es un
+  momento. El evento `choque` lleva su `fuerza` (0-1): el sonido y las chispas (de 2 a
+  10 por lado, `chispasChoque`) van con ella, en la carrera y en la repetición, y un
+  toque vale menos momento (×0,6). El que se lleva al otro por delante es un momento
+  en la «pista»: «¡SE LO LLEVA POR DELANTE!», en los siete idiomas.
+- **Medido** (21 desfases por encuentro, a la velocidad que aguanta cada uno solo,
+  desde 50 px antes): en el cruce de El ocho, al 40 % siguen los dos en 8 de 9 y, al
+  60 % o más, se sale uno en 5-8 de 9; en la X de El nudo, a tope, se sale uno en 6 de
+  9; en las estrechas, a media velocidad siguen y, cerca del tope, se sale uno en la
+  mitad. Que salgan los dos es raro (1-2 de 9): a la par en la X.
+- **Arnés**: a la velocidad de sus encuentros (190-250 px/s) siguen los dos en 43
+  choques, se sale uno en 6 y los dos en 2; comprueba que salen los tres desenlaces y
+  que en ningún encuentro de un oficial salen siempre los dos. «Nunca dos veces
+  seguidas» pasa a ser «la mano nunca los deja chocando otra vez»: darse dos veces sin
+  la mano es legítimo (en el desvío de La bañera el de detrás, frenado por el golpe,
+  alcanza al otro y le vuelve a dar). 1742/1742 en verde. Visto en El ocho: el golpe en
+  el cruce cruza la cola del golpeado y siguen los dos; a más velocidad, el de detrás
+  se queda frenado contra el costado del otro.

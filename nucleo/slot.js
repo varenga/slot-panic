@@ -17,17 +17,19 @@
  * agarra más, la curva de derrape aguanta más pasado (y la deslizante, aún
  * más), los baches agarran como una curva, en la X el carril cruza al otro
  * lado y en la estrecha se acerca al otro. Dos coches que se encuentran en una
- * X, en un cruce o a la par en una estrecha chocan y salen los dos.
+ * X, en un cruce o a la par en una estrecha chocan: el golpe se suma al
+ * derrape y, según cómo y dónde se den, siguen los dos, se sale uno o los dos.
+ * Uno que se sale puede llevarse por delante al otro.
  *
  * Los mandos siguen siendo `{ acelerar, frenar, giro }`: aquí solo cuenta
  * `acelerar`. No toca el DOM: el arnés lo ejecuta tal cual.
  */
 
 import {
-  ACUMULA_DERRAPE, AGARRE_PERALTE, AGARRE_SLOT, RADIO_GUIA, ALTO, ANCHO, BAJA_POTENCIA, CARRIL, CHOQUE,
+  ACUMULA_DERRAPE, AGARRE_PERALTE, AGARRE_SLOT, RADIO_GUIA, ALTO, ANCHO, ANCHO_COCHE, BAJA_POTENCIA, CARRIL,
   COCHE_REFERENCIA, COCHES, COLETEO_DERRAPE, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, CURVA_DESLIZANTE, DURACION_MANO, ESPERA_MANO,
-  FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, INERCIA_MOTOR, INERCIA_SOLTAR, LARGO_COCHE, LIMITE_SLOT, PASO_FISICA, RECUPERA_DERRAPE,
-  SUBE_POTENCIA, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
+  FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, GOLPE_SALE, INERCIA_MOTOR, INERCIA_SOLTAR, LIMITE_SLOT, PALANCA_MORRO, PASO_FISICA,
+  PENETRA, REBOTE_COCHES, RECUPERA_DERRAPE, ROCE, ROZA, SUBE_POTENCIA, TOQUE, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from '../config.js';
 import { normalizarAngulo } from './geometria.js';
 import { cerrar, cocheDe, crearGrabacion, grabar } from './fantasma.js';
@@ -37,7 +39,7 @@ const QUIETO = 12;                  // px/s por debajo de los que el coche se da
 const AMORTIGUA_TROMPO = 2.5;       // 1/s con que se apaga el trompo
 const REBOTE_MESA = 0.5;            // fracción de la velocidad que vuelve del borde de la mesa
 const ATRAS_SALIDA = 30;            // px detrás de la meta en que se sale, como en carretera
-const HOLGURA_CHOQUE = 8;           // px más allá de CHOQUE en que dos coches siguen tocándose
+const HOLGURA_CHOQUE = 8;           // px de separación a la que dos coches siguen «tocándose»
 
 // --- El carril ---------------------------------------------------------------
 
@@ -234,7 +236,7 @@ export function crearCarreraSlot(circuito, colores, turno = 0, { vueltas = VUELT
     tiempo: 0,
     tiempoSalida: 0,
     ganador: null,      // índice del primero en terminar
-    solapados: false,   // si los dos coches se tocaban en el paso anterior (ver `comprobarChoque`)
+    toque: null,        // si los dos coches se están tocando: { tregua, choque } (ver `comprobarChoque`)
     eventos: []         // { tipo, coche } del último avance: cuenta, salida, sale, clac, vuelta, fin
   };
   // La primera vuelta empieza en la parrilla, parado.
@@ -283,50 +285,232 @@ function pasoCarreraSlot(carrera, mandos, dt) {
 }
 
 /*
- * Dos coches en el carril que se tocan (en una X, un cruce o a la par en una
- * estrecha; en paralelo van a 2 · CARRIL) chocan y salen los dos, cada uno hacia su lado. Solo cuenta
- * al empezar a tocarse y si se acercan: la mano puede dejar uno encima del
- * otro, parados, y no vuelven a chocar al arrancar.
+ * Los choques entre los dos coches (GOLPE_SALE, en config.js). Cada coche es
+ * una cápsula en su pose: un segmento a lo largo y RADIO_COCHE alrededor. Al
+ * empezar a tocarse acercándose, un golpe; mientras siguen tocándose, el roce.
+ * El golpe no decide nada: frena o empuja, y de lado se suma al derrape, que
+ * es el que saca al coche. Uno fuera choca con uno en el carril (rebota, y al
+ * otro le da su golpe); con la mano en el aire, o los dos fuera, no.
  */
-export function distanciaChoque(a, b) {
-  return CHOQUE * (a.ficha.largo + b.ficha.largo) / (2 * LARGO_COCHE);
+export const RADIO_COCHE = ANCHO_COCHE / 2;
+
+/** La cápsula de un coche: los extremos de su segmento, de la cola al morro. */
+export function capsula(slot) {
+  const { coche } = slot;
+  const medio = Math.max(0, slot.ficha.largo / 2 - RADIO_COCHE);
+  const ux = Math.cos(coche.angulo) * medio, uy = Math.sin(coche.angulo) * medio;
+  return { ax: coche.x - ux, ay: coche.y - uy, bx: coche.x + ux, by: coche.y + uy };
 }
+
+/*
+ * Los puntos más cercanos de dos segmentos, como fracciones (0 en la cola, 1
+ * en el morro). Si van paralelos, el medio de lo que se solapan: así ninguno
+ * de los dos lleva siempre el golpe en la cola.
+ */
+function masCercanos(p, q) {
+  const d1x = p.bx - p.ax, d1y = p.by - p.ay, d2x = q.bx - q.ax, d2y = q.by - q.ay;
+  const rx = p.ax - q.ax, ry = p.ay - q.ay;
+  const a = d1x * d1x + d1y * d1y, e = d2x * d2x + d2y * d2y, f = d2x * rx + d2y * ry;
+  const acotar = (v) => Math.max(0, Math.min(1, v));
+  const c = d1x * rx + d1y * ry, b = d1x * d2x + d1y * d2y;
+  if (a < 1e-9 || e < 1e-9) {
+    // Un coche tan corto que es un círculo.
+    const s = a < 1e-9 ? 0 : acotar(-c / a);
+    return { s, t: e < 1e-9 ? 0 : acotar((b * s + f) / e) };
+  }
+  const denom = a * e - b * b;
+  if (denom < 1e-6 * a * e) {
+    // Paralelos: lo que q se solapa con p, y su medio.
+    const t0 = -c / a, t1 = (b - c) / a;
+    const s = (acotar(Math.min(t0, t1)) + acotar(Math.max(t0, t1))) / 2;
+    return { s, t: acotar((b * s + f) / e) };
+  }
+  let s = acotar((b * f - c * e) / denom);
+  let t = (b * s + f) / e;
+  if (t < 0) { t = 0; s = acotar(-c / a); } else if (t > 1) { t = 1; s = acotar((b - c) / a); }
+  return { s, t };
+}
+
+/*
+ * Cómo se tocan dos coches: la distancia entre sus cápsulas, la normal (de a
+ * hacia b), el punto de cada uno y dónde le da a cada uno, de -1 (la cola) a
+ * 1 (el morro).
+ */
+export function contacto(a, b) {
+  const p = capsula(a), q = capsula(b);
+  const { s, t } = masCercanos(p, q);
+  const pa = { x: p.ax + (p.bx - p.ax) * s, y: p.ay + (p.by - p.ay) * s };
+  const pb = { x: q.ax + (q.bx - q.ax) * t, y: q.ay + (q.by - q.ay) * t };
+  let nx = pb.x - pa.x, ny = pb.y - pa.y;
+  const distancia = Math.hypot(nx, ny);
+  if (distancia > 1e-9) {
+    nx /= distancia;
+    ny /= distancia;
+  } else {
+    // Uno encima del otro: de centro a centro o, si coinciden, de lado.
+    const cx = b.coche.x - a.coche.x, cy = b.coche.y - a.coche.y, l = Math.hypot(cx, cy);
+    [nx, ny] = l > 1e-9 ? [cx / l, cy / l] : [-Math.sin(a.coche.angulo), Math.cos(a.coche.angulo)];
+  }
+  return { distancia, nx, ny, pa, pb, ua: 2 * s - 1, ub: 2 * t - 1 };
+}
+
+/** Lo que cuenta un golpe según dónde: en la cola, 1; en el morro, donde la guía lo sujeta, PALANCA_MORRO. */
+const palanca = (u) => PALANCA_MORRO + (1 - PALANCA_MORRO) * (1 - u) / 2;
 
 function comprobarChoque(carrera) {
   const [a, b] = carrera.coches;
-  const dx = b.coche.x - a.coche.x, dy = b.coche.y - a.coche.y;
-  const distancia = Math.hypot(dx, dy);
-  const choque = distanciaChoque(a, b);
-  const solapados = distancia < choque;
-  const empiezan = solapados && !carrera.solapados;
+  const posado = a.posado || b.posado;
+  a.posado = b.posado = false;
+  // Con la mano en el aire no toca a nadie; dos fuera ruedan cada uno a lo suyo.
+  if (a.estado === 'mano' || b.estado === 'mano' || (a.estado === 'fuera' && b.estado === 'fuera')) {
+    carrera.toque = null;
+    return;
+  }
+  const c = contacto(a, b);
+  const toca = 2 * RADIO_COCHE - c.distancia;   // px metidos uno en el otro
   /*
-   * Dejan de tocarse al separarse algo más de lo que hace falta para chocar:
-   * la mano puede dejarlos a poco más de CHOQUE en una X, y al arrancar los
+   * Dejan de tocarse al separarse algo más de lo que hace falta para tocarse:
+   * la mano puede dejarlos casi tocándose en una X, y al arrancar los
    * carriles los juntaban y volvían a chocar (lo vio el arnés en una X corta
-   * del constructor). Menos que los 2 · CARRIL de dos coches en paralelo: si
-   * no, dos coches largos que salen juntos de una X seguirían «tocándose» en
-   * paralelo y no chocarían en la siguiente.
+   * del constructor). Menos que lo que queda entre dos coches en paralelo.
    */
-  const holgura = Math.min(HOLGURA_CHOQUE, 2 * CARRIL - 2 - choque);
-  carrera.solapados = solapados || (carrera.solapados && distancia < choque + holgura);
+  if (toca <= -HOLGURA_CHOQUE || (toca <= 0 && !carrera.toque)) {
+    carrera.toque = null;
+    return;
+  }
+  const empiezan = !carrera.toque && toca > 0;
+  if (empiezan) carrera.toque = { tregua: false, choque: false };
   /*
    * Lo que la mano acaba de posar ya estaba ahí: en una estrecha puede dejarlo
    * a la par del otro, que ya ha arrancado y se le acerca (lo vio el arnés en
-   * la estrecha larga de El resbalón).
+   * la estrecha larga de El resbalón), y en una X, encima del otro. Hasta que
+   * se separen, ni se chocan ni se rozan.
    */
-  const posado = a.posado || b.posado;
-  a.posado = b.posado = false;
-  if (!empiezan || posado || a.estado !== 'carril' || b.estado !== 'carril') return;
-  const acercandose = (b.coche.vx - a.coche.vx) * dx + (b.coche.vy - a.coche.vy) * dy < 0;
-  if (!acercandose) return;
-  carrera.eventos.push({ tipo: 'choque', coche: 0, x: (a.coche.x + b.coche.x) / 2, y: (a.coche.y + b.coche.y) / 2 });
-  [[a, 1], [b, -1]].forEach(([slot, signo], i) => {
-    // Hacia el lado contrario del otro: `soltar` empuja hacia -curva · normal.
-    const rumbo = slot.coche.angulo - slot.coleteo;
-    const lado = (-Math.sin(rumbo) * dx + Math.cos(rumbo) * dy) * signo;
-    soltar(slot, lado > 0 ? 1 : -1);
+  if (posado) carrera.toque.tregua = true;
+  if (carrera.toque.tregua || toca <= 0) return;
+
+  const acercan = (a.coche.vx - b.coche.vx) * c.nx + (a.coche.vy - b.coche.vy) * c.ny;
+  const arrolla = a.estado === 'fuera' || b.estado === 'fuera';
+  const chocan = () => {
+    carrera.toque.choque = true;
+    carrera.eventos.push({
+      tipo: 'choque', coche: 0, x: (c.pa.x + c.pb.x) / 2, y: (c.pa.y + c.pb.y) / 2,
+      fuerza: Math.min(1, Math.max(0, acercan) / VELOCIDAD_SLOT), arrolla
+    });
+  };
+  if (arrolla) {
+    // El de fuera no tiene carril que lo sujete: se aparta del otro.
+    const [libre, signo] = a.estado === 'fuera' ? [a, -1] : [b, 1];
+    libre.coche.x += signo * c.nx * toca;
+    libre.coche.y += signo * c.ny * toca;
+  }
+  // Un golpe al empezar a tocarse o, si uno va suelto, cada vez que se le echa encima.
+  if (acercan > 0 && (empiezan || arrolla)) {
+    if (empiezan && acercan >= TOQUE) chocan();
+    const reparto = acercan * (1 + REBOTE_COCHES) / 2;
+    golpear(carrera, 0, -reparto * c.nx, -reparto * c.ny, c.pa, c.ua);
+    golpear(carrera, 1, reparto * c.nx, reparto * c.ny, c.pb, c.ub);
+    return;
+  }
+  if (arrolla) return;
+  /*
+   * Los dos en el carril y metidos más de medio coche uno en el otro (en una X
+   * o un cruce, donde los carriles se cortan): ninguno puede seguir y salen
+   * los dos, cada uno hacia su lado. Si no, se rozan.
+   */
+  if (toca > RADIO_COCHE) {
+    if (!carrera.toque.choque) chocan();
+    [[a, 1], [b, -1]].forEach(([slot, signo], i) => {
+      const rumbo = slot.coche.angulo - slot.coleteo;
+      const lado = (-Math.sin(rumbo) * c.nx + Math.cos(rumbo) * c.ny) * signo;
+      soltar(slot, lado > 0 ? 1 : -1);
+      carrera.eventos.push({ tipo: 'sale', coche: i });
+    });
+    return;
+  }
+  rozar(carrera, c, toca, acercan);
+}
+
+/*
+ * El golpe a un coche: (gx, gy), lo que cambia su velocidad. Uno fuera lo
+ * toma tal cual y gira según dónde le den. Uno en el carril: a lo largo, su
+ * velocidad; de lado, el derrape (con la palanca de dónde le dan) y la cola,
+ * que sale hacia donde la empujan. Si el derrape llega a 1, se sale por ahí.
+ */
+function golpear(carrera, i, gx, gy, punto, u) {
+  const slot = carrera.coches[i];
+  const { coche } = slot;
+  if (slot.estado === 'fuera') {
+    coche.vx += gx;
+    coche.vy += gy;
+    const rx = punto.x - coche.x, ry = punto.y - coche.y;
+    slot.giro += (rx * gy - ry * gx) / (slot.ficha.largo * slot.ficha.largo / 3);
+    return;
+  }
+  const rumbo = coche.angulo - slot.coleteo;
+  const hx = Math.cos(rumbo), hy = Math.sin(rumbo);
+  const lado = -hy * gx + hx * gy;   // hacia la izquierda del coche: la normal de `soltar`
+  slot.v = Math.max(0, slot.v + hx * gx + hy * gy);
+  const efecto = Math.abs(lado) * palanca(u) / GOLPE_SALE;
+  slot.derrape = Math.min(1, slot.derrape + efecto);
+  // Empujada la cola hacia la izquierda, el coche mira a la derecha.
+  const sacudida = Math.sign(lado) * Math.min(1, efecto) * COLETEO_DERRAPE;
+  slot.coleteo -= sacudida;
+  coche.angulo -= sacudida;
+  if (slot.derrape < 1) return;
+  soltar(slot, lado > 0 ? -1 : 1);
+  // Y sale con el empujón de lado.
+  coche.vx -= hy * lado;
+  coche.vy += hx * lado;
+  carrera.eventos.push({ tipo: 'sale', coche: i });
+}
+
+/*
+ * El roce, mientras siguen tocándose en el carril. Ninguno se mete más en el
+ * otro a lo largo de su carril: si aún se acercan, el que empuja frena (y el
+ * empujado gana). Una cola metida en el otro rebota hacia fuera: si no, la
+ * de dentro de una curva deslizante, que sale hacia el de fuera, se le metía
+ * cada vez más. Y cada uno suma derrape, más cuanto más aprieta (deprisa o a
+ * fondo), más metidos están y más de lado lo empuja, con su palanca; sus
+ * velocidades se igualan. El derrape se recupera a RECUPERA_DERRAPE: un roce
+ * suave no saca a nadie.
+ */
+function rozar(carrera, c, toca, acercan) {
+  const [a, b] = carrera.coches;
+  if (acercan > 0) {
+    // Sin rebote y sin derrape: solo lo que se metían.
+    [[a, -1], [b, 1]].forEach(([slot, signo]) => {
+      const rumbo = slot.coche.angulo - slot.coleteo;
+      const largo = Math.cos(rumbo) * c.nx + Math.sin(rumbo) * c.ny;
+      slot.v = Math.max(0, slot.v + signo * largo * acercan / 2);
+    });
+  }
+  const relativa = Math.abs(a.v - b.v);
+  [[a, c.ua, -1], [b, c.ub, 1]].forEach(([slot, u, signo], i) => {
+    const { coche, ficha } = slot;
+    const rumbo = coche.angulo - slot.coleteo;
+    const lx = -Math.sin(coche.angulo), ly = Math.cos(coche.angulo);
+    const deLado = lx * c.nx + ly * c.ny;
+    // La cola: girar dθ la mueve -u · medio · dθ por la izquierda del coche (u < 0).
+    const medio = ficha.largo / 2 - RADIO_COCHE;
+    if (u < 0 && Math.abs(u * deLado) * medio > 1) {
+      // Hacia fuera del otro: a se aparta por -n y b por +n.
+      const giro = Math.min(0.05, toca / (Math.abs(u * deLado) * medio)) * Math.sign(-signo * deLado * u) * -1;
+      slot.coleteo += giro;
+      coche.angulo += giro;
+    }
+    const aprieta = Math.min(1, Math.max((slot.v + relativa) / VELOCIDAD_SLOT, slot.potencia));
+    const empuje = Math.abs(-Math.sin(rumbo) * c.nx + Math.cos(rumbo) * c.ny);
+    slot.derrape = Math.min(1, slot.derrape + ROCE * palanca(u) * aprieta * empuje * (toca / PENETRA) * PASO_FISICA);
+    if (slot.derrape < 1) return;
+    soltar(slot, slot.coleteo > 0 ? 1 : -1);
     carrera.eventos.push({ tipo: 'sale', coche: i });
   });
+  if (a.estado === 'carril' && b.estado === 'carril') {
+    const media = (a.v + b.v) / 2, f = Math.min(1, ROZA * PASO_FISICA);
+    a.v += (media - a.v) * f;
+    b.v += (media - b.v) * f;
+  }
 }
 
 const ANCHAS = { derrape: CURVA_DERRAPE, deslizante: CURVA_DESLIZANTE };

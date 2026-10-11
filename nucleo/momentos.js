@@ -10,7 +10,9 @@
  *
  * A la vez se buscan los momentos:
  *
- *   choque       dos coches que chocan (en una X, un cruce o una estrecha)
+ *   choque       dos coches que chocan (en una X, un cruce o una estrecha), o
+ *                uno que se sale y se lleva por delante al otro (en la pista);
+ *                el golpe más fuerte, más vale
  *   salida       un coche que se sale lanzado (SALIDA_FUERTE)
  *   salvada      un derrape de más de SALVADA que no acaba fuera
  *   adelanta     uno pasa al otro, que sigue en el carril, y aguanta delante
@@ -88,7 +90,7 @@ export function grabarCuadro(rep, carrera, dt, humanos = []) {
     if (e.tipo === 'cuenta' || e.tipo === 'salida') continue;
     const coche = e.coche === undefined ? null : carrera.coches[e.coche].coche;
     rep.eventos.push({
-      t: rep.t, tipo: e.tipo, coche: e.coche ?? null,
+      t: rep.t, tipo: e.tipo, coche: e.coche ?? null, fuerza: e.fuerza,
       x: e.x ?? coche?.x, y: e.y ?? coche?.y, vx: coche?.vx ?? 0, vy: coche?.vy ?? 0
     });
   }
@@ -121,7 +123,10 @@ function buscarMomentos(rep, carrera, humanos) {
   for (const e of carrera.eventos) {
     if (e.tipo === 'choque') {
       coches.forEach((_, i) => enChoque.add(i));
-      proponer(rep, 'choque', { coches: [0, 1], humano: humano(0) || humano(1), lugar: lugarChoque(circuito, coches[0].s, coches[1].s) });
+      // Un toque vale menos que un golpe de verdad (a media velocidad, o más, todo).
+      const puntos = TIPOS_MOMENTO.choque.puntos * (0.6 + 0.4 * Math.min(1, 2 * (e.fuerza ?? 1)));
+      const lugar = e.arrolla ? 'pista' : lugarChoque(circuito, coches[0].s, coches[1].s);
+      proponer(rep, 'choque', { coches: [0, 1], humano: humano(0) || humano(1), lugar, puntos });
     } else if (e.tipo === 'sale' && !enChoque.has(e.coche)) {
       const { coche } = coches[e.coche];
       const rapidez = Math.hypot(coche.vx, coche.vy);

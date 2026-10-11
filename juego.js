@@ -40,7 +40,7 @@ import { formatearTiempo } from './nucleo/slot.js';
 import { MODELOS } from './coches.js';
 import { cajasGrupos, cajasMenu, dibujarGrupos, dibujarMenu } from './menu.js';
 import {
-  actualizarParticulas, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
+  actualizarParticulas, chispasChoque, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
 } from './particulas.js';
 import {
   botonesFin, cajaRecordsPortada, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
@@ -1033,8 +1033,9 @@ function avanzarMundo(mandosCoches, dt) {
   avanzarSlot(carrera, mandosCoches, dt);
   for (const evento of carrera.eventos) {
     if (evento.tipo === 'choque') {
+      const chispas = chispasChoque(evento.fuerza);
       for (const [nx, ny] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        emitirChispas(estado.particulas, { x: evento.x, y: evento.y, nx, ny }, 0, 0, 8);
+        emitirChispas(estado.particulas, { x: evento.x, y: evento.y, nx, ny }, 0, 0, chispas);
       }
     }
     if (evento.tipo !== 'sale') continue;
@@ -1352,7 +1353,7 @@ const ESCENAS = {
           sfxSale();
           if (estado.tactil && estado.humanos[evento.coche]) vibrar(200);
         }
-        else if (evento.tipo === 'choque') sfxChoque();
+        else if (evento.tipo === 'choque') sfxChoque(evento.fuerza);
         else if (evento.tipo === 'clac') sfxClac();
         else if (evento.tipo === 'vuelta' || evento.tipo === 'fin') apuntarVuelta(evento.coche);
         if (evento.tipo === 'vuelta') {
@@ -1454,7 +1455,7 @@ const ESCENAS = {
     actualizar(dt) {
       const rp = estado.reproduccion;
       for (const e of avanzarReproduccion(rp, dt, estado.decorado.escenario.polvo)) {
-        if (e.tipo === 'choque') sfxChoque();
+        if (e.tipo === 'choque') sfxChoque(e.fuerza);
         else if (e.tipo === 'sale') sfxSale();
         else if (e.tipo === 'clac') sfxClac();
       }

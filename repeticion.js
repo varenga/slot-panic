@@ -14,7 +14,7 @@
 import { ALTO, ANCHO, COLOR, FUENTE, SALTAR_REPETICION, ZOOM_REPETICION } from './config.js';
 import { circulo, ctx, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { eventosEntre, poseEn, ritmoRepeticion } from './nucleo/momentos.js';
-import { actualizarParticulas, emitirChispas, emitirHumo } from './particulas.js';
+import { actualizarParticulas, chispasChoque, emitirChispas, emitirHumo } from './particulas.js';
 import { nombreSlot } from './pantalla.js';
 import { t } from './i18n.js';
 
@@ -74,7 +74,8 @@ export function avanzarReproduccion(rp, dt, polvo) {
 function emitir(rp, eventos, polvo) {
   for (const e of eventos) {
     if (e.tipo === 'choque') {
-      for (const [nx, ny] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) emitirChispas(rp.particulas, { x: e.x, y: e.y, nx, ny }, 0, 0, 8);
+      const chispas = chispasChoque(e.fuerza);
+      for (const [nx, ny] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) emitirChispas(rp.particulas, { x: e.x, y: e.y, nx, ny }, 0, 0, chispas);
     } else if (e.tipo === 'sale') {
       const v = Math.hypot(e.vx, e.vy) || 1;
       emitirChispas(rp.particulas, { x: e.x, y: e.y, nx: e.vx / v, ny: e.vy / v }, e.vx * 0.3, e.vy * 0.3, 10);

@@ -16,6 +16,11 @@ const COLOR_CONFETI = ['#e05a63', '#f2cd68', '#88aede', '#4fbf7a', '#e6e8ee', '#
 const CONFETI = 120;
 const GRAVEDAD_CONFETI = 60;   // px/s²: cae despacio, como papel
 
+/** Las chispas de un choque, hacia cada lado: de 2 a 10, según su `fuerza` (sin ella, todas). */
+export function chispasChoque(fuerza = 1) {
+  return Math.round(2 + 8 * Math.min(1, 2 * fuerza));
+}
+
 /**
  * Chispas desde el punto de contacto: salen hacia atrás y a lo largo del muro,
  * con lo que lleva el coche, nunca hacia dentro del muro.

@@ -19,8 +19,11 @@ modo). Antes de crecer, que esté en su sitio:
 
 Por decidir el orden, con el filtro de siempre («¿hace la carrera más divertida?»):
 
-- [ ] Playtest de las piezas: ¿se nota la curva de derrape?, ¿los choques en la X y el
-      cruce divierten o frustran?, ¿el peralte y los baches se leen antes de llegar?
+- [ ] Playtest de las piezas: ¿se nota la curva de derrape?, ¿el peralte y los baches se
+      leen antes de llegar?
+- [ ] Playtest de los choques: ¿se entiende por qué uno sigue y el otro no?, ¿frustra que
+      te saque el que se sale a tu lado?, ¿el roce de la estrecha saca demasiado o poco
+      (`ROCE` 12, `GOLPE_SALE` 90)?
 - [ ] Más circuitos oficiales (hoy cinco).
 - [ ] Playtest de *La bañera*: ¿el desvío se lee antes de llegar?, ¿las balas de paja
       se ven pequeñas?, ¿14 px de quiebro (`DESVIO`) se notan?

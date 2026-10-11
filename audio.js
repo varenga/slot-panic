@@ -171,10 +171,14 @@ export function sfxSale() {
   noiseBurst({ dur: 0.12, gain: 0.12, filterFreq: 2400 });
 }
 
-/** Dos coches que se encuentran en una X o un cruce: un golpe sordo y plástico que cruje. */
-export function sfxChoque() {
-  tone({ type: 'sine', freq: 140, freqEnd: 50, dur: 0.3, gain: 0.22 });
-  noiseBurst({ dur: 0.22, gain: 0.25, filterFreq: 1400 });
+/*
+ * Dos coches que chocan: un golpe sordo y plástico que cruje. Más flojo
+ * cuanto menos `fuerza` (de 0 a 1; a media velocidad, ya a tope).
+ */
+export function sfxChoque(fuerza = 1) {
+  const f = 0.35 + 0.65 * Math.min(1, 2 * fuerza);
+  tone({ type: 'sine', freq: 140, freqEnd: 50, dur: 0.3, gain: 0.22 * f });
+  noiseBurst({ dur: 0.22, gain: 0.25 * f, filterFreq: 1400 });
 }
 
 /** La pieza encaja en el carril: un clic seco de plástico. */
