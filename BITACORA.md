@@ -1494,3 +1494,18 @@ app en la consola de Play.
   baches, una peraltada y un lazo estrecho con su estrecha. El campeonato pasa a seis
   carreras. `servidor/records.php` admite el circuito; la base no cambia.
   `pnyk.json`: 1.11.0.
+
+## El ladrillo, berlina (11/10/2026, rama `37-ladrillo-berlina`)
+
+- El ladrillo y la ranchera se confundían: los dos eran familiares de techo largo. El
+  ladrillo pasa a ser la berlina de 1978 (plano en `_desarrollo/coche-volvo-244jpg.jpg`):
+  tres volúmenes, con el capó largo, el techo corto con su techo solar, la luna y el
+  maletero, y los pilotos grandes doblando las esquinas de atrás. Se quedan los
+  parachoques negros, los faros cuadrados (la calandra, más ancha) y la caja de
+  esquinas vivas. Ancho de dibujo ±4,41 (4898 × 1707 mm).
+- Solo cambia la forma: el id (`ladrillo`), el largo (36 px, aunque la fórmula daría
+  37) y el carácter son los de antes, así que los récords y el arnés no cambian.
+- **Apodos nuevos**, iguales en los siete idiomas (como MULTIPLO): rana → PORCHETA,
+  monovolumen → ESPACIO, ladrillo → BOLVO 244, ranchera → BOLVO 850R, mínimo → MINIC y
+  burbuja → BITLE. Los id no cambian (`rana`, `monovolumen`, `ladrillo`, `ranchera`,
+  `minimo`, `burbuja`): con ellos se guardan los récords y lo elegido.

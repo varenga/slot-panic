@@ -119,7 +119,7 @@ export const COCHES = {
   escarabajo:  { largo: 32, acelera: 0.9,  agarre: 1,     punta: 1.04 },    // 4070 mm
   bambino:     { largo: 25, acelera: 1.3,  agarre: 0.94,  punta: 0.975 },   // 2970 mm
   monovolumen: { largo: 37, acelera: 1,    agarre: 0.975, punta: 1.04 },    // 4856 mm
-  ladrillo:    { largo: 36, acelera: 0.8,  agarre: 1.01,  punta: 1.06 },    // 4790 mm
+  ladrillo:    { largo: 36, acelera: 0.8,  agarre: 1.01,  punta: 1.06 },    // 4898 mm (se queda en 36: los récords)
   ranchera:    { largo: 36, acelera: 0.92, agarre: 0.97,  punta: 1.075 },   // 4709 mm
   rana:        { largo: 33, acelera: 1.24, agarre: 0.94,  punta: 1 },       // 4245 mm
   cuatrolatas: { largo: 30, acelera: 1.1,  agarre: 0.975, punta: 1 },       // 3668 mm
