@@ -1534,3 +1534,10 @@ app en la consola de Play.
 
 - En el modo lupa, el sitio del dedo: una franja abajo con el pedal del acelerador, y
   la vista encima, sin el dedo. `pnyk.json`: 1.11.2.
+
+## Playtest del modo lupa (11/10/2026)
+
+- El zoom se queda en 1,2 (`LUPA_ZOOM`): «se puede jugar perfectamente, no da sensación
+  de pequeño ni de que las cosas vengan pronto». Las curvas se ven a tiempo también con
+  la vista más baja por la franja del acelerador (1.11.2). No hace falta pintar nada
+  más allá de la mesa.
