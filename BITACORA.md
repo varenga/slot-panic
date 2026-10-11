@@ -1509,3 +1509,9 @@ app en la consola de Play.
   monovolumen → ESPACIO, ladrillo → BOLVO 244, ranchera → BOLVO 850R, mínimo → MINIC y
   burbuja → BITLE. Los id no cambian (`rana`, `monovolumen`, `ladrillo`, `ranchera`,
   `minimo`, `burbuja`): con ellos se guardan los récords y lo elegido.
+
+## Slot Panic 1.11.1 (11/10/2026)
+
+- El ladrillo, berlina (el Bolvo 244), y seis apodos nuevos: PORCHETA, ESPACIO,
+  BOLVO 244, BOLVO 850R, MINIC y BITLE. Los récords siguen valiendo.
+  `pnyk.json`: 1.11.1.
