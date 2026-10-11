@@ -1574,3 +1574,9 @@ app en la consola de Play.
   fuera (`RAMPA`), la banda rayada del borde más marcada y flechas en el sentido de la
   marcha cada 44 px por la parte alta: ahí se pasa más rápido. Al pasar no cambia nada:
   primero, ver si con el dibujo se entiende.
+
+## Slot Panic 1.12.0 (11/10/2026)
+
+- Los baches se notan: frenan, el coche bota, suenan, vibran y levantan polvo; y se ven
+  antes de llegar. El peralte se ve inclinado, con flechas. Los récords siguen valiendo.
+  `pnyk.json`: 1.12.0.
