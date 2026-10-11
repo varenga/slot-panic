@@ -70,8 +70,8 @@ export function enApp() {
  * 31×15,5 lógicos (en pantalla, unos 22×11 px) sobre una pista de 64: el de
  * Race Panic (22×11) a ×1,4, que en la pista se perdía. Entre los dos coches
  * en paralelo quedan 14 px, y 9 hasta el borde del asfalto. Es el del coche
- * de siempre (el clásico): cada modelo tiene su largo (COCHES), y el CHOQUE
- * crece con él.
+ * de siempre (el clásico): cada modelo tiene su largo (COCHES), y su
+ * cápsula de choque crece con él.
  */
 export const LARGO_COCHE = 31;
 export const ANCHO_COCHE = 15.5;
@@ -84,7 +84,7 @@ export const ANCHO_COCHE = 15.5;
  * X; el exponente conserva el orden y aprieta las diferencias a todos por
  * igual. El ancho sale de su forma (de 13 a 17 px): dos coches en paralelo, a
  * 2 · CARRIL, no se tocan nunca. Más largo es más fácil de alcanzar en una X:
- * el CHOQUE crece con el largo de los dos. El clásico no es de verdad: se
+ * para chocar, cada uno es una cápsula de su largo (ver GOLPE_SALE). El clásico no es de verdad: se
  * queda en el de siempre.
  *
  * Y tres multiplicadores sobre el coche de siempre: `acelera` (el motor gana
@@ -231,7 +231,7 @@ export const FUERA_MAXIMO = 2.2;        // s fuera, como mucho, antes de que lle
  *   encima de VELOCIDAD_BACHES derrapa.
  * - En la ESTRECHA los carriles se acercan al eje hasta ESTRECHA veces su
  *   distancia: a la par, dos coches se tocan (a 2 · CARRIL · ESTRECHA, menos
- *   que CHOQUE). Es la chicane del juguete: adelantar ahí es arriesgarse.
+ *   que el ancho de un coche). Es la chicane del juguete: adelantar ahí es arriesgarse.
  * - La CURVA DESLIZANTE es amplia, resbaladiza y estrecha: se toma derrapando.
  *   Hasta `tolera` veces el agarre de más, la cola sale mucho y frena, pero el
  *   derrape no se acumula; pasado eso, sí, y a fondo se sale como en todas.
@@ -239,10 +239,6 @@ export const FUERA_MAXIMO = 2.2;        // s fuera, como mucho, antes de que lle
  *   los carriles se juntan (como en la estrecha), se van juntos DESVIO px a un
  *   lado, vuelven y se separan. La guía nota el quiebro como una curva: el
  *   radio con que agarra es el de la curvatura del carril.
- * - El CHOQUE: dos coches en el carril a menos de esto (en una X, un cruce o una estrecha)
- *   salen los dos. Menos que los 2 · CARRIL de dos carriles en paralelo, y
- *   crece con el coche: se chocan cuando se ve que se tocan (era 14 con el
- *   coche de 22×11).
  */
 export const AGARRE_PERALTE = 1.4;
 export const CURVA_DERRAPE = { acumula: 0.4, freno: 0.5, limite: 1, coleteo: 1.6, tolera: 0 };
@@ -250,7 +246,35 @@ export const CURVA_DESLIZANTE = { acumula: 2, freno: 0.1, limite: 1, coleteo: 2.
 export const ESTRECHA = 0.4;            // fracción de CARRIL a la que se acercan los carriles
 export const DESVIO = 14;               // px que se van de lado los carriles juntos en el desvío
 export const VELOCIDAD_BACHES = 330;    // px/s
-export const CHOQUE = 20;               // px entre los centros de los dos coches
+/*
+ * Los CHOQUES entre coches. Cada coche es una cápsula: un segmento a lo largo
+ * de su pose (con la cola que haya sacado) y ANCHO_COCHE / 2 alrededor. Dos
+ * carriles en paralelo, a 2 · CARRIL, no se tocan ni derrapando a tope; en una
+ * X, un cruce o una estrecha, sí. Un coche fuera choca con uno en el carril:
+ * se lo puede llevar por delante.
+ *
+ * El choque no decide quién se sale: da un GOLPE, y la física de siempre hace
+ * el resto. Lo que se acercan a lo largo de la normal del contacto se lo
+ * reparten los dos (REBOTE_COCHES de rebote). A lo largo del carril, cambia la
+ * velocidad (el de detrás frena, el de delante gana); de lado, se suma al
+ * derrape: GOLPE_SALE px/s en la cola sacan a un coche que iba agarrado. La
+ * guía va en el morro y lo sujeta: ahí el golpe cuenta PALANCA_MORRO. Así un
+ * coche que ya derrapaba se sale con un toque, y el de delante, al que le dan
+ * en la cola, antes que el de detrás.
+ *
+ * Mientras siguen tocándose (a la par en una estrecha), se ROZAN: cada uno
+ * suma ROCE de derrape por segundo con su palanca, a fondo y con PENETRA px
+ * metidos, que tiene que ganarle a RECUPERA_DERRAPE; y ROZA iguala sus
+ * velocidades. Por debajo de TOQUE px/s, tocarse no es un choque (ni suena
+ * ni es un momento).
+ */
+export const GOLPE_SALE = 90;           // px/s de golpe de lado, en la cola, que sacan a un coche agarrado
+export const PALANCA_MORRO = 0.35;      // lo que cuenta un golpe en el morro, en la guía (en la cola, 1)
+export const REBOTE_COCHES = 0.3;       // fracción de lo que se acercaban con que rebotan
+export const TOQUE = 30;                // px/s de acercarse por debajo de los que no es un choque
+export const ROCE = 12;                  // derrape por s rozándose a fondo, en la cola y PENETRA px metidos
+export const PENETRA = 4;               // px metidos del roce de referencia (a la par en la estrecha, ~3,5)
+export const ROZA = 3;                  // 1/s con que el roce iguala las velocidades
 /*
  * La CPU que lleva el carril que nadie toca (ver `crearPiloto`). Perfecta, «no
  * había quien le ganara» (0,7 s por vuelta del mejor piloto); con 0,95 ± 30 % y

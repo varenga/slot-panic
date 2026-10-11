@@ -7,7 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Publicado (v1.0.0): carreras de slot en cinco circuitos (*La horquilla*, y *El
 ocho*, *El nudo*, *El resbalón* y *La bañera*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
-dosifica a toques), derrape antes de salirse, choques en las X, los cruces, las estrechas y el desvío, una curva deslizante y una mano que devuelve el
+dosifica a toques), derrape antes de salirse, choques en las X, los cruces, las estrechas y el desvío (el golpe se
+suma al derrape: siguen los dos, se sale uno o los dos; y uno que se sale se lleva por delante al
+otro), una curva deslizante y una mano que devuelve el
 coche; uno
 contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los cinco seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
@@ -142,7 +144,7 @@ demás, en `BITACORA.md`). Mide y comprueba:
    vuelta y pierde > 20 %; ninguna curva se pasa a su punta; arrancando en una curva no
    se sale, ni un humano que reacciona 0,2 s tarde; los niveles de la CPU dejan sus
    márgenes, en orden. Ninguno es el más rápido en todos, y los más cortos y los
-   más largos chocan en cada encuentro (y en paralelo, nunca).
+   más largos chocan en cada encuentro (y en paralelo, sin derrapar, nunca se tocan).
 3. **Slot**: los carriles van por el asfalto y dentro del lienzo, y sus tramos lejanos a
    > 60 px. El piloto prudente (×1, no pasa del agarre) no se sale nunca y da la vuelta
    en 9-16 s (hoy 13,5); entrar derrapando le gana (hoy 11 %) y a fondo se sale al menos
@@ -158,7 +160,10 @@ demás, en `BITACORA.md`). Mide y comprueba:
    1,7 %; con una X, < 2 %) y con el turno cambiado los coches se cambian de carril.
    Las medidas del piloto se toman con **cada coche solo** en la pista. Juntos, dos
    coches iguales sin X, cruces ni estrechas no chocan nunca; en cada X, cada cruce y
-   cada estrecha, lanzados con 21 desfases, chocan en alguno y nunca dos veces seguidas.
+   cada estrecha, lanzados con 21 desfases, chocan en alguno, en los oficiales no siempre
+   salen los dos y la mano nunca los deja chocando otra vez. En los oficiales salen los
+   tres desenlaces (siguen, se sale uno, los dos), y uno fuera que va de lado contra el
+   otro lo saca lanzado (400 px/s) y despacio (80) no, y rebota.
    Las curvas a tope incluyen el peralte, la de derrape, la deslizante y los baches.
 4. **Idiomas**: los siete catálogos tienen las mismas claves, y los nombres de los
    circuitos públicos (adjetivo y sustantivo, con género) son tantos como espera
@@ -180,7 +185,8 @@ demás, en `BITACORA.md`). Mide y comprueba:
    elegidos (≤ 3) no se pisan y caben en lo grabado, la repetición pinta las poses
    grabadas, un momento repetido dura ≤ 7,5 s y los tres ≤ 20 s, con la misma semilla
    salen los mismos y una carrera de 10 vueltas graba < 2 MB. En cada encuentro, cada
-   choque es un momento en su sitio (X, cruce o estrecha); los demás (salvada,
+   choque es un momento en su sitio (X, cruce o estrecha; «pista» si uno fuera arrolla
+   al otro); los demás (salvada,
    adelantamiento, llegada, salida, vuelta rápida) se prueban con carreras de mentira.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
@@ -329,9 +335,12 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   X, cada vuelta; en la estrecha se acerca al eje, a `ESTRECHA`; en el desvío, además,
   los dos se van de lado: `centro`). Lo que agarra cada
   punto, `radioAgarre(punto, lateral)`.
-- **Chocar es empezar a tocarse acercándose**: así la mano puede dejar dos coches uno
-  encima del otro sin que vuelvan a chocar en bucle. El paso en que la mano posa un
-  coche (`posado`) no cuenta como empezar a tocarse.
+- **El choque da un golpe, no decide**: cada coche es una cápsula; al empezar a tocarse
+  acercándose, lo que se acercan se reparte, frena o empuja a lo largo y, de lado, se
+  suma al derrape (con la palanca de dónde le dan: la cola cuenta más que el morro). Es
+  el derrape el que saca al coche. Mientras siguen tocándose, se rozan; metidos más de
+  medio coche, salen los dos. Si la mano posa un coche tocando al otro (`posado`), hay
+  tregua hasta que se separen: así no chocan en bucle.
 - **Lo que publica un push no puede romper con la caché vieja.** Los módulos ES no
   llevan `?v=`: con service worker, cada versión tiene su caché (la huella de todo lo que
   precarga) y no se mezclan; sin él, el `.htaccess` hace revalidar HTML, JS y CSS
