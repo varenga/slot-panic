@@ -1385,3 +1385,9 @@ app en la consola de Play.
   CPU contra CPU muchas carreras no tienen nada (sin salidas ni adelantamientos): sale
   el cartel sin el botón.
 - Arnés: 1731/1731 en verde. Visto en la mesa y en la lupa (?lupa), en El ocho.
+
+## Slot Panic 1.9.0 (11/10/2026)
+
+- Los mejores momentos: al acabar se repite el mejor (choque, salida, salvada,
+  adelantamiento, llegada o vuelta rápida) a cámara lenta, y MOMENTOS repite los tres.
+  `pnyk.json`: 1.9.0.
