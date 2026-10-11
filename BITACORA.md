@@ -1453,3 +1453,37 @@ app en la consola de Play.
 - Choques más realistas: el golpe se suma al derrape (siguen los dos, se sale uno o los
   dos), el roce en las estrechas y el que se sale se lleva por delante al otro.
   `pnyk.json`: 1.10.0.
+
+## La diagonal (11/10/2026, rama `36-sexto-circuito`)
+
+> «Vamos con el sexto circuito», con los planos de `_desarrollo/circuito-*.jpg` de
+> inspiración. El que manda es el *C1 G* (`circuito-1.jpg`): un ocho cuya rama larga
+> cruza en diagonal y un dedo que entra en el lazo grande.
+
+- **El sexto oficial, *La diagonal*** (`circuitos/diagonal.js`, clave `diagonal`): un
+  ocho torcido. El lazo grande a la izquierda, con la recta de meta arriba; de ella
+  baja un valle (r90, bajada de baches, horquilla r60, subida y r70) que entra en el
+  lazo. Arriba a la derecha, una peraltada r100 de 120° deja la pista en una diagonal
+  larga que cruza la recta de abajo; abajo a la derecha, un lazo estrecho (130 px de
+  alto: r60, la recta con una estrecha, horquilla r65). La recta de abajo vuelve por el
+  cruce a la curva de derrape r95 y a la meta. 3532 px de eje, la meta en (330, 100).
+- **El cruce, a 60° y no a 45°**: a 45°, en la cuña estrecha del cruce la recta y la
+  diagonal se quedaban a 98-103 px (el mínimo es 104) justo fuera de la ventana del
+  cruce (`VENTANA_CRUCE`, 128 px a cada lado). A 60° se separan antes y la ventana
+  basta: el núcleo no cambia. Sigue leyéndose en diagonal al lado del de El ocho, que
+  es en ángulo recto.
+- **El hueco de la portada** (470 × 300) obliga a la forma: el lazo grande tiene que
+  quedar vacío de arriba abajo, así que el cruce baja a la recta de abajo (y = 490) y
+  el valle va a su derecha (queda a 3 px del hueco).
+- **Lo que costó calibrarlo**: con el valle de r60 un humano que reacciona 0,25 s tarde
+  se salía en su entrada (tras la recta de meta) y en su salida (tras la subida), por
+  dentro, y la CPU difícil dejaba 0,80-0,81 s con los coches de menos agarre (el tope
+  es 0,8). Con r90 a la entrada y r70 a la salida, las dos cosas pasan.
+- Medido: prudente 12,41 s por vuelta, el fino le gana un 12 %, a fondo pierde un 47 %
+  (15 y 20 salidas en cinco vueltas), 0 curvas a tope, el humano tardío 0 salidas,
+  carriles a 3,0 %, CPU 2,36 / 0,88 / 0,64 s (con los trece coches, la difícil de
+  0,61 a 0,72). En el cruce chocan 9 de 9 veces con su momento, en la estrecha 4 de 4.
+  En la misma pista, la CPU contra el mejor piloto apenas se choca (1 en seis
+  carreras): el cruce lo pisan los dos coches a la vez pocas veces. El más rápido
+  ahí, la ranchera. `servidor/records.php`: mínimo 9000 ms (el 79 % de la mejor vuelta
+  grabada, 11,37 s), meta en (330, 100).
