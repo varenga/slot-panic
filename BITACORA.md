@@ -1487,3 +1487,10 @@ app en la consola de Play.
   carreras): el cruce lo pisan los dos coches a la vez pocas veces. El más rápido
   ahí, la ranchera. `servidor/records.php`: mínimo 9000 ms (el 79 % de la mejor vuelta
   grabada, 11,37 s), meta en (330, 100).
+
+## Slot Panic 1.11.0 (11/10/2026)
+
+- El sexto oficial, *La diagonal*: un ocho torcido que se cruza a 60°, con un valle de
+  baches, una peraltada y un lazo estrecho con su estrecha. El campeonato pasa a seis
+  carreras. `servidor/records.php` admite el circuito; la base no cambia.
+  `pnyk.json`: 1.11.0.
