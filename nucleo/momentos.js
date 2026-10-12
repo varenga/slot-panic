@@ -123,11 +123,12 @@ function buscarMomentos(rep, carrera, humanos) {
 
   for (const e of carrera.eventos) {
     if (e.tipo === 'choque') {
-      coches.forEach((_, i) => enChoque.add(i));
+      const [i, j] = e.coches ?? [0, 1];
+      enChoque.add(i).add(j);
       // Un toque vale menos que un golpe de verdad (a media velocidad, o más, todo).
       const puntos = TIPOS_MOMENTO.choque.puntos * (0.6 + 0.4 * Math.min(1, 2 * (e.fuerza ?? 1)));
-      const lugar = e.arrolla ? 'pista' : lugarChoque(circuito, coches[0].s, coches[1].s);
-      proponer(rep, 'choque', { coches: [0, 1], humano: humano(0) || humano(1), lugar, puntos });
+      const lugar = e.arrolla ? 'pista' : lugarChoque(circuito, coches[i].s, coches[j].s);
+      proponer(rep, 'choque', { coches: [i, j], humano: humano(i) || humano(j), lugar, puntos });
     } else if (e.tipo === 'sale' && !enChoque.has(e.coche)) {
       const { coche } = coches[e.coche];
       const rapidez = Math.hypot(coche.vx, coche.vy);

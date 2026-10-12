@@ -1622,3 +1622,53 @@ app en la consola de Play.
 
 - *La diagonal* pasa bajo un puente, en vez de cruzarse a 60°: al subir el coche frena
   y al bajar gana; en el puente no se chocan. Sus récords se vacían. `pnyk.json`: 1.13.0.
+
+## El motor de cuatro carriles y El ocho largo (12/10/2026, rama `43-cuatro-carriles`)
+
+- **Un modo, no un séptimo oficial.** El motor (N carriles, N coches, choques por
+  parejas) costaba lo mismo en los dos casos. Lo que cambiaba: como oficial, el ocho
+  largo entraba en el campeonato de los seis (de dos coches), en los récords del
+  servidor y en las secciones del arnés que recorren cada oficial (3b, 6, 7 y 8), y
+  sacarlo de ahí después no salía gratis. Un modo propio, con sus circuitos
+  (`CIRCUITOS_CUATRO`) y su campeonato, puede crecer: más circuitos, mangas.
+- **Los carriles los da el circuito** (`circuito.carriles`, de izquierda a derecha):
+  `{ carriles: 4 }` en la declaración da cuatro, a ±15 y ±45 px (cada uno a 2 ·
+  `CARRIL` del de al lado), y la pista se ensancha lo que tiene de más: 124 px. Lo que
+  antes daba por hecho que eran dos: el `turno` reparte `(i + turno) % carriles`,
+  `carrilEn` da el índice en `circuito.carriles` y los choques se comprueban **por
+  parejas** (`carrera.toques`, por 'i-j'; el evento `choque` lleva `coches: [i, j]`, y
+  los momentos lo usan). Lo que la mano posa vale para todas las parejas del coche en
+  ese paso.
+- **El margen del cruce crece con el ancho** (`circuito.ventanaCruce`, 128 px más lo que
+  la pista tiene de más: 188). Con 128, a un brazo del cruce le quedaba el otro a 130 px
+  y el muro se quedaba en el asfalto: 0 px de grava. `validarCircuito` mide con el
+  ancho de cada circuito.
+- **El ocho largo** (`circuitos/ochoLargo.js`): dos lazos con la recta del fondo (240
+  px) y rectas de 200 arriba y abajo, unidos por dos diagonales que se cruzan en
+  ángulo recto (a 60°, como se probó primero, los dos brazos se quedaban a 100 px
+  fuera del margen del cruce). Las curvas, de radio 90: los cuatro carriles miden
+  3167 px (el de fuera de un lazo es el de dentro del otro).
+  - Con radio 150 no se salía nadie a fondo (el de fuera, a 195, iba sobrado): vuelta
+    del prudente de 7,6 s y a fondo, lo mismo. Con 90, el prudente da la vuelta en ~11 s,
+    a fondo se sale 2-4 veces por vuelta y pierde un 37 %.
+  - **El carril de más afuera se pasa a fondo** su lazo (a 135 px). Con radio 70 no
+    pasaba, pero el de dentro quedaba a 25 px, los carriles se separaban un 6,7 % y la
+    CPU difícil dejaba 0,87 s. Se queda en 90: es lo que tiene ese carril, y lo paga
+    en el otro lazo, por dentro. El arnés no lo cuenta en «ninguna curva se pasa a
+    tope» (solo el carril a más de 2 · `CARRIL` del eje por fuera; con dos carriles,
+    ninguno).
+
+### Medidas (arnés, 5 vueltas, un coche por carril)
+
+| Piloto | Vuelta (carriles 0 / 1 / 2 / 3) | Salidas |
+|---|---|---|
+| prudente (×1) | 10,97 / 11,11 / 11,08 / 10,97 s | 0 |
+| al límite (×1,8) | 9,90 / 9,90 / 9,90 / 9,91 s | 0 |
+| a fondo | 17,2 / 13,7 / 13,7 / 16,1 s | 20 / 10 / 10 / 19 |
+
+- Entre carriles, con el mismo piloto, un 1,3 %. La CPU deja 0,90 s por vuelta al mejor
+  piloto (la fácil 1,77, la difícil 0,47) y se equivoca alguna vez.
+- En el cruce, cada pareja de carriles lanzada a 250 px/s choca en 8-9 de 21 desfases,
+  con los tres desenlaces. Cuatro CPU juntas: 1-2 choques por carrera, y la mano nunca
+  las deja chocando. Para eso el arnés cuenta los choques repetidos **por pareja**: con
+  cuatro, dos parejas distintas que chocan seguidas no son la mano.
