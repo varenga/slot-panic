@@ -6,9 +6,9 @@
  * pone el tiempo que habría hecho a su ritmo (lo que le faltaba, a la
  * velocidad media que llevaba).
  *
- * El coche 0 es siempre el J1 (la mitad izquierda) y el 1, el J2 o la CPU:
- * en cada carrera se cambian de carril, no de número. Sin DOM: lo prueba el
- * arnés.
+ * El coche 0 es siempre el J1 (la mitad izquierda) y el 1, el J2 o la CPU;
+ * en la pista de cuatro, el 2 y el 3 son de la CPU. En cada carrera se
+ * cambian de carril, no de número. Sin DOM: lo prueba el arnés.
  */
 
 export function crearCampeonato(circuitos) {
@@ -45,17 +45,21 @@ export function anotarCarrera(campeonato, carrera, humanos) {
 
 /*
  * Cómo va: victorias y tiempo sumado de cada coche, y quién va delante (o
- * null si van empatados del todo). Acabado, el que va delante es el campeón.
+ * null si los primeros van empatados del todo). Acabado, el que va delante es
+ * el campeón. `porTiempo`: el que va delante tiene las mismas victorias que
+ * otro, y le gana por tiempo.
  */
 export function clasificacion(campeonato) {
-  const victorias = [0, 0], tiempos = [0, 0];
+  const coches = campeonato.carreras[0]?.tiempos.length ?? 2;
+  const victorias = Array(coches).fill(0), tiempos = Array(coches).fill(0);
   for (const c of campeonato.carreras) {
     victorias[c.ganador]++;
     c.tiempos.forEach((t, i) => { tiempos[i] += t; });
   }
-  let delante = null;
-  if (victorias[0] !== victorias[1]) delante = victorias[0] > victorias[1] ? 0 : 1;
-  else if (tiempos[0] !== tiempos[1]) delante = tiempos[0] < tiempos[1] ? 0 : 1;
-  const porTiempo = victorias[0] === victorias[1] && delante !== null;
+  const orden = victorias.map((_, i) => i).sort((a, b) => victorias[b] - victorias[a] || tiempos[a] - tiempos[b]);
+  const [primero, segundo] = orden;
+  const empatan = victorias[primero] === victorias[segundo];
+  const delante = empatan && tiempos[primero] === tiempos[segundo] ? null : primero;
+  const porTiempo = empatan && delante !== null;
   return { victorias, tiempos, delante, porTiempo, acabado: campeonatoAcabado(campeonato) };
 }

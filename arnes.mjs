@@ -1126,6 +1126,32 @@ console.log('\nEl campeonato');
   empate.carreras[1].tiempos = [70, 60];
   comprobar(clasificacion(empate).delante === 1, 'con 2-2 el desempate no cambia con los tiempos');
 
+  /*
+   * El de la pista de cuatro: cuatro coches de verdad en sus circuitos, y las
+   * victorias de cuatro (con carreras de mentira): el que tiene más gana, y
+   * con las mismas, el menor tiempo, aunque otro sume menos con menos victorias.
+   */
+  {
+    const cuatro = crearCampeonato(CIRCUITOS_CUATRO);
+    while (!clasificacion(cuatro).acabado || !cuatro.carreras.length) {
+      const circuito = circuitoDelCampeonato(cuatro);
+      const r = correrSlot(circuito, circuito.carriles.map((_, i) => ({ ...CPU_SLOT, semilla: 20 + i })), { juntos: true });
+      anotarCarrera(cuatro, r.carrera, [true, false, false, false]);
+    }
+    const { victorias, tiempos } = clasificacion(cuatro);
+    comprobar(victorias.length === 4 && tiempos.every(Number.isFinite), `el campeonato de cuatro no cuenta a los cuatro (${victorias.join(', ')})`);
+    comprobar(victorias.reduce((a, b) => a + b, 0) === CIRCUITOS_CUATRO.length, 'las victorias de cuatro no suman las carreras');
+    const mentira = crearCampeonato([0, 1, 2, 3]);
+    for (const [ganador, tiemposCarrera] of [[2, [50, 51, 49, 40]], [1, [62, 60, 61, 40]], [2, [40, 45, 39, 30]]]) {
+      mentira.carreras.push({ clave: 'x', ganador, tiempos: tiemposCarrera, humanos: [true, false, false, false] });
+    }
+    comprobar(clasificacion(mentira).delante === 2, 'con cuatro no gana el que tiene más victorias');
+    // 2-2 entre el 1 y el 2; el 3 suma menos tiempo, pero sin victorias.
+    mentira.carreras.push({ clave: 'x', ganador: 1, tiempos: [55, 50, 58, 30], humanos: [true, false, false, false] });
+    const empatados = clasificacion(mentira);
+    comprobar(empatados.delante === 1 && empatados.porTiempo, 'con cuatro y 2-2 no gana el menor tiempo de los empatados');
+  }
+
   // Las carreras que se eligen (rápida, normal, resistencia): acaban en sus
   // vueltas, y el que no acaba lleva su ritmo con esas vueltas, no con las de serie.
   const medidas = [];

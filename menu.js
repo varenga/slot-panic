@@ -25,12 +25,12 @@ export const GRUPOS = ['carrera', 'coche', 'circuitos', 'ajustes'];
 
 /** La tecla directa de cada opción (con teclado), que funciona con el panel cerrado. */
 export const TECLA_OPCION = {
-  modo: 'T', circuito: 'C', duracion: 'V', nivel: 'D', j1: '1', j2: '2', escenario: 'E', hora: 'H', sonido: 'M', idioma: 'L'
+  modo: 'T', pista: 'P', circuito: 'C', duracion: 'V', nivel: 'D', j1: '1', j2: '2', escenario: 'E', hora: 'H', sonido: 'M', idioma: 'L'
 };
 
 /** Las filas de un grupo. Quién juega solo se elige con teclado: tocando, se entra tocando. */
 export function opcionesGrupo(grupo, eligeJugadores) {
-  if (grupo === 'carrera') return ['modo', 'circuito', 'duracion', 'nivel', ...(eligeJugadores ? ['j1', 'j2'] : [])];
+  if (grupo === 'carrera') return ['modo', 'pista', 'circuito', 'duracion', 'nivel', ...(eligeJugadores ? ['j1', 'j2'] : [])];
   if (grupo === 'ajustes') return ['escenario', 'hora', 'sonido', 'idioma'];
   return [];
 }
@@ -120,6 +120,7 @@ export function cajasMenu(marco, grupo, { columnas = 2, eligeJugadores = false, 
 export function etiquetaOpcion(id, e, teclado) {
   let v;
   if (id === 'modo') v = t(e.modo === 'campeonato' ? 'opcion.campeonato' : 'modo.suelta');
+  else if (id === 'pista') v = t('pista.' + e.circuito.carriles.length);
   else if (id === 'circuito') v = nombreCircuito(e.circuito);
   else if (id === 'duracion') v = `${vueltasDe(e.duracion)} · ${t('duracion.' + e.duracion)}`;
   else if (id === 'nivel') v = t('nivel.' + e.nivel);

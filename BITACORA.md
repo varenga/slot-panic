@@ -1672,3 +1672,29 @@ app en la consola de Play.
   con los tres desenlaces. Cuatro CPU juntas: 1-2 choques por carrera, y la mano nunca
   las deja chocando. Para eso el arnés cuenta los choques repetidos **por pareja**: con
   cuatro, dos parejas distintas que chocan seguidas no son la mano.
+
+## La pista de cuatro carriles en la portada (12/10/2026, rama `43-cuatro-carriles`)
+
+- **El modo lo da el circuito**: si el elegido es de cuatro carriles, la carrera es de
+  cuatro coches; sin otra preferencia guardada (se recuerda el circuito, como siempre).
+  En CARRERA, **PISTA: 2 / 4 CARRILES** (tecla P) pasa a la otra lista; la tecla C solo
+  recorre los de su pista, y de vuelta a la de dos se vuelve al circuito que se corría.
+  El campeonato de la pista de cuatro corre `CIRCUITOS_CUATRO`.
+- **Cuatro coches siempre**: el J1 y el J2 (cada uno con su mitad de la pantalla, como
+  hoy) y los otros dos, siempre de la CPU, con los primeros colores de la paleta que no
+  lleve nadie y el coche de siempre. En la lupa, el J1 contra tres CPU. En cada carrera,
+  cada coche pasa al carril de al lado (`turno` mod 4).
+- **La portada, encima del cruce**: el ocho largo no tiene hueco dentro de los lazos; la
+  portada va en el centro y se va al empezar. Los paneles de la cuenta atrás (J1 y J2)
+  van en el hueco de cada lazo, más estrechos: arriba estaban la recta y la parrilla.
+- **Lo de encima, para cuatro**: el marcador pone el J1 y el J2 en los bordes y las CPU
+  de más hacia dentro (sin la mejor vuelta); las etiquetas de la parrilla van delante de
+  cada coche, en su carril; el fin, por orden de llegada (`ordenLlegada`) y con el
+  puesto; el campeonato, una columna por coche. En la lupa, a la derecha, el puesto del
+  J1 (`hud.puesto`). La llegada apretada, como momento, se mide con el segundo que va
+  más cerca. Se jugó en el navegador: portada, cuenta atrás, carrera, fin, campeonato y
+  lupa.
+- **`clasificacion`** cuenta tantos coches como lleven las carreras: delante, el de más
+  victorias y, con las mismas, el de menos tiempo. El arnés corre el campeonato de cuatro
+  con cuatro CPU y prueba el desempate con cuatro.
+

@@ -141,7 +141,7 @@ function buscarMomentos(rep, carrera, humanos) {
       const tiempo = slot.vueltas.at(-1);
       const inicio = carrera.tiempo - tiempo;
       rep.vueltas.push({ t: rep.t, coche: e.coche, tiempo, humano: humano(e.coche) && (slot.humanoDesde ?? 0) <= inicio + 1e-9 });
-      if (e.tipo === 'fin' && coches.length === 2) llegada(rep, carrera, e.coche, humanos);
+      if (e.tipo === 'fin') llegada(rep, carrera, e.coche, humanos);
     }
   }
 
@@ -191,18 +191,21 @@ function buscarMomentos(rep, carrera, humanos) {
 }
 
 /*
- * Ha llegado el primero: cuánto le falta al segundo, a su ritmo (lo que
- * corre ahora o su media, lo que sea más), y si sigue en el carril.
+ * Ha llegado el primero: cuánto le falta al segundo (con cuatro, al que va
+ * más cerca), a su ritmo (lo que corre ahora o su media, lo que sea más), y
+ * si sigue en el carril.
  */
 function llegada(rep, carrera, ganador, humanos) {
-  const otro = carrera.coches[1 - ganador];
+  const segundo = carrera.coches.map((_, i) => i).filter((i) => i !== ganador)
+    .reduce((a, b) => (carrera.coches[b].progreso > carrera.coches[a].progreso ? b : a));
+  const otro = carrera.coches[segundo];
   if (otro.estado !== 'carril' && otro.terminado === null) return;
   const restante = Math.max(0, carrera.vueltas * carrera.circuito.largo - otro.progreso);
   const ritmo = Math.max(otro.v, otro.progreso / Math.max(1, carrera.tiempo), 1);
   const hueco = otro.terminado !== null ? 0 : restante / ritmo;
   if (hueco >= LLEGADA) return;
   proponer(rep, 'llegada', {
-    coches: [ganador, 1 - ganador], humano: !!humanos[0] || !!humanos[1],
+    coches: [ganador, segundo], humano: !!humanos[ganador] || !!humanos[segundo],
     puntos: TIPOS_MOMENTO.llegada.puntos + 4 * (LLEGADA - hueco) / LLEGADA
   });
 }

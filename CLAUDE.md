@@ -376,6 +376,9 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   cosméticos.
 - **Lo pulsable se define una vez**: la misma función da la caja para dibujarla y para
   saber si se ha pulsado.
+- **La pista de cuatro, un modo**: si el circuito es de cuatro carriles, la carrera es de
+  cuatro coches (PISTA, tecla P, cambia de lista). Solo los coches 0 y 1 pueden ser de
+  una persona; el 2 y el 3 son siempre de la CPU.
 - **Un dedo por jugador**: la mitad izquierda es J1 y la derecha J2. Ninguna mecánica
   nueva puede exigir un control que el móvil no tenga.
 - **En vertical, la lupa** (`estado.lupa`): toda la pantalla es el J1 y el otro carril, la
