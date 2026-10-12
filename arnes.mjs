@@ -34,7 +34,7 @@ import { construirDePiezas } from './nucleo/piezas.js';
 import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucleo/trazo.js';
 import { luzDeCarrera, sombraSol, sombraTorre } from './luz.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato, tiempoFinal } from './nucleo/campeonato.js';
-import { anotarManga, crearSerie, mangasDe, serieAcabada, sumaSerie } from './nucleo/mangas.js';
+import { anotarManga, crearSerie, mangasDe, serieAcabada, sumaEnCarrera, sumaSerie } from './nucleo/mangas.js';
 import { codificar, decodificar, posar } from './nucleo/fantasma.js';
 import {
   crearRepeticion, duracionMomento, elegirMomentos, eventosEntre, grabarCuadro, numerosGrabados, poseEn, TIPOS_MOMENTO
@@ -472,6 +472,33 @@ function seccionMangas(circuito, mangas) {
   console.log(`  la serie con el mismo piloto: ${tiempos.map((t) => t.toFixed(2)).join(', ')} s (un ${(reparto * 100).toFixed(2)} % entre el primero y el último)`);
   comprobar(reparto < 0.01, `en la serie de mangas, con el mismo piloto, uno saca un ${(reparto * 100).toFixed(2)} % a otro`);
   comprobar(ganador === orden[0] && tiempos[ganador] === Math.min(...tiempos), 'la serie de mangas no la gana la menor suma');
+
+  /*
+   * La suma en carrera (la del marcador): cuatro CPU, una serie de 3 vueltas.
+   * Al llegar el primero da lo mismo que la serie, y corriendo no salta.
+   */
+  const enCarrera = crearSerie(mangas);
+  let error = 0, salto = 0;
+  for (let turno = 0; !serieAcabada(enCarrera); turno++) {
+    const carrera = crearCarreraSlot(circuito, circuito.carriles.map((_, i) => COLORES[i]), turno, { vueltas: 3 });
+    const pilotos = circuito.carriles.map((_, i) => crearPiloto({ ...CPU_SLOT, semilla: 30 + i + 4 * turno }));
+    let antes = null;
+    for (let k = 0; carrera.fase !== 'fin' && k < 400 / DT; k++) {
+      avanzarSlot(carrera, carrera.fase === 'carrera' ? carrera.coches.map((c, i) => decidirSlot(pilotos[i], c, circuito)) : [], DT);
+      if (carrera.fase === 'cuenta') continue;
+      const { tiempos } = sumaEnCarrera(enCarrera, carrera);
+      // Lo que se ve es la diferencia con el primero: es la que no puede saltar.
+      const dif = tiempos.map((t) => t - Math.min(...tiempos));
+      if (antes && carrera.tiempo > 3) salto = Math.max(salto, ...dif.map((d, i) => Math.abs(d - antes[i])));
+      antes = dif;
+    }
+    const vivo = sumaEnCarrera(enCarrera, carrera).tiempos;
+    anotarManga(enCarrera, carrera);
+    error = Math.max(error, ...sumaSerie(enCarrera).tiempos.map((t, i) => Math.abs(t - vivo[i])));
+  }
+  console.log(`  la suma en carrera: al acabar cada manga se separa ${error.toFixed(3)} s de la serie; corriendo, salta como mucho ${salto.toFixed(3)} s`);
+  comprobar(error < 0.01, `la suma en carrera se separa ${error.toFixed(3)} s de la de la serie al acabar la manga`);
+  comprobar(salto < 0.25, `la suma en carrera salta ${salto.toFixed(3)} s de un fotograma a otro`);
 
   // Con mangas de mentira: gana la menor suma aunque otro gane más mangas.
   const mentira = crearSerie(3);

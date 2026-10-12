@@ -28,7 +28,7 @@ import {
 import { construirDePiezas } from './nucleo/piezas.js';
 import { validarCircuito } from './nucleo/validar.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato } from './nucleo/campeonato.js';
-import { anotarManga, crearSerie, mangasDe, serieAcabada, sumaSerie } from './nucleo/mangas.js';
+import { anotarManga, crearSerie, mangasDe, serieAcabada, sumaEnCarrera, sumaSerie } from './nucleo/mangas.js';
 import { posar } from './nucleo/fantasma.js';
 import { crearRepeticion, elegirMomentos, grabarCuadro, ritmoRepeticion } from './nucleo/momentos.js';
 import {
@@ -299,6 +299,16 @@ function rotuloCarrera() {
   if (serie) partes.push(t('manga.n', { n: serie.mangas.length + 1, total: serie.total }));
   if (campeonato) partes.push(nombreCircuito(estado.circuito));
   return partes.length ? partes.join(' · ') : null;
+}
+
+/*
+ * La suma para el marcador, en mangas: en la cuenta atrás, la de las mangas
+ * acabadas (en la primera no hay); corriendo, con lo que va de esta.
+ */
+function sumaDelMarcador() {
+  const { serie, carrera } = estado;
+  if (!serie || (carrera.fase === 'cuenta' && !serie.mangas.length)) return null;
+  return sumaEnCarrera(serie, carrera);
 }
 
 /** A media serie de mangas: la carrera no ha acabado. */
@@ -1476,12 +1486,12 @@ const ESCENAS = {
       dibujarMundo();
       if (estado.lupa) {
         dibujarMapa(estado.circuito, estado.carrera.coches);
-        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCarrera());
+        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCarrera(), sumaDelMarcador());
         dibujarAvisosLupa(estado.avisos);
         if (conAcelerador()) dibujarAcelerador(estado.carrera.coches[0], punteros.size > 0);
         return;
       }
-      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCarrera());
+      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCarrera(), sumaDelMarcador());
       dibujarAvisos(estado.avisos);
     },
     teclear(codigo) {

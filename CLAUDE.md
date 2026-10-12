@@ -175,7 +175,9 @@ demás, en `BITACORA.md`). Mide y comprueba:
    > 30 % y se sale ≥ 2 veces por vuelta de media), la CPU por cada carril contra el
    mejor piloto por ese mismo, y en vez de que los carriles se separen < 8 %, una serie
    de cuatro mangas con el mismo piloto: cada coche pasa por todos los carriles y las
-   sumas se separan < 1 % (hoy 0,0 %).
+   sumas se separan < 1 % (hoy 0,0 %). La suma en carrera (`sumaEnCarrera`, la del
+   marcador), con cuatro CPU, al acabar cada manga da la de la serie (< 0,01 s) y
+   corriendo no salta más de 0,25 s de un fotograma a otro.
 4. **Idiomas**: los siete catálogos tienen las mismas claves, y los nombres de los
    circuitos públicos (adjetivo y sustantivo, con género) son tantos como espera
    `api.php`.
@@ -249,7 +251,7 @@ nucleo/piloto.js       la CPU, la exhibición y el instrumento del arnés: decid
 nucleo/campeonato.js   el campeonato: los oficiales en orden, victorias, tiempos (el
                        del que no acaba, a su ritmo) y el desempate
 nucleo/mangas.js       las mangas: cuántas pide un circuito (mangasDe), la serie y
-                       su suma
+                       su suma, también a media manga (sumaEnCarrera)
 nucleo/fantasma.js     cada vuelta grabada a 1/30 s y reproducida con su reloj;
                        codificar() / decodificar() para guardarla y enviarla
 nucleo/momentos.js     los mejores momentos: el búfer de poses de la carrera, los

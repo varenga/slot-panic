@@ -12,6 +12,7 @@
  * lo prueba el arnés.
  */
 
+import { VELOCIDAD_SLOT } from '../config.js';
 import { largoCarril } from './slot.js';
 import { tiempoFinal } from './campeonato.js';
 
@@ -52,4 +53,28 @@ export function sumaSerie(serie) {
   for (const m of serie.mangas) m.tiempos.forEach((t, i) => { tiempos[i] += t; });
   const orden = tiempos.map((_, i) => i).sort((a, b) => tiempos[a] - tiempos[b]);
   return { tiempos, orden, ganador: orden[0] ?? null, acabada: serieAcabada(serie) };
+}
+
+/*
+ * Cómo va la suma a media manga: lo de las mangas acabadas más lo de esta, en
+ * la que a cada uno se le cuenta lo que tarda, a su ritmo, en llegar adonde va
+ * el primero (como `tiempoFinal` al acabar, que da lo mismo). Al principio el
+ * ritmo de media aún es bajo: no cuenta por debajo de RITMO_MINIMO.
+ * `diferencias`: lo que cada uno lleva sobre el primero de la suma; el
+ * primero, lo que le saca al segundo (en negativo).
+ */
+const RITMO_MINIMO = 0.2 * VELOCIDAD_SLOT;
+
+export function sumaEnCarrera(serie, carrera) {
+  const antes = sumaSerie(serie).tiempos;
+  const meta = carrera.vueltas * carrera.circuito.largo;
+  const primero = Math.min(meta, Math.max(...carrera.coches.map((slot) => slot.progreso)));
+  const tiempos = carrera.coches.map((slot, i) => {
+    const ahora = slot.terminado ?? carrera.tiempo + Math.max(0, primero - slot.progreso) / Math.max(slot.progreso / Math.max(carrera.tiempo, 1e-9), RITMO_MINIMO);
+    return (antes[i] ?? 0) + ahora;
+  });
+  const orden = tiempos.map((_, i) => i).sort((a, b) => tiempos[a] - tiempos[b]);
+  const diferencias = tiempos.map((t) => t - tiempos[orden[0]]);
+  if (orden.length > 1) diferencias[orden[0]] = tiempos[orden[0]] - tiempos[orden[1]];
+  return { tiempos, orden, diferencias };
 }
