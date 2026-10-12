@@ -1766,3 +1766,15 @@ app en la consola de Play.
 
 - En el móvil, cuatro mangas de 3 vueltas (~2 min) se hacen bien. Queda por ver las de
   10 vueltas.
+
+## El adelantamiento con cuatro coches (12/10/2026)
+
+- `momentos.js` solo buscaba adelantamientos con dos coches: en la pista de cuatro las
+  repeticiones se quedaban sin ellos. Ahora se miran por parejas (quién va delante y el
+  cambio que tiene que aguantar `FIRME` s, de cada una), y el momento lleva al que pasa
+  y al pasado. Con dos coches no cambia nada.
+- Medido (tres carreras de 3 vueltas en cada circuito de cuatro, el J1 contra tres
+  CPU): de 5 a 12 adelantamientos por carrera, de 0 a 3 del J1; entre los tres
+  elegidos se mezclan con choques, llegadas y la vuelta rápida. El arnés lo prueba con
+  una carrera de mentira de cuatro: el cuarto pasa al tercero y solo sale ese.
+- `pnyk.json`: 1.15.1.

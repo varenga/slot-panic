@@ -67,4 +67,3 @@ la portada, con cuatro coches siempre, las mangas y *La judía* y *La ele*
 - [ ] Playtest de *La judía* y *La ele*: ¿se entiende que el carril de fuera va casi a
       fondo y el de dentro hay que soltar?, ¿el carril de dentro de *La ele* (radio 25)
       se ve demasiado cerrado?
-- [ ] El adelantamiento como mejor momento solo se busca con dos coches.
