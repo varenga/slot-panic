@@ -1761,3 +1761,8 @@ app en la consola de Play.
 - Las mangas en la pista de cuatro: un circuito que no es un ocho se corre en una manga
   por carril y gana la menor suma. Dos circuitos nuevos de cuatro carriles, *La judía* y
   *La ele*. `pnyk.json`: 1.15.0.
+
+## Playtest de las mangas (12/10/2026)
+
+- En el móvil, cuatro mangas de 3 vueltas (~2 min) se hacen bien. Queda por ver las de
+  10 vueltas.
