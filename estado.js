@@ -282,6 +282,7 @@ export const estado = {
   edicion: null,       // el constructor abierto (constructor.js); sigue vivo mientras se prueba
   probando: false,     // la carrera es la prueba del constructor: al acabar se vuelve a él
   campeonato: null,    // el campeonato en curso (nucleo/campeonato.js), o null
+  serie: null,         // las mangas de la carrera en curso (nucleo/mangas.js), o null
   denuncia: null,      // en el fin de un público ajeno: null, 'pendiente' (preguntando) o 'hecha'
   tipoFantasma: 'tuyo', // contra qué fantasma corre el J1 (TIPOS_FANTASMA)
   fantasma: null,      // la vuelta contra la que corre el J1 ahora (nucleo/fantasma.js), o null

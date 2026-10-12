@@ -73,6 +73,8 @@ export function completarCircuito(eje, datos) {
   const circuito = {
     clave: datos.clave,
     interior: datos.interior,
+    // Dónde van los paneles de la cuenta atrás, si no caben donde siempre (pantalla.js).
+    guia: datos.guia,
     gradas: datos.gradas || [],
     eje,
     largo: s,

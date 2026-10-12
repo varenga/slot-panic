@@ -1702,3 +1702,62 @@ app en la consola de Play.
 
 - La pista de cuatro carriles: un modo propio (PISTA, tecla P) con *El ocho largo*,
   cuatro coches (el J1, el J2 y dos CPU) y su campeonato. `pnyk.json`: 1.14.0.
+
+## Las mangas, La judía y La ele (12/10/2026, rama `44-mangas`)
+
+- **Por qué mangas**: todo circuito cerrado que no es un ocho gira 360°, y en la pista
+  de cuatro el carril de fuera da 2π · 90 = 565 px más por vuelta que el de dentro.
+  En el ocho largo no hace falta (el de fuera de un lazo es el de dentro del otro);
+  en cualquier otro, sí. `mangasDe` (`nucleo/mangas.js`) lo encuentra, no se declara:
+  si los carriles de un circuito de cuatro se separan más de un 2 %, pide una manga
+  por carril.
+- **La serie**: cada manga es una carrera de las vueltas elegidas; en cada una, cada
+  coche pasa al carril de al lado (el `turno`), y en cuatro seguidas todos han corrido
+  por todos. Cada manga acaba cuando llega el primero (a los demás, su tiempo a su
+  ritmo: `tiempoFinal`, como en el campeonato) y gana la **menor suma**, no el que gana
+  más mangas. En el campeonato de la pista de cuatro, la carrera de un circuito con
+  mangas cuenta su suma (`anotarCarrera` con el resultado de la serie).
+- **En pantalla**: la portada dice «4 MANGAS DE 3 VUELTAS»; la cuenta atrás, «MANGA 2
+  DE 4» (con el campeonato, delante); el fin de cada manga, quién la gana y la tabla de
+  las mangas con la suma, y SIGUIENTE MANGA; el de la última, quién gana la suma (o, en
+  el campeonato, su tabla). R a media serie no repite (solo en la primera manga).
+  `pintarTabla` sirve a las dos tablas, la del campeonato y la de las mangas, en la mesa
+  y en la lupa. Se vio en el navegador: portada, cuenta atrás, fin de manga y de serie.
+- **Los paneles de la cuenta atrás**, en la pista de cuatro, iban en el hueco de cada
+  lazo del ocho largo. Un circuito que no tiene hueco ahí dice dónde (`guia`): en *La
+  ele*, el J2 y el rótulo, en el hueco de arriba a la derecha, fuera de la ele; en *La
+  judía*, el rótulo encima del hundimiento. Y la meta de *La judía* va 200 px a la
+  derecha del centro: debajo del semáforo, tapaba el coche del carril de arriba.
+- **El arnés, con mangas**: lo que cuenta es la serie. A fondo se mide la suma de los
+  cuatro carriles: el de más afuera va casi a fondo (lo paga en los otros). La CPU, por
+  cada carril contra el mejor piloto por ese mismo: contra el mejor carril, en *La ele*
+  la difícil dejaba 0,96 s (un carril saca un 11 % a otro). Y en vez de «los carriles
+  se separan < 8 %», una serie de cuatro mangas con el mismo piloto: cada coche pasa
+  por todos los carriles y las sumas se separan < 1 %.
+- **La judía** (`circuitos/judia.js`): un óvalo de 900 px de recta con la de abajo
+  hundida (cuatro curvas de 45°; las dos del fondo, al otro lado). Con radio 90, el
+  carril de fuera a fondo solo perdía un 7 %; con 80, un 19 %.
+- **La ele** (`circuitos/ele.js`): seis curvas de 90°, una a la izquierda (el rincón).
+  Con radio 80 la CPU no se equivocaba nunca y por el carril 1 ir a fondo era lo más
+  rápido (0 salidas). Una chicane en la recta de abajo sacaba al humano que reacciona
+  tarde por el carril de dentro; unos baches se pasaban a tope. Con radio 70 y sin
+  nada más, en verde: el carril de dentro va a 25 px (en el ocho largo eso separaba
+  los carriles; aquí lo arreglan las mangas).
+- **El huevo**, descartado: con una peraltada y una horquilla la vuelta se quedaba en
+  6-7 s y el carril de fuera iba más rápido a fondo; con una chicane, igual.
+
+### Medidas (arnés, 5 vueltas, un coche por carril)
+
+| | Carriles (px) | Prudente (vuelta, carril 0-3) | A fondo, la serie | CPU fácil / normal / difícil |
+|---|---|---|---|---|
+| *La judía* | 3218-2653 | 10,17 / 10,40 / 10,60 / 10,15 s | pierde 66 %, 68 salidas | 1,73 / 0,78 / 0,42 s |
+| *La ele* | 3062-2497 | 9,85 / 9,99 / 10,10 / 9,10 s | pierde 54 %, 53 salidas | 1,59 / 0,75 / 0,41 s |
+
+- La serie con el mismo piloto: 209,87 s los cuatro en *La judía*; en *La ele*, un
+  0,03 % del primero al último. Cuatro CPU juntas: 1-2 choques por carrera.
+
+## Slot Panic 1.15.0 (12/10/2026)
+
+- Las mangas en la pista de cuatro: un circuito que no es un ocho se corre en una manga
+  por carril y gana la menor suma. Dos circuitos nuevos de cuatro carriles, *La judía* y
+  *La ele*. `pnyk.json`: 1.15.0.

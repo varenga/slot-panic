@@ -28,6 +28,7 @@ import {
 import { construirDePiezas } from './nucleo/piezas.js';
 import { validarCircuito } from './nucleo/validar.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato } from './nucleo/campeonato.js';
+import { anotarManga, crearSerie, mangasDe, serieAcabada, sumaSerie } from './nucleo/mangas.js';
 import { posar } from './nucleo/fantasma.js';
 import { crearRepeticion, elegirMomentos, grabarCuadro, ritmoRepeticion } from './nucleo/momentos.js';
 import {
@@ -61,7 +62,7 @@ import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js
 import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
 import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, pintarHora } from './luz.js';
 import {
-  altoLienzoLupa, altoLupa, botonesFinCampeonatoLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
+  altoLienzoLupa, altoLupa, botonesFinTablaLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarAcelerador, dibujarPortadaLupa, empezarFotogramaLupa, marcoMenuLupa, prepararLupa, seguirCamara, zoomLupa
 } from './lupa.js';
 
@@ -287,13 +288,21 @@ function correrSiguiente() {
   empezarCarrera();
 }
 
-/** Lo que se lee en la cuenta atrás de una carrera del campeonato. */
-function rotuloCampeonato() {
-  const { campeonato } = estado;
-  if (!campeonato) return null;
-  const n = campeonato.carreras.length + 1;
-  return `${t('campeonato.carrera', { n, total: campeonato.circuitos.length })} · ${nombreCircuito(estado.circuito)}`;
+/*
+ * Lo que se lee en la cuenta atrás: la carrera del campeonato y la manga. En
+ * el campeonato, el circuito; en mangas, cuál es.
+ */
+function rotuloCarrera() {
+  const { campeonato, serie } = estado;
+  const partes = [];
+  if (campeonato) partes.push(t('campeonato.carrera', { n: campeonato.carreras.length + 1, total: campeonato.circuitos.length }));
+  if (serie) partes.push(t('manga.n', { n: serie.mangas.length + 1, total: serie.total }));
+  if (campeonato) partes.push(nombreCircuito(estado.circuito));
+  return partes.length ? partes.join(' · ') : null;
 }
+
+/** A media serie de mangas: la carrera no ha acabado. */
+const enMangas = () => estado.serie && !serieAcabada(estado.serie);
 
 /** Repetir en el fin: la misma carrera o, acabado el campeonato, otro. */
 function repetir() {
@@ -301,9 +310,10 @@ function repetir() {
   else empezarCarrera();
 }
 
-/** Seguir en el fin: en el campeonato, la siguiente; si no, repetir. */
+/** Seguir en el fin: la siguiente manga; en el campeonato, la siguiente carrera; si no, repetir. */
 function seguir() {
-  if (estado.campeonato && !clasificacion(estado.campeonato).acabado) correrSiguiente();
+  if (enMangas()) correrManga();
+  else if (estado.campeonato && !clasificacion(estado.campeonato).acabado) correrSiguiente();
   else repetir();
 }
 
@@ -617,6 +627,7 @@ function alMenu() {
   if (estado.probando) volverAlConstructor();
   else {
     estado.campeonato = null;
+    estado.serie = null;
     estado.menu = null;
     irAPortada();
   }
@@ -634,6 +645,7 @@ function limpiarPista() {
  */
 function irAPortada() {
   estado.fase = 'portada';
+  estado.serie = null;
   if (conRecords()) cargarRecords(estado.circuito.clave);
   const n = estado.circuito.carriles.length;
   estado.carrera = crearCarreraSlot(estado.circuito, coloresCarrera(n), 0, { modelos: estado.modelos });
@@ -645,17 +657,29 @@ function irAPortada() {
 }
 
 /*
- * Con teclado, cada carril es de quien diga CARRERA (una persona o la CPU).
- * Tocando, lo lleva la CPU hasta que alguien toca su mitad de la pantalla;
- * desde ahí es suyo toda la carrera: juegan uno o dos sin menú.
+ * Una carrera nueva. En un circuito que pide mangas (los de la pista de cuatro
+ * que no son un ocho: `nucleo/mangas.js`), la primera de ellas.
  */
 function empezarCarrera() {
+  const mangas = mangasDe(estado.circuito);
+  estado.serie = mangas > 1 ? crearSerie(mangas) : null;
+  correrManga();
+}
+
+/*
+ * Con teclado, cada carril es de quien diga CARRERA (una persona o la CPU).
+ * Tocando, lo lleva la CPU hasta que alguien toca su mitad de la pantalla;
+ * desde ahí es suyo toda la carrera: juegan uno o dos sin menú. En mangas,
+ * cada una empieza igual: tocando, se vuelve a tomar el carril.
+ */
+function correrManga() {
   evento('empezar_carrera', datosCarrera());
   if (estado.circuito.publico) apuntarJugado(estado.circuito.publico.id);
   estado.denuncia = null;
   estado.fase = 'carrera';
   // Cada carrera, los coches se cambian de carril: no son iguales. En la
-  // pista de cuatro, cada uno pasa al de al lado (y el último, al primero).
+  // pista de cuatro, cada uno pasa al de al lado (y el último, al primero):
+  // en cuatro mangas seguidas, cada uno corre por los cuatro.
   const n = estado.circuito.carriles.length;
   estado.turno = (estado.turno + 1) % n;
   estado.carrera = crearCarreraSlot(estado.circuito, coloresCarrera(n), estado.turno, {
@@ -823,9 +847,18 @@ function terminarCarrera() {
   estado.esperaReinicio = ESPERA_REINICIO;
   let gana = estado.humanos[estado.carrera.ganador];
   evento('acabar_carrera', { ...datosCarrera(), jugadores: estado.humanos.filter(Boolean).length });
-  const { campeonato } = estado;
-  if (campeonato) {
-    anotarCarrera(campeonato, estado.carrera, estado.humanos);
+  const { campeonato, serie } = estado;
+  if (serie) {
+    anotarManga(serie, estado.carrera);
+    // Al acabar la última, lo que se celebra es la suma.
+    if (serieAcabada(serie)) {
+      const { ganador } = sumaSerie(serie);
+      gana = estado.humanos[ganador];
+      evento('acabar_mangas', { ganador: nombreDe(ganador), mangas: serie.total, tactil: estado.tactil });
+    }
+  }
+  if (campeonato && !enMangas()) {
+    anotarCarrera(campeonato, estado.carrera, estado.humanos, serie && sumaSerie(serie));
     const { acabado, delante } = clasificacion(campeonato);
     // Al acabar, lo que se celebra es el campeonato.
     if (acabado) {
@@ -901,7 +934,7 @@ function idsFinSuelta() {
 
 /** Los botones del fin; si hay momentos, MOMENTOS tras los dos primeros. */
 function idsFin() {
-  const ids = estado.campeonato ? idsFinCampeonato(estado.campeonato) : idsFinSuelta();
+  const ids = enMangas() ? ['manga', 'menu'] : estado.campeonato ? idsFinCampeonato(estado.campeonato) : idsFinSuelta();
   return estado.momentos?.lista.length ? [...ids.slice(0, 2), 'momentos', ...ids.slice(2)] : ids;
 }
 
@@ -925,6 +958,7 @@ function datosCarrera() {
     escenario: estado.escenario,
     hora: estado.hora,
     vueltas: vueltasElegidas(),
+    mangas: estado.serie?.total ?? 1,
     cpu: estado.nivel,
     coche: estado.modelos[0],
     tactil: estado.tactil
@@ -1442,17 +1476,17 @@ const ESCENAS = {
       dibujarMundo();
       if (estado.lupa) {
         dibujarMapa(estado.circuito, estado.carrera.coches);
-        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCampeonato());
+        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCarrera());
         dibujarAvisosLupa(estado.avisos);
         if (conAcelerador()) dibujarAcelerador(estado.carrera.coches[0], punteros.size > 0);
         return;
       }
-      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCampeonato());
+      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCarrera());
       dibujarAvisos(estado.avisos);
     },
     teclear(codigo) {
-      // En el campeonato no se repite una carrera a medias.
-      if (codigo === 'KeyR' && !estado.campeonato) empezarCarrera();
+      // En el campeonato no se repite una carrera a medias; en mangas, solo en la primera.
+      if (codigo === 'KeyR' && !estado.campeonato && !estado.serie?.mangas.length) empezarCarrera();
       else if (codigo === 'Escape') alMenu();
     },
     pulsar() {
@@ -1484,11 +1518,11 @@ const ESCENAS = {
       }
       dibujarMundo();
       if (estado.lupa) {
-        dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas, estado.campeonato, idsFin());
+        dibujarFinLupa(estado.carrera, estado.humanos, estado.particulas, estado, idsFin());
         if (estado.avisoFin) dibujarAvisosLupa([estado.avisoFin]);
         return;
       }
-      dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil, estado.campeonato, idsFin());
+      dibujarFinSlot(estado.carrera, estado.humanos, estado.tactil, estado, idsFin());
       if (estado.avisoFin) dibujarAvisos([estado.avisoFin]);
       dibujarConfeti(estado.particulas);
     },
@@ -1501,13 +1535,13 @@ const ESCENAS = {
     },
     pulsar(p) {
       if (estado.esperaReinicio > 0 || estado.trasMeta > 0) return;
-      const { campeonato } = estado;
       const cajas = estado.lupa
-        ? (campeonato ? botonesFinCampeonatoLupa(campeonato, idsFin()) : botonesFinLupa(idsFin()))
+        ? (estado.campeonato || estado.serie ? botonesFinTablaLupa(idsFin()) : botonesFinLupa(idsFin()))
         : botonesFin(idsFin());
       const boton = cajas.find((caja) => dentro(p, caja));
       if (boton?.id === 'repetir') repetir();
       else if (boton?.id === 'siguiente') correrSiguiente();
+      else if (boton?.id === 'manga') correrManga();
       else if (boton?.id === 'menu') alMenu();
       else if (boton?.id === 'momentos') verTodos();
       else if (boton?.id === 'denunciar') estado.denuncia = 'pendiente';

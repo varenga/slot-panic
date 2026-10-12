@@ -34,6 +34,7 @@ import { construirDePiezas } from './nucleo/piezas.js';
 import { aTrazado, cambiarVariante, crearTrazo, deTrazado, pisar } from './nucleo/trazo.js';
 import { luzDeCarrera, sombraSol, sombraTorre } from './luz.js';
 import { anotarCarrera, circuitoDelCampeonato, clasificacion, crearCampeonato, tiempoFinal } from './nucleo/campeonato.js';
+import { anotarManga, crearSerie, mangasDe, serieAcabada, sumaSerie } from './nucleo/mangas.js';
 import { codificar, decodificar, posar } from './nucleo/fantasma.js';
 import {
   crearRepeticion, duracionMomento, elegirMomentos, eventosEntre, grabarCuadro, numerosGrabados, poseEn, TIPOS_MOMENTO
@@ -446,6 +447,40 @@ function rampas(circuito) {
   });
 }
 
+/*
+ * Las mangas: un circuito de cuatro que no es un ocho (sus carriles no miden
+ * lo mismo) se corre en una manga por carril. En la serie, cada coche pasa
+ * por todos, una vez; con el mismo piloto en todos, la suma de cada uno es
+ * casi la misma (< 1 %), aunque un carril saque mucho a otro; y gana la menor
+ * suma, no el que más mangas gana.
+ */
+function seccionMangas(circuito, mangas) {
+  const largos = circuito.carriles.map((l) => largoCarril(circuito, l));
+  comprobar(mangas === circuito.carriles.length, `«${circuito.clave}» pide ${mangas} mangas con ${circuito.carriles.length} carriles`);
+  console.log(`  pide mangas: el carril de fuera da ${(Math.max(...largos) - Math.min(...largos)).toFixed(0)} px más por vuelta`);
+  const serie = crearSerie(mangas);
+  const recorridos = circuito.carriles.map(() => new Set());
+  for (let turno = 0; !serieAcabada(serie); turno++) {
+    const r = correrUna(circuito, circuito.carriles.map(() => ({ prudencia: 1 })), turno, 400);
+    r.carrera.coches.forEach((slot, i) => recorridos[i].add(slot.lateral));
+    comprobar(r.choques === 0, `en la manga ${turno + 1}, coches iguales en paralelo chocan ${r.choques} veces`);
+    anotarManga(serie, r.carrera);
+  }
+  comprobar(recorridos.every((r) => r.size === circuito.carriles.length), 'en la serie de mangas algún coche no corre por todos los carriles');
+  const { tiempos, ganador, orden } = sumaSerie(serie);
+  const reparto = (Math.max(...tiempos) - Math.min(...tiempos)) / Math.min(...tiempos);
+  console.log(`  la serie con el mismo piloto: ${tiempos.map((t) => t.toFixed(2)).join(', ')} s (un ${(reparto * 100).toFixed(2)} % entre el primero y el último)`);
+  comprobar(reparto < 0.01, `en la serie de mangas, con el mismo piloto, uno saca un ${(reparto * 100).toFixed(2)} % a otro`);
+  comprobar(ganador === orden[0] && tiempos[ganador] === Math.min(...tiempos), 'la serie de mangas no la gana la menor suma');
+
+  // Con mangas de mentira: gana la menor suma aunque otro gane más mangas.
+  const mentira = crearSerie(3);
+  for (const tiemposManga of [[30, 31, 40], [30, 31, 40], [45, 31, 40]]) {
+    mentira.mangas.push({ ganador: tiemposManga.indexOf(Math.min(...tiemposManga)), tiempos: tiemposManga });
+  }
+  comprobar(sumaSerie(mentira).ganador === 1 && sumaSerie(mentira).acabada, 'en mangas no gana la menor suma (gana el de más mangas)');
+}
+
 function seccionSlot(circuito, oficial) {
   const calibrar = oficial ? comprobar : () => {};
   console.log(`\nSlot en «${circuito.clave}»`);
@@ -488,10 +523,22 @@ function seccionSlot(circuito, oficial) {
   const premio = Math.min(...prudente.carrera.coches.map((c) => c.terminado)) / fino.mejor - 1;
   console.log(`  entrar derrapando ahorra un ${(premio * 100).toFixed(0)} % sobre no pasar del agarre`);
   calibrar(premio > 0, 'entrar derrapando no gana a no pasar del agarre');
-  const ventaja = Math.min(...aFondo.carrera.coches.map((c) => c.terminado)) / fino.mejor - 1;
-  console.log(`  soltar en las curvas ahorra un ${(ventaja * 100).toFixed(0)} % sobre ir a fondo`);
+  /*
+   * En mangas cada coche corre por todos los carriles, y lo que cuenta es la
+   * suma: el de fuera de casi todas las curvas puede ir a fondo casi sin
+   * salirse (lo paga en el de dentro), y a fondo se mide la serie entera.
+   */
+  const mangas = mangasDe(circuito);
+  const suma = (r) => r.carrera.coches.reduce((a, c) => a + c.terminado, 0);
+  const ventaja = mangas > 1
+    ? suma(aFondo) / suma(fino) - 1
+    : Math.min(...aFondo.carrera.coches.map((c) => c.terminado)) / fino.mejor - 1;
+  console.log(`  soltar en las curvas ahorra un ${(ventaja * 100).toFixed(0)} % sobre ir a fondo${mangas > 1 ? ' (en la serie de mangas)' : ''}`);
   calibrar(ventaja > 0.3, 'ir a fondo no pierde al menos un 30 % contra quien suelta');
-  calibrar(aFondo.carrera.coches.every((c) => c.salidas >= 2 * VUELTAS_SLOT), 'ir a fondo no se sale al menos dos veces por vuelta');
+  if (mangas > 1) {
+    const salidas = aFondo.carrera.coches.reduce((a, c) => a + c.salidas, 0);
+    calibrar(salidas >= 2 * VUELTAS_SLOT * mangas, `ir a fondo no se sale al menos dos veces por vuelta en la serie (${salidas} en ${VUELTAS_SLOT * mangas})`);
+  } else calibrar(aFondo.carrera.coches.every((c) => c.salidas >= 2 * VUELTAS_SLOT), 'ir a fondo no se sale al menos dos veces por vuelta');
 
   // La mano: devuelve siempre el coche, y pronto.
   const media = aFondo.manos.reduce((a, b) => a + b, 0) / aFondo.manos.length;
@@ -538,19 +585,25 @@ function seccionSlot(circuito, oficial) {
    * (0,7 s por vuelta del mejor piloto); a 2 s, «ahora es fácil».
    */
   {
+    /*
+     * La CPU corre por el carril 0 contra el mejor piloto por su mejor carril.
+     * En mangas los carriles sacan mucho uno a otro (y cada coche pasa por
+     * todos): la CPU, por cada carril, contra el mejor piloto por ese mismo.
+     */
+    const delCarril0 = (r) => (mangas > 1 ? r.carrera.coches : r.carrera.coches.slice(0, 1));
+    const referencia = mangas > 1 ? suma(fino) / fino.carrera.coches.length / VUELTAS_SLOT : fino.mejor / VUELTAS_SLOT;
     const vueltas = [], salidas = [];
     let repetida = null;
     const semillas = oficial ? 6 : 1;
     for (let semilla = 1; semilla <= semillas; semilla++) {
       const r = correrSlot(circuito, cada({ ...CPU_SLOT, semilla }));
-      const [c] = r.carrera.coches;
-      vueltas.push(c.terminado / VUELTAS_SLOT);
-      salidas.push(c.salidas);
-      if (semilla === 1) repetida = c.terminado;
+      for (const c of delCarril0(r)) vueltas.push(c.terminado / VUELTAS_SLOT);
+      salidas.push(delCarril0(r).reduce((a, c) => a + c.salidas, 0));
+      if (semilla === 1) repetida = r.carrera.coches[0].terminado;
     }
     const otra = correrSlot(circuito, cada({ ...CPU_SLOT, semilla: 1 })).carrera.coches[0].terminado;
     const media = vueltas.reduce((a, b) => a + b, 0) / vueltas.length;
-    const margen = media - fino.mejor / VUELTAS_SLOT;
+    const margen = media - referencia;
     console.log(`  la CPU da vueltas de ${media.toFixed(2)} s de media, ${margen.toFixed(2)} s más que el mejor piloto, y se sale ${salidas.join(', ')} veces en ${semillas === 6 ? 'seis carreras' : 'una carrera'}`);
     calibrar(margen > 0.6, `la CPU deja solo ${margen.toFixed(2)} s por vuelta al mejor piloto: no hay quien le gane`);
     calibrar(margen < 1.4, `la CPU deja ${margen.toFixed(2)} s por vuelta al mejor piloto: es fácil`);
@@ -567,7 +620,7 @@ function seccionSlot(circuito, oficial) {
         if (piloto === CPU_SLOT) return margen;
         const tiempos = [1, 2, 3, 4, 5, 6].flatMap((semilla) =>
           correrSlot(circuito, cada({ ...piloto, semilla })).carrera.coches.map((c) => c.terminado / VUELTAS_SLOT));
-        return tiempos.reduce((a, b) => a + b, 0) / tiempos.length - fino.mejor / VUELTAS_SLOT;
+        return tiempos.reduce((a, b) => a + b, 0) / tiempos.length - referencia;
       });
       const [facil, , dificil] = margenes;
       console.log(`  los niveles de la CPU dejan ${NIVELES_CPU.map(({ id }, i) => `${id} ${margenes[i].toFixed(2)}`).join(', ')} s por vuelta`);
@@ -602,8 +655,9 @@ function seccionSlot(circuito, oficial) {
    */
   const terminados = prudente.carrera.coches.map((c) => c.terminado);
   const desigualdad = (Math.max(...terminados) - Math.min(...terminados)) / Math.min(...terminados);
-  console.log(`  entre carriles, con el mismo piloto: ${(desigualdad * 100).toFixed(1)} % (se cambian en cada carrera)`);
-  calibrar(desigualdad < 0.08, `un carril saca un ${(desigualdad * 100).toFixed(1)} % a otro`);
+  console.log(`  entre carriles, con el mismo piloto: ${(desigualdad * 100).toFixed(1)} % (${mangas > 1 ? `en ${mangas} mangas` : 'se cambian en cada carrera'})`);
+  if (mangas > 1) seccionMangas(circuito, mangas);
+  else calibrar(desigualdad < 0.08, `un carril saca un ${(desigualdad * 100).toFixed(1)} % a otro`);
   if (circuito.cambiosCarril % 2) calibrar(desigualdad < 0.02, `con una X, un carril aún saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
   const cambiada = crearCarreraSlot(circuito, COLORES.slice(0, circuito.carriles.length), 1);
   comprobar(cambiada.coches.every((slot, i) => slot.lateral === circuito.carriles[(i + 1) % circuito.carriles.length]),
@@ -1135,8 +1189,17 @@ console.log('\nEl campeonato');
     const cuatro = crearCampeonato(CIRCUITOS_CUATRO);
     while (!clasificacion(cuatro).acabado || !cuatro.carreras.length) {
       const circuito = circuitoDelCampeonato(cuatro);
-      const r = correrSlot(circuito, circuito.carriles.map((_, i) => ({ ...CPU_SLOT, semilla: 20 + i })), { juntos: true });
-      anotarCarrera(cuatro, r.carrera, [true, false, false, false]);
+      // En un circuito que pide mangas, la carrera es la serie: cuenta la suma.
+      const serie = crearSerie(mangasDe(circuito));
+      let r;
+      for (let turno = 0; !serieAcabada(serie); turno++) {
+        r = correrUna(circuito, circuito.carriles.map((_, i) => ({ ...CPU_SLOT, semilla: 20 + i + 4 * turno })), turno, 400);
+        anotarManga(serie, r.carrera);
+      }
+      const suma = sumaSerie(serie);
+      anotarCarrera(cuatro, r.carrera, [true, false, false, false], serie.total > 1 ? suma : null);
+      const ultima = cuatro.carreras[cuatro.carreras.length - 1];
+      if (serie.total > 1) comprobar(ultima.ganador === suma.ganador && ultima.tiempos.every((t, i) => t === suma.tiempos[i]), `en el campeonato, «${circuito.clave}» no cuenta la suma de las mangas`);
     }
     const { victorias, tiempos } = clasificacion(cuatro);
     comprobar(victorias.length === 4 && tiempos.every(Number.isFinite), `el campeonato de cuatro no cuenta a los cuatro (${victorias.join(', ')})`);

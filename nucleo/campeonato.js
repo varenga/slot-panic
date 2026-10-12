@@ -33,12 +33,16 @@ export function tiempoFinal(carrera, slot) {
   return carrera.tiempo * meta / slot.progreso;
 }
 
-/** Apunta una carrera acabada: su circuito, el ganador, los tiempos y quién llevaba cada coche. */
-export function anotarCarrera(campeonato, carrera, humanos) {
+/*
+ * Apunta una carrera acabada: su circuito, el ganador, los tiempos y quién
+ * llevaba cada coche. Si se ha corrido en mangas (`nucleo/mangas.js`), lo que
+ * cuenta es la suma: `resultado`, { ganador, tiempos }.
+ */
+export function anotarCarrera(campeonato, carrera, humanos, resultado = null) {
   campeonato.carreras.push({
     clave: carrera.circuito.clave,
-    ganador: carrera.ganador,
-    tiempos: carrera.coches.map((slot) => tiempoFinal(carrera, slot)),
+    ganador: resultado ? resultado.ganador : carrera.ganador,
+    tiempos: resultado ? resultado.tiempos : carrera.coches.map((slot) => tiempoFinal(carrera, slot)),
     humanos: [...humanos]
   });
 }
