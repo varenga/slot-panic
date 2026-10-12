@@ -1755,3 +1755,9 @@ app en la consola de Play.
 
 - La serie con el mismo piloto: 209,87 s los cuatro en *La judía*; en *La ele*, un
   0,03 % del primero al último. Cuatro CPU juntas: 1-2 choques por carrera.
+
+## Slot Panic 1.15.0 (12/10/2026)
+
+- Las mangas en la pista de cuatro: un circuito que no es un ocho se corre en una manga
+  por carril y gana la menor suma. Dos circuitos nuevos de cuatro carriles, *La judía* y
+  *La ele*. `pnyk.json`: 1.15.0.
