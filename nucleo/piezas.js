@@ -34,18 +34,24 @@
  *                                            otra de `entrada` que los separa.
  *                                            La pista sigue recta: se mueven los
  *                                            carriles
+ *   { tipo: 'puente', rampa, largo }         una rampa de `rampa` px que sube,
+ *                                            el tablero de `largo` y otra que
+ *                                            baja. La pista que pasa por debajo
+ *                                            no se cruza con él: es un puente
  *
  * Por dentro, una recta o una curva puede llevar `estrecha: [desde, hasta]`:
- * el factor del carril al empezar y al acabar (de 1, lo normal, a ESTRECHA).
+ * el factor del carril al empezar y al acabar (de 1, lo normal, a ESTRECHA); y
+`elevacion: [desde, hasta]`, la altura (de 0, la mesa, a 1, el tablero).
  *
  * El cruce del ocho no es una pieza: es una recta que pasa por encima de otra,
- * y `circuito.js` lo encuentra solo.
+ * y `circuito.js` lo encuentra solo (y, si una de las dos va por un puente, no
+ * es un cruce: es el puente).
  *
  * Si las piezas no cierran el circuito, `construirDePiezas` lo dice: un
  * circuito de juguete que no cierra no se puede montar.
  */
 
-import { DESVIO, ESTRECHA, PASO_EJE } from '../config.js';
+import { ALTURA_PUENTE, DESVIO, ESTRECHA, PASO_EJE } from '../config.js';
 import { completarCircuito } from './circuito.js';
 
 const CIERRE = 0.5;                      // px de descuadre que se admiten al cerrar
@@ -84,8 +90,30 @@ function desplegar(piezas) {
         { tipo: 'recta', largo: entrada, efecto: 'estrecha', estrecha: [ESTRECHA, 1], enDesvio: true }
       ];
     }
+    if (pieza.tipo === 'puente') {
+      const { rampa, largo } = pieza;
+      return [
+        { tipo: 'recta', largo: rampa, efecto: 'puente', elevacion: [0, 1] },
+        { tipo: 'recta', largo, efecto: 'puente', elevacion: [1, 1] },
+        { tipo: 'recta', largo: rampa, efecto: 'puente', elevacion: [1, 0] }
+      ];
+    }
     return [pieza];
   });
+}
+
+/*
+ * La altura en la fracción `t` de una pieza y su pendiente (lo que sube por
+ * px, con ALTURA_PUENTE): la rampa sube con un coseno, sin esquinas abajo ni
+ * arriba.
+ */
+function elevacionEn(pieza, largo, t) {
+  if (!pieza.elevacion) return {};
+  const [desde, hasta] = pieza.elevacion;
+  return {
+    elevacion: desde + (hasta - desde) * (1 - Math.cos(Math.PI * t)) / 2,
+    pendiente: (hasta - desde) * ALTURA_PUENTE * Math.PI / (2 * largo) * Math.sin(Math.PI * t)
+  };
 }
 
 /*
@@ -173,7 +201,8 @@ export function construirDePiezas(datos) {
         efecto: pieza.efecto || null,
         junta: k === 0,
         carril: factorEn(pieza, carril, t),
-        ...desvioEn(pieza, largo, t)
+        ...desvioEn(pieza, largo, t),
+        ...elevacionEn(pieza, largo, t)
       });
     }
     if (curva) {

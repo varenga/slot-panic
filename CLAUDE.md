@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Publicado (v1.0.0): carreras de slot en seis circuitos (*La horquilla*, y *El
 ocho*, *El nudo*, *El resbalón*, *La bañera* y *La diagonal*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, solo apretar y soltar (un gatillo que se
-dosifica a toques), derrape antes de salirse, choques en las X, los cruces, las estrechas y el desvío (el golpe se
+dosifica a toques), derrape antes de salirse, un puente que frena al subir y empuja al bajar, choques en las X, los cruces, las estrechas y el desvío (el golpe se
 suma al derrape: siguen los dos, se sale uno o los dos; y uno que se sale se lleva por delante al
 otro), una curva deslizante y una mano que devuelve el
 coche; uno
@@ -163,7 +163,10 @@ demás, en `BITACORA.md`). Mide y comprueba:
    cada estrecha, lanzados con 21 desfases, chocan en alguno, en los oficiales no siempre
    salen los dos y la mano nunca los deja chocando otra vez. En los oficiales salen los
    tres desenlaces (siguen, se sale uno, los dos), y uno fuera que va de lado contra el
-   otro lo saca lanzado (400 px/s) y despacio (80) no, y rebota.
+   otro lo saca lanzado (400 px/s) y despacio (80) no, y rebota. En cada puente, uno
+   por arriba y otro por abajo, con 21 desfases, no se tocan nunca; y a fondo la
+   subida frena un 10-35 % (hoy 17 %) y la bajada empuja un 3-20 % (hoy 7 %), frente a
+   la misma pista sin pendiente.
    Las curvas a tope incluyen el peralte, la de derrape, la deslizante y los baches.
 4. **Idiomas**: los siete catálogos tienen las mismas claves, y los nombres de los
    circuitos públicos (adjetivo y sustantivo, con género) son tantos como espera
@@ -257,9 +260,9 @@ circuitos/resbalon.js  «El resbalón», de piezas: las estrechas (corta y larga
                        curva deslizante y una chicane
 circuitos/banera.js    «La bañera», de piezas: la recta más larga, dos peraltadas,
                        una X, el valle con el desvío y una de derrape
-circuitos/diagonal.js  «La diagonal», de piezas: un ocho torcido que se cruza a
-                       60°, un valle de baches, una peraltada y un lazo estrecho
-                       con su estrecha
+circuitos/diagonal.js  «La diagonal», de piezas: un ocho torcido cuya diagonal
+                       pasa bajo un puente, un valle de baches, una peraltada y un
+                       lazo estrecho con su estrecha
 dibujo.js              el mundo: suelo, decorado y pista (en una capa que se pinta
                        una vez), carriles y coches
 coches.js              la forma de cada modelo, vista desde arriba: silueta, ruedas
@@ -332,7 +335,14 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
 - **Un circuito se declara, no se dibuja**: por vértices con radio (`circuito.js`) o por
   piezas desde la meta (`piezas.js`), con sectores e interior. Las piezas tienen que
   cerrar; la última, recta (la parrilla sale 30 px detrás de la meta). El cruce no se
-  declara: se encuentra.
+  declara: se encuentra; si uno de los dos tramos va por un puente, no es un cruce
+  (`circuito.cruces`) sino un puente (`circuito.puentes`), y para la geometría
+  (`enCruce`) cuentan los dos.
+- **El puente sube de verdad**: en las rampas la gravedad (`GRAVEDAD` · la `pendiente`
+  del punto) frena al subir y empuja al bajar. Los coches a distinta altura
+  (`elevacion`) no chocan. El tablero se pinta en su capa (`dibujarPuentes`) encima
+  solo de los que pasan por debajo (`bajoPuente`, por la pose: también en la
+  repetición y con el fantasma); los demás, encima de él.
 - **El carril lo da la pieza**: el desplazamiento real es `lateralEn(circuito, lateral,
   s)`, nunca `slot.lateral` a secas (en la X cambia de lado, y con un número impar de
   X, cada vuelta; en la estrecha se acerca al eje, a `ESTRECHA`; en el desvío, además,

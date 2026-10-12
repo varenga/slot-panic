@@ -465,7 +465,8 @@ ${circuitos}
 - Pasado el agarre el coche derrapa; si insiste, se sale y una mano lo devuelve al
   carril donde se salió: salirse cuesta tiempo, no la carrera.
 - En las piezas en X los carriles se cruzan y los coches cambian de carril; en una X
-  o un cruce, dos coches que llegan a la vez chocan.
+  o un cruce, dos coches que llegan a la vez chocan. Por un puente no: al subir el coche
+  frena algo y al bajar gana algo.
 - Récords de vuelta en los circuitos oficiales (una tabla por circuito, firmada con tres
   letras) y un fantasma para correr contra la mejor vuelta propia o la del récord.
 - Campeonato: los circuitos oficiales seguidos; gana quien gane más carreras y, con

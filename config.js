@@ -251,6 +251,18 @@ export const VELOCIDAD_BACHES = 330;    // px/s
 export const FRENO_BACHES = 0.15;       // 1/s de velocidad que se pierde en los baches, a VELOCIDAD_BACHES
 export const PASO_BACHES = 40;          // px de un bache al siguiente
 /*
+ * El PUENTE: una rampa, el tablero y otra rampa. Al subir, la gravedad frena
+ * el coche (GRAVEDAD · la pendiente) y al bajar lo empuja: como en el juguete,
+ * se nota sin ser mucho. ALTURA_PUENTE es la altura del tablero para la física;
+ * ELEVA_COCHE, lo que el dibujo agranda el coche arriba (la `altura` de la mano).
+ * A 12 px (en el móvil gustó más que a 8, que se notaba poco), saliendo de la
+ * horquilla a fondo, se llega arriba un 22 % más lento que sin puente y abajo
+ * un 8 % más rápido; a toques, un 38 % y un 25 %. Cuesta ~0,1 s por vuelta.
+ */
+export const ALTURA_PUENTE = 12;        // px
+export const GRAVEDAD = 1800;           // px/s²
+export const ELEVA_COCHE = 0.22;
+/*
  * Los CHOQUES entre coches. Cada coche es una cápsula: un segmento a lo largo
  * de su pose (con la cola que haya sacado) y ANCHO_COCHE / 2 alrededor. Dos
  * carriles en paralelo, a 2 · CARRIL, no se tocan ni derrapando a tope; en una

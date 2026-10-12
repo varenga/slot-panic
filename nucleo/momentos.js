@@ -110,7 +110,7 @@ function piezaEn(circuito, s) {
 
 /** Dónde han chocado: 'cruce', 'x' o 'estrecha' (en una estrecha, una deslizante o un desvío). */
 export function lugarChoque(circuito, s0, s1) {
-  if (enCruce(circuito, s0, s1)) return 'cruce';
+  if (enCruce(circuito, s0, s1, circuito.cruces)) return 'cruce';
   return piezaEn(circuito, s0) === 'x' ? 'x' : 'estrecha';
 }
 

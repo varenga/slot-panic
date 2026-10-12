@@ -1580,3 +1580,45 @@ app en la consola de Play.
 - Los baches se notan: frenan, el coche bota, suenan, vibran y levantan polvo; y se ven
   antes de llegar. El peralte se ve inclinado, con flechas. Los récords siguen valiendo.
   `pnyk.json`: 1.12.0.
+
+## El puente de La diagonal (12/10/2026, rama `42-puente`)
+
+- **Por qué**: el cruce de *La diagonal*, a 60°, no convencía: en el juguete los cruces
+  son siempre en ángulo recto, y uno torcido no existe. El puente sí ha existido
+  siempre. La diagonal pasa por debajo y la recta que sale de la horquilla del lazo
+  estrecho sube por encima; el trazado en planta no cambia (ni el decorado).
+- **La pieza** `{ tipo: 'puente', rampa, largo }` (`nucleo/piezas.js`): una rampa que
+  sube, el tablero y otra que baja, con la altura (`elevacion`, de 0 a 1) y la
+  `pendiente` en cada punto del eje; la rampa sube con un coseno, sin esquinas. En *La
+  diagonal*: rampas de 120 px, tablero de 110 (tapa los 74 px que la diagonal, de 64 px
+  de ancho a 60°, pisa de la recta) y la rampa a 17 px de la horquilla.
+- **Al subir frena, al bajar empuja**, como en el juguete: la gravedad (`GRAVEDAD`, 1800
+  px/s²) por la pendiente, con `ALTURA_PUENTE` 12 px. Se probó en el móvil tras
+  `?puente`: con 8 px se notaba poco; con 12, gustó más. Saliendo de la horquilla a
+  fondo, arriba se llega un 22 % más lento que sin puente y abajo un 8 % más rápido; a
+  toques, un 38 % y un 25 %. La vuelta del prudente, 12,43 → 12,53 s.
+- **No es un cruce**: donde uno de los dos tramos va arriba, `circuito.js` lo aparta
+  de `cruces` a `puentes`; los coches a distinta altura no chocan (`comprobarChoque`) y
+  ya no hay choques de «cruce» en *La diagonal* (lanzados a la vez, en 0 de 21
+  desfases; con el cruce, en 9). Para la geometría (`enCruce`) sigue contando: los dos
+  tramos se pisan en el plano.
+- **El dibujo**: el tablero, en su capa (`dibujarPuentes`): la sombra en lo de abajo,
+  un costado, la calzada, estrías en las rampas, barandillas en lo alto y los carriles.
+  El coche de arriba se agranda un poco (`ELEVA_COCHE`, la `altura` de la mano: se
+  graba en la repetición). **El parpadeo**: el primer montaje decidía por la altura
+  del coche qué iba debajo del tablero, y al pie de la rampa es 0: el tablero lo tapaba
+  un instante al empezar a subir. Ahora va debajo solo el que cruza por abajo
+  (`bajoPuente`: cerca del cruce y sin el rumbo del tablero, o suelto por la mesa), por
+  la pose: vale para la repetición y el fantasma.
+- **El arnés**: en cada puente, uno por arriba y otro por abajo nunca se tocan, y a
+  fondo la subida frena un 10-35 % (hoy 17 %, entrando a 200 px/s) y la bajada empuja un
+  3-20 % (hoy 7 %), frente a la misma pista sin pendiente.
+- **Los récords de *La diagonal*** se vacían: con el puente la vuelta es ~0,1 s más
+  lenta. El mínimo del servidor (9000 ms) sigue por debajo de la mejor vuelta
+  automática. El fantasma viejo sigue sirviendo de dibujo (el trazado en planta es el
+  mismo), solo que va algo más rápido.
+
+## Slot Panic 1.13.0 (12/10/2026)
+
+- *La diagonal* pasa bajo un puente, en vez de cruzarse a 60°: al subir el coche frena
+  y al bajar gana; en el puente no se chocan. Sus récords se vacían. `pnyk.json`: 1.13.0.

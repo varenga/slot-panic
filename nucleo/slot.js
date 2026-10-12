@@ -27,7 +27,7 @@
 
 import {
   ACUMULA_DERRAPE, AGARRE_PERALTE, AGARRE_SLOT, RADIO_GUIA, ALTO, ANCHO, ANCHO_COCHE, BAJA_POTENCIA, CARRIL,
-  COCHE_REFERENCIA, COCHES, COLETEO_DERRAPE, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, CURVA_DESLIZANTE, DURACION_MANO, ESPERA_MANO,
+  COCHE_REFERENCIA, COCHES, COLETEO_DERRAPE, ELEVA_COCHE, GRAVEDAD, COLETEO_DESDE, COLETEO_MAXIMO, CUENTA_ATRAS, CURVA_DERRAPE, CURVA_DESLIZANTE, DURACION_MANO, ESPERA_MANO,
   FRENO_BACHES, FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, GOLPE_SALE, INERCIA_MOTOR, INERCIA_SOLTAR, LIMITE_SLOT, PALANCA_MORRO, PASO_BACHES, PASO_FISICA,
   PENETRA, REBOTE_COCHES, RECUPERA_DERRAPE, ROCE, ROZA, SUBE_POTENCIA, TOQUE, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from '../config.js';
@@ -358,12 +358,22 @@ export function contacto(a, b) {
 /** Lo que cuenta un golpe según dónde: en la cola, 1; en el morro, donde la guía lo sujeta, PALANCA_MORRO. */
 const palanca = (u) => PALANCA_MORRO + (1 - PALANCA_MORRO) * (1 - u) / 2;
 
+/** La `altura` del dibujo de un coche en el carril por un punto del eje: en el puente, más grande. */
+const alturaEn = (p) => p.elevacion * ELEVA_COCHE;
+
+/** A qué altura va un coche: en el carril, la del puente (0 fuera de él); fuera, en la mesa. */
+function elevacionDe(slot, circuito) {
+  return slot.estado === 'carril' ? circuito.eje[buscar(circuito, slot.s).indice].elevacion : 0;
+}
+
 function comprobarChoque(carrera) {
   const [a, b] = carrera.coches;
   const posado = a.posado || b.posado;
   a.posado = b.posado = false;
-  // Con la mano en el aire no toca a nadie; dos fuera ruedan cada uno a lo suyo.
-  if (a.estado === 'mano' || b.estado === 'mano' || (a.estado === 'fuera' && b.estado === 'fuera')) {
+  // Con la mano en el aire no toca a nadie; dos fuera ruedan cada uno a lo suyo,
+  // y uno en el puente pasa por encima del de abajo.
+  if (a.estado === 'mano' || b.estado === 'mano' || (a.estado === 'fuera' && b.estado === 'fuera') ||
+    Math.abs(elevacionDe(a, carrera.circuito) - elevacionDe(b, carrera.circuito)) > 0.5) {
     carrera.toque = null;
     return;
   }
@@ -532,6 +542,8 @@ function pasoSlot(slot, circuito, acelerar, dt) {
 
   const { indice } = buscar(circuito, slot.s);
   const p = circuito.eje[indice];
+  // En la rampa del puente, la gravedad: frena al subir y empuja al bajar.
+  if (p.pendiente) slot.v = Math.max(0, slot.v - GRAVEDAD * p.pendiente * dt);
   const lateral = lateralEn(circuito, slot.lateral, slot.s);
   const radio = radioAgarre(p, lateral);
   slot.exigencia = radio === Infinity ? 0 : slot.v * slot.v / radio / (AGARRE_SLOT * ficha.agarre);
@@ -555,7 +567,9 @@ function pasoSlot(slot, circuito, acelerar, dt) {
   const bache = baches && Math.floor((slot.s + ds) / PASO_BACHES) !== Math.floor(slot.s / PASO_BACHES);
   slot.s += ds;
   slot.progreso += ds;
-  slot.altura = baches ? 0.12 * Math.min(1, slot.v / VELOCIDAD_BACHES) * Math.abs(Math.sin(Math.PI * slot.s / PASO_BACHES)) : 0;
+  slot.altura = baches
+    ? 0.12 * Math.min(1, slot.v / VELOCIDAD_BACHES) * Math.abs(Math.sin(Math.PI * slot.s / PASO_BACHES))
+    : alturaEn(p);
 
   // La cola sale hacia fuera al acercarse al límite, y más derrapando: el
   // aviso de que viene. En las rectas vuelve a su sitio.
@@ -653,7 +667,7 @@ function pasoMano(slot, circuito, dt) {
   slot.altura = Math.sin(Math.PI * f);
   if (f < 1) return null;
   slot.estado = 'carril';
-  slot.altura = 0;
+  slot.altura = alturaEn(circuito.eje[buscar(circuito, slot.s).indice]);
   slot.posado = true;
   colocarEnCarril(slot, circuito);
   return 'clac';

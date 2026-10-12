@@ -23,9 +23,8 @@ Por decidir el orden, con el filtro de siempre («¿hace la carrera más diverti
       y las flechas) o hace falta que se note al pasar?, ¿los baches se notan (bote,
       golpe, vibración, polvo)?, ¿el freno (`FRENO_BACHES` 0,15) se queda corto?
 - [ ] Más circuitos oficiales (hoy seis).
-- [ ] Playtest de *La diagonal*: ¿el cruce a 60° se ve venir desde la diagonal?, ¿se
-      chocan en él lo bastante (en la misma pista, la CPU y el mejor piloto casi nunca)?,
-      ¿la estrecha del lazo antes de la horquilla sirve de algo?
+- [ ] Playtest de *La diagonal* (con el puente, 1.13.0): ¿la estrecha del lazo antes
+      de la horquilla sirve de algo?, ¿el puente se lee en el escenario juguete y de noche?
 - [ ] Playtest de *La bañera*: ¿el desvío se lee antes de llegar?, ¿las balas de paja
       se ven pequeñas?, ¿14 px de quiebro (`DESVIO`) se notan?
 - [ ] Playtest de los récords: ¿el fantasma ayuda o estorba (hoy al 0,3)?, ¿se entiende

@@ -27,6 +27,8 @@ Cada idea pasa por el mismo filtro:
 - Abre la puerta a un **constructor** para el jugador: elegir piezas, cerrar el
   circuito, correrlo. Y a compartirlo (un código corto, como el fantasma de Race Panic).
 - **Cruces** (las piezas en X): vuelve la idea del ocho, sin puente.
+- **El puente en el constructor**: donde el trazado se cruza, elegir cruce o puente. Hoy
+  solo lo tiene *La diagonal* (`BITACORA.md`, rama `42`).
 
 # 2. Coches y jugadores
 
@@ -63,3 +65,77 @@ Los mejores momentos ya se repiten al acabar (`BITACORA.md`, rama `34`). Lo que 
 - **El fantasma y las repeticiones con el mismo formato de poses**: hoy el fantasma graba
   a 1/30 s solo la pose y el búfer de momentos a 1/60 s con altura, estado, derrape y
   velocidad.
+
+# 5. La pista de cuatro carriles
+
+Recrear los circuitos clásicos de cuatro carriles: **cuatro coches**, como mucho dos
+humanos (J1 y J2, cada uno con su mitad de la pantalla, como hoy) y la CPU con los otros.
+En la lupa, el J1 contra tres CPU.
+
+- **Circuitos sencillos**, para que quepan: la pista de cuatro carriles es el doble de
+  ancha (hoy `ANCHO_PISTA` = 64 con dos carriles a ±`CARRIL`). Un óvalo, una judía o un
+  ocho largo con alguna curva de radio distinto. Sin X ni estrechas: en el clásico de
+  cuatro carriles no las hay.
+- **Las mangas**: el carril de fuera es más largo que el de dentro, y con cuatro la
+  diferencia ya no se arregla cambiando de carril cada carrera. En el clásico se corre
+  una manga por carril y cada piloto pasa por los cuatro. Gana la suma de tiempos (o de
+  vueltas en un tiempo fijo). Encaja con lo que ya hace `campeonato.js`.
+- **Choques**: sin X ni cruces, los coches solo se tocan al salirse (uno fuera arrolla
+  al de al lado) o si la mano lo posa encima de otro. Con cuatro, más tráfico: más mano.
+- **Lo que hoy da por hecho que son dos**: `CARRILES` (dos laterales), `turno` (cambiar
+  de carril cada carrera), `comprobarChoque` (con dos coches; con cuatro, cada par de
+  vecinos), el marcador, el cartel de fin, los momentos, el fantasma y los récords
+  (¿por carril?), el zumbido de los coches (cuatro a la vez) y la portada.
+- **Arnés**: las secciones 1 a 3 con cuatro carriles (los de fuera también por el
+  asfalto y lejos de otro tramo), ningún carril que se pase de lado en una curva a su
+  punta, la diferencia entre carriles medida y compensada por las mangas.
+
+Por decidir: si es un circuito (o varios) aparte, con su propio modo en la portada, o
+una opción de cualquier circuito oficial que quepa; y si el constructor llega a dibujar
+pistas de cuatro.
+
+# 6. Partidas en línea
+
+Dos jugadores, cada uno en su dispositivo. **Sin registro, sin chat y sin nada que se
+compartan los jugadores** durante la partida: solo los coches.
+
+**Cómo se entra** (por decidir; pueden convivir):
+
+- **Sala privada con código**: uno crea la sala y le sale un código corto (4-5 letras sin
+  las que se confunden: ni O/0 ni I/1) para pasárselo a quien quiera. El que crea elige
+  el circuito, las vueltas y su coche; el otro, su coche.
+- **Salas abiertas**: una lista de salas esperando rival (circuito, vueltas), o un botón
+  de «partida rápida» que te mete en la primera libre o te crea una. Sin nombres: «Rival».
+- Una sala que nadie usa caduca en unos minutos.
+
+**La red.** Plesk sirve PHP + MySQL, sin un proceso que mantenga conexiones abiertas
+(WebSocket). Opciones:
+
+- **Sondeo a `api.php`**: cada 100-300 ms. Lo más sencillo, pero el retraso es mucho
+  para ver al otro en un choque, y a ese ritmo carga el servidor.
+- **WebRTC entre los dos**: `api.php` solo sirve para encontrarse (la sala, el código y
+  el apretón de manos, unos pocos mensajes) y después los dos se hablan directamente por
+  un canal de datos, con decenas de milisegundos de retraso. Hace falta un STUN (los hay
+  públicos y gratuitos); entre algunas redes (móvil con NAT simétrica, empresas) no
+  conecta sin un TURN, que es un servidor propio o de pago. Funciona en el navegador y
+  en la WebView de la app. Ojo: cada uno ve la IP del otro, y la política de privacidad
+  lo tiene que decir.
+- **Un servidor de tiempo real aparte** (Node con WebSocket, fuera de Plesk o en un
+  servicio): más control, pero otra pieza que mantener y pagar.
+
+La recomendada, de entrada: WebRTC con `api.php` de señalización.
+
+**Lo que viaja.** Lo bueno del slot: cada jugador tiene **un solo mando, un bit**
+(`acelerar`), y la física es de paso fijo (`PASO_FISICA`). El que crea la sala es el
+anfitrión y simula la carrera; el otro le manda su bit (solo cuando cambia, con el paso
+en que cambió), y el anfitrión le devuelve 10-20 veces por segundo el estado de los dos
+coches (s, velocidad, derrape, estado). El invitado simula su coche al momento (lo que
+siente al apretar no espera a la red) y corrige suave hacia lo que dice el anfitrión.
+No se puede fiar todo al determinismo: `Math.sin`, `Math.exp`… no dan el mismo último
+bit en todos los motores de JavaScript, y la carrera se desviaría.
+
+**Por decidir y medir**: si un choque se decide solo en el anfitrión (y el invitado lo
+ve con retraso); qué pasa si uno se va (gana el otro, o la carrera sigue con la CPU); si
+cuentan los récords (mejor no: no es una vuelta de un solo jugador); y cómo lo prueba
+el arnés (dos carreras en Node conectadas por una red de mentira, con retraso y
+pérdidas, que acaban igual que la del anfitrión).

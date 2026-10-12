@@ -58,6 +58,8 @@ export function completarCircuito(eje, datos) {
     p.carril ??= 1;
     p.centro ??= 0;
     p.efecto ??= null;
+    p.elevacion ??= 0;   // en un puente, de 0 (la mesa) a 1 (el tablero)
+    p.pendiente ??= 0;
     s += p.largo;
   });
 
@@ -75,7 +77,12 @@ export function completarCircuito(eje, datos) {
     muroCercano: (p, indicePrevio) => muroCercano(circuito, p, indicePrevio),
     bordeEn: (proyeccion) => bordeEn(circuito, proyeccion)
   };
-  circuito.cruces = buscarCruces(circuito);
+  // Donde uno de los dos tramos va por arriba, no es un cruce: es un puente.
+  const cortes = buscarCruces(circuito);
+  const elevacion = (s) => circuito.eje[puntoEn(circuito, s).indice].elevacion;
+  const alto = ({ s: [a, b] }) => Math.abs(elevacion(a) - elevacion(b)) > 0.5;
+  circuito.cruces = cortes.filter((c) => !alto(c));
+  circuito.puentes = cortes.filter(alto);
   calcularMuros(circuito);
   // Dónde acaba cada sector, en s; el último, en la meta (una vuelta entera).
   // Se declaran como un punto junto a la pista o como la fracción de la vuelta.
@@ -115,13 +122,17 @@ function corte(a, b, c, d) {
   return t >= 0 && t < 1 && u >= 0 && u < 1 ? [t, u] : null;
 }
 
-/** ¿Están los puntos `s1` y `s2` del eje en los dos tramos de un mismo cruce? */
-export function enCruce(circuito, s1, s2) {
+/*
+ * ¿Están los puntos `s1` y `s2` del eje en los dos tramos de un mismo cruce?
+ * Para la geometría, un puente también lo es (los dos tramos se pisan en el
+ * plano); `lista` dice cuáles cuentan.
+ */
+export function enCruce(circuito, s1, s2, lista = [...circuito.cruces, ...circuito.puentes]) {
   const cerca = (s, c) => {
     const d = Math.abs(s - c);
     return Math.min(d, circuito.largo - d) < VENTANA_CRUCE;
   };
-  return circuito.cruces.some(({ s: [a, b] }) => (cerca(s1, a) && cerca(s2, b)) || (cerca(s1, b) && cerca(s2, a)));
+  return lista.some(({ s: [a, b] }) => (cerca(s1, a) && cerca(s2, b)) || (cerca(s1, b) && cerca(s2, a)));
 }
 
 /**

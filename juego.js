@@ -35,7 +35,9 @@ import {
   reproduccionAcabada, saltarMomento
 } from './repeticion.js';
 import { iniciarLienzo } from './nucleo/lienzo.js';
-import { dibujarCarriles, dibujarCocheSlot, dibujarFantasma, dibujarFondo, dibujarTorres } from './dibujo.js';
+import {
+  dibujarCarriles, dibujarCocheSlot, dibujarFantasma, dibujarFondo, dibujarPuentes, dibujarTorres, bajoPuente
+} from './dibujo.js';
 import { formatearTiempo } from './nucleo/slot.js';
 import { MODELOS } from './coches.js';
 import { cajasGrupos, cajasMenu, dibujarGrupos, dibujarMenu } from './menu.js';
@@ -1079,14 +1081,15 @@ function dibujarMundo() {
  * la cuenta atrás ya está en la parrilla; luego, mientras el J1 lo conduzca
  * alguien.
  */
-function pintarFantasma() {
+function pintarFantasma(debajo) {
   const { carrera } = estado;
   const fantasma = fantasmaDelJ1();
   if (!fantasma || estado.fase !== 'carrera') return;
   if (carrera.fase !== 'cuenta' && !estado.humanos[0]) return;
   const slot = carrera.coches[0];
   const pose = posar(fantasma, carrera.tiempo - slot.inicioVuelta);
-  if (pose) dibujarFantasma(pose, { ...slot.coche, modelo: fantasma.coche });
+  // Debajo del puente o encima, según por dónde vaya.
+  if (pose && bajoPuente(estado.circuito, pose) === debajo) dibujarFantasma(pose, { ...slot.coche, modelo: fantasma.coche });
 }
 
 /*
@@ -1099,10 +1102,14 @@ function pintarMundo(cochesCarrera = estado.carrera.coches, particulas = estado.
   dibujarCarriles(estado.circuito, estado.decorado);
   dibujarTorres(estado.decorado, luz);
   dibujarHumo(particulas);
-  if (!repeticion) pintarFantasma();
-  // El que va por el aire, encima.
+  // El que va por el aire, encima; y el puente, sobre los que pasan por debajo.
   const coches = [...cochesCarrera].sort((a, b) => a.altura - b.altura);
-  coches.forEach(dibujarCocheSlot);
+  const debajo = (slot) => bajoPuente(estado.circuito, slot.coche, slot.estado);
+  if (!repeticion) pintarFantasma(true);
+  coches.filter(debajo).forEach(dibujarCocheSlot);
+  dibujarPuentes(estado.circuito, estado.decorado);
+  if (!repeticion) pintarFantasma(false);
+  coches.filter((slot) => !debajo(slot)).forEach(dibujarCocheSlot);
   pintarHora(luz, estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
   dibujarChispas(particulas);
 }
