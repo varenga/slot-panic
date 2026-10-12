@@ -15,7 +15,8 @@
  *                el golpe más fuerte, más vale
  *   salida       un coche que se sale lanzado (SALIDA_FUERTE)
  *   salvada      un derrape de más de SALVADA que no acaba fuera
- *   adelanta     uno pasa al otro, que sigue en el carril, y aguanta delante
+ *   adelanta     uno pasa a otro, que sigue en el carril, y aguanta delante
+ *                (con cuatro, en cada pareja)
  *   llegada      el segundo cruza la meta a menos de LLEGADA s (por su ritmo)
  *   vuelta       la mejor vuelta de la carrera, si la ha dado una persona
  *
@@ -62,8 +63,8 @@ export function crearRepeticion(circuito, coches) {
     vueltas: [],        // { t, coche, tiempo, humano }: cada vuelta acabada
     candidatos: [],     // los momentos encontrados: { tipo, t, coches, humano, puntos, lugar }
     derrapes: Array.from({ length: coches }, () => ({ pico: 0, t: 0, lugar: null, humano: false })),
-    orden: null,        // quién va delante
-    cambio: null        // el adelantamiento que aún tiene que aguantar
+    orden: new Map(),   // de cada pareja de coches, quién va delante
+    cambio: new Map()   // de cada pareja, el adelantamiento que aún tiene que aguantar
   };
 }
 
@@ -162,32 +163,47 @@ function buscarMomentos(rep, carrera, humanos) {
     } else if (slot.derrape === 0) d.pico = 0;
   });
 
-  // El adelantamiento: cambia quién va delante y aguanta FIRME s.
-  if (coches.length !== 2 || carrera.fase !== 'carrera' || coches.some((slot) => slot.progreso <= 0)) return;
-  const [a, b] = coches;
-  const delante = a.progreso === b.progreso ? rep.orden : a.progreso > b.progreso ? 0 : 1;
-  if (rep.orden === null) rep.orden = delante;
-  if (delante === rep.orden) {
-    rep.cambio = null;
+  // El adelantamiento: entre cada pareja, cambia quién va delante y aguanta FIRME s.
+  if (carrera.fase !== 'carrera') return;
+  for (let i = 0; i < coches.length; i++) {
+    for (let j = i + 1; j < coches.length; j++) adelantamiento(rep, circuito, coches, i, j, humano);
+  }
+}
+
+function adelantamiento(rep, circuito, coches, i, j, humano) {
+  const a = coches[i], b = coches[j];
+  if (a.progreso <= 0 || b.progreso <= 0) return;
+  const pareja = i * coches.length + j;
+  const orden = rep.orden.get(pareja) ?? null;
+  const delante = a.progreso === b.progreso ? orden : a.progreso > b.progreso ? i : j;
+  if (orden === null) {
+    rep.orden.set(pareja, delante);
     return;
   }
-  if (!rep.cambio) {
+  if (delante === orden) {
+    rep.cambio.delete(pareja);
+    return;
+  }
+  const detras = delante === i ? j : i;
+  let cambio = rep.cambio.get(pareja);
+  if (!cambio) {
     // Si el otro está fuera, no lo ha pasado: se ha salido (y eso ya es otro momento).
-    rep.cambio = {
-      t: rep.t, quien: delante, limpio: coches[rep.orden].estado === 'carril',
+    cambio = {
+      t: rep.t, limpio: coches[detras].estado === 'carril',
       lugar: piezaEn(circuito, coches[delante].s), humano: humano(delante)
     };
+    rep.cambio.set(pareja, cambio);
   }
-  if (rep.t - rep.cambio.t < FIRME) return;
-  const { t, quien, limpio, lugar, humano: deUnHumano } = rep.cambio;
+  if (rep.t - cambio.t < FIRME) return;
+  const { t, limpio, lugar, humano: deUnHumano } = cambio;
   if (limpio) {
     rep.candidatos.push({
-      tipo: 'adelanta', t, coches: [quien, 1 - quien], humano: deUnHumano, lugar: estrecha(lugar) ? 'estrecha' : null,
+      tipo: 'adelanta', t, coches: [delante, detras], humano: deUnHumano, lugar: estrecha(lugar) ? 'estrecha' : null,
       puntos: TIPOS_MOMENTO.adelanta.puntos + (estrecha(lugar) ? 2 : 0)
     });
   }
-  rep.orden = delante;
-  rep.cambio = null;
+  rep.orden.set(pareja, delante);
+  rep.cambio.delete(pareja);
 }
 
 /*

@@ -198,7 +198,8 @@ demás, en `BITACORA.md`). Mide y comprueba:
    salen los mismos y una carrera de 10 vueltas graba < 2 MB. En cada encuentro, cada
    choque es un momento en su sitio (X, cruce o estrecha; «pista» si uno fuera arrolla
    al otro); los demás (salvada,
-   adelantamiento, llegada, salida, vuelta rápida) se prueban con carreras de mentira.
+   adelantamiento, también entre dos de cuatro, llegada, salida, vuelta rápida) se prueban
+   con carreras de mentira.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).

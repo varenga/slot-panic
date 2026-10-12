@@ -1487,27 +1487,28 @@ console.log('\nLos mejores momentos');
   }
 
   /*
-   * Carreras de mentira: dos coches en una recta de La horquilla, movidos a
-   * mano, para ver que cada momento se encuentra cuando toca y solo entonces.
+   * Carreras de mentira: dos coches (o cuatro) en una recta de La horquilla,
+   * movidos a mano, para ver que cada momento se encuentra cuando toca y solo
+   * entonces.
    */
   const circuito = CIRCUITOS[0];
-  function deMentira() {
+  function deMentira(salidas = [200, 150]) {
     const coche = (s) => ({
       estado: 'carril', s, progreso: s, v: 300, derrape: 0, altura: 0, vueltas: [], terminado: null, humanoDesde: 0,
       coche: { x: 100 + s, y: 100, angulo: 0, vx: 300, vy: 0 }
     });
-    const carrera = { circuito, fase: 'carrera', tiempo: 10, vueltas: 3, eventos: [], coches: [coche(200), coche(150)] };
-    return { carrera, rep: crearRepeticion(circuito, 2) };
+    const carrera = { circuito, fase: 'carrera', tiempo: 10, vueltas: 3, eventos: [], coches: salidas.map(coche) };
+    return { carrera, rep: crearRepeticion(circuito, salidas.length) };
   }
-  function correrMentira(pasos) {
-    const { carrera, rep } = deMentira();
+  function correrMentira(pasos, salidas) {
+    const { carrera, rep } = deMentira(salidas);
     for (let k = 0; k < pasos.length; k++) {
       carrera.eventos = [];
       pasos[k](carrera, k);
       carrera.tiempo += DT;
       grabarCuadro(rep, carrera, DT, [true, false]);
     }
-    return rep.candidatos.map((m) => m.tipo + (m.lugar ? ':' + m.lugar : '')).join(',');
+    return rep.candidatos.map((m) => m.tipo + (m.lugar ? ':' + m.lugar : '') + (salidas ? ':' + m.coches : '')).join(',');
   }
   const durante = (n, paso) => Array.from({ length: n }, () => paso);
   // La salvada: un derrape de 0,7 que vuelve a 0 en el carril; si acaba fuera, nada.
@@ -1519,6 +1520,8 @@ console.log('\nLos mejores momentos');
   const adelanta = correrMentira(durante(150, pasa(Infinity)));
   const devuelve = correrMentira(durante(150, pasa(50)));
   const alSalirse = correrMentira(durante(150, (c, k) => { pasa(Infinity)(c, k); c.coches[0].estado = 'fuera'; }));
+  // Con cuatro, entre dos de la CPU: el cuarto pasa al tercero (y a nadie más).
+  const enCuatro = correrMentira(durante(150, (c, k) => { c.coches[3].progreso = c.coches[3].s = 350 + k * 2; }), [200, 150, 400, 350]);
   // La llegada: el primero gana con el segundo a 0,1 s (por su ritmo); a 1 s, nada.
   const llega = (hueco) => [(c) => {
     c.coches[0].vueltas = [9];
@@ -1534,6 +1537,7 @@ console.log('\nLos mejores momentos');
   const mentiras = [
     ['una salvada', salvada, 'salvada'], ['salvada que acaba fuera', fuera, ''],
     ['un adelantamiento', adelanta, 'adelanta'], ['uno que devuelve el puesto', devuelve, ''], ['pasar al que se ha salido', alSalirse, ''],
+    ['adelantar con cuatro', enCuatro, 'adelanta:3,2'],
     ['llegar a 0,1 s', correrMentira(llega(0.1)), 'llegada'], ['llegar a 1 s', correrMentira(llega(1)), ''],
     ['salirse lanzado', correrMentira(sale(420)), 'salida'], ['salirse despacio', correrMentira(sale(200)), ''],
     ['salirse por un choque', correrMentira(sale(420, true)), 'choque:']
