@@ -14,7 +14,7 @@ import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
 import { azar } from './nucleo/decorado.js';
-import { CARRILES, trazadoCarril } from './nucleo/slot.js';
+import { trazadoCarril } from './nucleo/slot.js';
 import { modelo, pintarModelo, sombraModelo } from './coches.js';
 import { sombraSol, sombraTorre } from './luz.js';
 
@@ -1474,7 +1474,7 @@ export function dibujarCarriles(circuito, decorado) {
       // Con un número impar de X, el carril que sale por un lado vuelve por el
       // otro: cada trazado acaba en el primer punto del otro, y abierto.
       const impar = circuito.cambiosCarril % 2 === 1;
-      const trazados = CARRILES.map((lateral) =>
+      const trazados = circuito.carriles.map((lateral) =>
         [...trazadoCarril(circuito, lateral), trazadoCarril(circuito, impar ? -lateral : lateral)[0]]);
       // En el escenario juguete, las trencillas trenzadas: un gris de metal con un
       // punteado claro encima.
@@ -1593,7 +1593,7 @@ function pintarPuentes(circuito, juguete) {
       ctx.strokeStyle = color;
       ctx.lineWidth = grosor;
       ctx.setLineDash(raya ?? []);
-      for (const lateral of CARRILES) {
+      for (const lateral of circuito.carriles) {
         const trazado = trazadoCarril(circuito, lateral);
         polilinea(tramo.map((i) => trazado[i]), false);
       }

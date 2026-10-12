@@ -12,7 +12,7 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_PIANO, ANCHO_PISTA, ESCAPATORIA, ESCAPATORIA_CURVA, ESCAPATORIA_DERRAPE, PASO_EJE, PENDIENTE_MURO,
+  ALTO, ANCHO, ANCHO_PIANO, ANCHO_PISTA, CARRIL, ESCAPATORIA, ESCAPATORIA_CURVA, ESCAPATORIA_DERRAPE, PASO_EJE, PENDIENTE_MURO,
   VENTANA_PROYECCION
 } from '../config.js';
 import { distancia, proyectarEnSegmento, redondearPoligono } from './geometria.js';
@@ -25,6 +25,8 @@ const GRAVA_MINIMA = 16;        // px de grava que el piano deja siempre, si hac
 /*
  * px de pista, a cada lado de un cruce, en que los dos tramos se pisan sin
  * que eso sea invadir: más allá, el otro tramo queda a más de un ancho + 40.
+ * Es la de la pista de dos carriles: la ancha la alarga lo que tiene de más
+ * (`circuito.ventanaCruce`).
  */
 export const VENTANA_CRUCE = 128;
 
@@ -44,6 +46,11 @@ export function construirCircuito(datos) {
  * los sectores. Lo usan `construirCircuito` y `construirDePiezas`
  * (`piezas.js`).
  */
+/** Los laterales de `n` carriles, simétricos respecto al eje: con dos, ±CARRIL. */
+export function laterales(n) {
+  return Array.from({ length: n }, (_, i) => (2 * i - (n - 1)) * CARRIL);
+}
+
 export function completarCircuito(eje, datos) {
   let s = 0;
   eje.forEach((p, i) => {
@@ -69,7 +76,10 @@ export function completarCircuito(eje, datos) {
     gradas: datos.gradas || [],
     eje,
     largo: s,
-    ancho: datos.ancho || ANCHO_PISTA,
+    // Los carriles, del de la izquierda al de la derecha: dos, o cuatro en la
+    // pista ancha. Cada uno a 2 · CARRIL del de al lado; la pista, más ancha.
+    carriles: laterales(datos.carriles || 2),
+    ancho: datos.ancho || ANCHO_PISTA + ((datos.carriles || 2) - 2) * 2 * CARRIL,
     // Cuántas X tiene: con un número impar, cada coche cambia de carril cada vuelta.
     cambiosCarril: datos.cambiosCarril || 0,
     proyectar: (p, indicePrevio) => proyectar(circuito, p, indicePrevio),
@@ -77,6 +87,7 @@ export function completarCircuito(eje, datos) {
     muroCercano: (p, indicePrevio) => muroCercano(circuito, p, indicePrevio),
     bordeEn: (proyeccion) => bordeEn(circuito, proyeccion)
   };
+  circuito.ventanaCruce = VENTANA_CRUCE + Math.max(0, circuito.ancho - ANCHO_PISTA);
   // Donde uno de los dos tramos va por arriba, no es un cruce: es un puente.
   const cortes = buscarCruces(circuito);
   const elevacion = (s) => circuito.eje[puntoEn(circuito, s).indice].elevacion;
@@ -130,7 +141,7 @@ function corte(a, b, c, d) {
 export function enCruce(circuito, s1, s2, lista = [...circuito.cruces, ...circuito.puentes]) {
   const cerca = (s, c) => {
     const d = Math.abs(s - c);
-    return Math.min(d, circuito.largo - d) < VENTANA_CRUCE;
+    return Math.min(d, circuito.largo - d) < circuito.ventanaCruce;
   };
   return lista.some(({ s: [a, b] }) => (cerca(s1, a) && cerca(s2, b)) || (cerca(s1, b) && cerca(s2, a)));
 }

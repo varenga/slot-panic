@@ -18,13 +18,13 @@
  * para depurar; el jugador ve un aviso traducido).
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, ANCHO_PISTA, LARGO_COCHE } from '../config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, LARGO_COCHE } from '../config.js';
 import { enCruce } from './circuito.js';
 import { zonasVetadas } from './decorado.js';
-import { CARRILES, trazadoCarril } from './slot.js';
+import { trazadoCarril } from './slot.js';
 
 const LEJOS = 300;                  // px de pista a partir de los que otro punto es otro tramo
-const SEPARACION = ANCHO_PISTA + 40;
+const SEPARACION = 40;              // px más allá del ancho de la pista
 const GRAVA_MINIMA = 14;            // px; por dentro de las curvas, medidos a pasos de 1 px
 const SEPARACION_CARRILES = 60;
 const CERCA = 400;                  // px de eje entre dos tramos a partir de los que ya no se mira más
@@ -54,8 +54,8 @@ export function validarCircuito(circuito) {
     }
   }
   medidas.separacion = minimo;
-  if (minimo <= SEPARACION) fallos.push(`dos tramos de pista quedan a ${minimo.toFixed(0)} px (menos de un ancho + 40)`);
-  const r = ANCHO_PISTA / 2;
+  if (minimo <= circuito.ancho + SEPARACION) fallos.push(`dos tramos de pista quedan a ${minimo.toFixed(0)} px (menos de un ancho + 40)`);
+  const r = circuito.ancho / 2;
   if (eje.some((p) => p.x - r < 0 || p.y - r < 0 || p.x + r > ANCHO || p.y + r > ALTO)) fallos.push('la pista se sale del lienzo');
 
   // --- El muro y la grava
@@ -134,16 +134,16 @@ export function validarCircuito(circuito) {
   }
 
   // --- Los carriles
-  const margen = ANCHO_PISTA / 2 - Math.max(...CARRILES.map(Math.abs)) - ANCHO_COCHE / 2;
+  const margen = circuito.ancho / 2 - Math.max(...circuito.carriles.map(Math.abs)) - ANCHO_COCHE / 2;
   if (margen < 4) fallos.push(`un coche en el carril se queda a ${margen} px del borde del asfalto`);
-  const trazados = CARRILES.map((l) => trazadoCarril(circuito, l));
+  const trazados = circuito.carriles.map((l) => trazadoCarril(circuito, l));
   let alBorde = 0, cercania = Infinity;
   for (const trazado of trazados) {
     for (const p of trazado) {
       if (p.x < LARGO_COCHE || p.x > ANCHO - LARGO_COCHE || p.y < LARGO_COCHE || p.y > ALTO - LARGO_COCHE) alBorde++;
     }
   }
-  // Cada carril se aparta del eje CARRIL px como mucho: los tramos a más de CERCA no se acercan.
+  // Cada carril se aparta del eje poco más que medio ancho: los tramos a más de CERCA no se acercan.
   for (const [i, j] of cercanos) {
     for (const a of trazados) for (const b of trazados) {
       cercania = Math.min(cercania, Math.hypot(a[i].x - b[j].x, a[i].y - b[j].y));

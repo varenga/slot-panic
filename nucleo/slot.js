@@ -47,7 +47,8 @@ const HOLGURA_CHOQUE = 8;           // px de separación a la que dos coches sig
  * Los dos carriles, por el lado -1 y el +1 del eje. No son iguales: casi
  * todas las curvas de La horquilla giran al mismo lado, y con el mismo
  * piloto uno saca un 3-4 % al otro. Como en el juguete, los coches se cambian
- * de carril en cada carrera (`turno`).
+ * de carril en cada carrera (`turno`). La pista de cuatro tiene los suyos
+ * (`circuito.carriles`, de izquierda a derecha); estos son los de siempre.
  */
 export const CARRILES = [-CARRIL, CARRIL];
 
@@ -62,9 +63,9 @@ function signoVuelta(circuito, s) {
   return Math.abs(Math.floor(s / circuito.largo)) % 2 ? -1 : 1;
 }
 
-/** El carril (0 o 1, el índice de CARRILES) por el que va un coche en la coordenada `s`. */
+/** El carril (el índice en `circuito.carriles`) por el que va un coche en la coordenada `s`. */
 export function carrilEn(circuito, lateral, s) {
-  return lateral * signoVuelta(circuito, s) < 0 ? 0 : 1;
+  return circuito.carriles.indexOf(lateral * signoVuelta(circuito, s));
 }
 
 /*
@@ -229,14 +230,14 @@ export function crearCarreraSlot(circuito, colores, turno = 0, { vueltas = VUELT
     circuito,
     vueltas,
     grabar: grabarVueltas,
-    // El coche i va por el carril (i + turno) % 2.
-    coches: colores.map((color, i) => crearSlot(circuito, CARRILES[(i + turno) % 2], color, modelos[i])),
+    // El coche i va por el carril (i + turno) % carriles.
+    coches: colores.map((color, i) => crearSlot(circuito, circuito.carriles[(i + turno) % circuito.carriles.length], color, modelos[i])),
     fase: 'cuenta',     // 'cuenta' | 'carrera' | 'fin'
     cuenta: CUENTA_ATRAS,
     tiempo: 0,
     tiempoSalida: 0,
     ganador: null,      // índice del primero en terminar
-    toque: null,        // si los dos coches se están tocando: { tregua, choque } (ver `comprobarChoque`)
+    toques: {},         // cada pareja que se está tocando, por 'i-j': { tregua, choque } (ver `comprobarChoque`)
     eventos: []         // { tipo, coche } del último avance: cuenta, salida, sale, clac, bache, vuelta, fin
   };
   // La primera vuelta empieza en la parrilla, parado.
@@ -282,11 +283,24 @@ function pasoCarreraSlot(carrera, mandos, dt) {
     }
     if (carrera.fase === 'carrera') contarVueltas(carrera, slot, i);
   });
-  if (carrera.coches.length === 2) comprobarChoque(carrera);
+  comprobarChoques(carrera);
 }
 
 /*
- * Los choques entre los dos coches (GOLPE_SALE, en config.js). Cada coche es
+ * Cada pareja de coches, por si se tocan. Lo que la mano acaba de posar vale
+ * para todas las parejas del coche en ese paso.
+ */
+function comprobarChoques(carrera) {
+  const { coches } = carrera;
+  const posados = coches.map((slot) => slot.posado);
+  for (const slot of coches) slot.posado = false;
+  for (let i = 0; i < coches.length; i++) {
+    for (let j = i + 1; j < coches.length; j++) comprobarChoque(carrera, i, j, posados[i] || posados[j]);
+  }
+}
+
+/*
+ * Los choques entre dos coches (GOLPE_SALE, en config.js). Cada coche es
  * una cápsula en su pose: un segmento a lo largo y RADIO_COCHE alrededor. Al
  * empezar a tocarse acercándose, un golpe; mientras siguen tocándose, el roce.
  * El golpe no decide nada: frena o empuja, y de lado se suma al derrape, que
@@ -366,15 +380,15 @@ function elevacionDe(slot, circuito) {
   return slot.estado === 'carril' ? circuito.eje[buscar(circuito, slot.s).indice].elevacion : 0;
 }
 
-function comprobarChoque(carrera) {
-  const [a, b] = carrera.coches;
-  const posado = a.posado || b.posado;
-  a.posado = b.posado = false;
+function comprobarChoque(carrera, ia, ib, posado) {
+  const a = carrera.coches[ia], b = carrera.coches[ib];
+  const clave = ia + '-' + ib;
+  const toques = carrera.toques;
   // Con la mano en el aire no toca a nadie; dos fuera ruedan cada uno a lo suyo,
   // y uno en el puente pasa por encima del de abajo.
   if (a.estado === 'mano' || b.estado === 'mano' || (a.estado === 'fuera' && b.estado === 'fuera') ||
     Math.abs(elevacionDe(a, carrera.circuito) - elevacionDe(b, carrera.circuito)) > 0.5) {
-    carrera.toque = null;
+    delete toques[clave];
     return;
   }
   const c = contacto(a, b);
@@ -385,27 +399,28 @@ function comprobarChoque(carrera) {
    * carriles los juntaban y volvían a chocar (lo vio el arnés en una X corta
    * del constructor). Menos que lo que queda entre dos coches en paralelo.
    */
-  if (toca <= -HOLGURA_CHOQUE || (toca <= 0 && !carrera.toque)) {
-    carrera.toque = null;
+  if (toca <= -HOLGURA_CHOQUE || (toca <= 0 && !toques[clave])) {
+    delete toques[clave];
     return;
   }
-  const empiezan = !carrera.toque && toca > 0;
-  if (empiezan) carrera.toque = { tregua: false, choque: false };
+  const empiezan = !toques[clave] && toca > 0;
+  if (empiezan) toques[clave] = { tregua: false, choque: false };
+  const toque = toques[clave];
   /*
    * Lo que la mano acaba de posar ya estaba ahí: en una estrecha puede dejarlo
    * a la par del otro, que ya ha arrancado y se le acerca (lo vio el arnés en
    * la estrecha larga de El resbalón), y en una X, encima del otro. Hasta que
    * se separen, ni se chocan ni se rozan.
    */
-  if (posado) carrera.toque.tregua = true;
-  if (carrera.toque.tregua || toca <= 0) return;
+  if (posado) toque.tregua = true;
+  if (toque.tregua || toca <= 0) return;
 
   const acercan = (a.coche.vx - b.coche.vx) * c.nx + (a.coche.vy - b.coche.vy) * c.ny;
   const arrolla = a.estado === 'fuera' || b.estado === 'fuera';
   const chocan = () => {
-    carrera.toque.choque = true;
+    toque.choque = true;
     carrera.eventos.push({
-      tipo: 'choque', coche: 0, x: (c.pa.x + c.pb.x) / 2, y: (c.pa.y + c.pb.y) / 2,
+      tipo: 'choque', coche: ia, coches: [ia, ib], x: (c.pa.x + c.pb.x) / 2, y: (c.pa.y + c.pb.y) / 2,
       fuerza: Math.min(1, Math.max(0, acercan) / VELOCIDAD_SLOT), arrolla
     });
   };
@@ -419,8 +434,8 @@ function comprobarChoque(carrera) {
   if (acercan > 0 && (empiezan || arrolla)) {
     if (empiezan && acercan >= TOQUE) chocan();
     const reparto = acercan * (1 + REBOTE_COCHES) / 2;
-    golpear(carrera, 0, -reparto * c.nx, -reparto * c.ny, c.pa, c.ua);
-    golpear(carrera, 1, reparto * c.nx, reparto * c.ny, c.pb, c.ub);
+    golpear(carrera, ia, -reparto * c.nx, -reparto * c.ny, c.pa, c.ua);
+    golpear(carrera, ib, reparto * c.nx, reparto * c.ny, c.pb, c.ub);
     return;
   }
   if (arrolla) return;
@@ -430,8 +445,8 @@ function comprobarChoque(carrera) {
    * los dos, cada uno hacia su lado. Si no, se rozan.
    */
   if (toca > RADIO_COCHE) {
-    if (!carrera.toque.choque) chocan();
-    [[a, 1], [b, -1]].forEach(([slot, signo], i) => {
+    if (!toque.choque) chocan();
+    [[a, 1, ia], [b, -1, ib]].forEach(([slot, signo, i]) => {
       const rumbo = slot.coche.angulo - slot.coleteo;
       const lado = (-Math.sin(rumbo) * c.nx + Math.cos(rumbo) * c.ny) * signo;
       soltar(slot, lado > 0 ? 1 : -1);
@@ -439,7 +454,7 @@ function comprobarChoque(carrera) {
     });
     return;
   }
-  rozar(carrera, c, toca, acercan);
+  rozar(carrera, ia, ib, c, toca, acercan);
 }
 
 /*
@@ -486,8 +501,8 @@ function golpear(carrera, i, gx, gy, punto, u) {
  * velocidades se igualan. El derrape se recupera a RECUPERA_DERRAPE: un roce
  * suave no saca a nadie.
  */
-function rozar(carrera, c, toca, acercan) {
-  const [a, b] = carrera.coches;
+function rozar(carrera, ia, ib, c, toca, acercan) {
+  const a = carrera.coches[ia], b = carrera.coches[ib];
   if (acercan > 0) {
     // Sin rebote y sin derrape: solo lo que se metían.
     [[a, -1], [b, 1]].forEach(([slot, signo]) => {
@@ -497,7 +512,7 @@ function rozar(carrera, c, toca, acercan) {
     });
   }
   const relativa = Math.abs(a.v - b.v);
-  [[a, c.ua, -1], [b, c.ub, 1]].forEach(([slot, u, signo], i) => {
+  [[a, c.ua, -1, ia], [b, c.ub, 1, ib]].forEach(([slot, u, signo, i]) => {
     const { coche, ficha } = slot;
     const rumbo = coche.angulo - slot.coleteo;
     const lx = -Math.sin(coche.angulo), ly = Math.cos(coche.angulo);

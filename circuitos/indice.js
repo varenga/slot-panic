@@ -10,5 +10,13 @@ import { NUDO } from './nudo.js';
 import { RESBALON } from './resbalon.js';
 import { BANERA } from './banera.js';
 import { DIAGONAL } from './diagonal.js';
+import { OCHO_LARGO } from './ochoLargo.js';
 
 export const CIRCUITOS = [PRIMERO, OCHO, NUDO, RESBALON, BANERA, DIAGONAL];
+
+/*
+ * Los de la pista de cuatro carriles: otro modo, con sus circuitos y su
+ * campeonato. No son oficiales: no entran en el campeonato de los seis ni
+ * tienen récords.
+ */
+export const CIRCUITOS_CUATRO = [OCHO_LARGO];

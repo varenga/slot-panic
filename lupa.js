@@ -23,7 +23,7 @@ import {
 import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import {
-  barraPotencia, boton, DESTACADO, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, panel, pintarCabeceraCampeonato,
+  barraPotencia, boton, DESTACADO, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, ordenLlegada, panel, pintarCabeceraCampeonato,
   pintarTablaCampeonato, semaforo, tituloPortada
 } from './pantalla.js';
 import { dibujarConfeti } from './particulas.js';
@@ -255,12 +255,16 @@ export function dibujarMapa(circuito, coches) {
 /*
  * El marcador: el J1 a la izquierda y la CPU a la derecha, cada uno con su
  * vuelta; en el centro, la cuenta atrás o el tiempo. Debajo del J1, su
- * potencia.
+ * potencia. En la pista de cuatro, a la derecha, el puesto del J1.
  */
 export function dibujarMarcadorLupa(carrera, humanos, rotulo = null) {
   ctx.fillStyle = COLOR.banda;
   ctx.fillRect(0, 0, ANCHO_LUPA, BARRA);
-  carrera.coches.forEach((slot, i) => {
+  if (carrera.coches.length > 2) {
+    const puesto = ordenEnCarrera(carrera).indexOf(0) + 1;
+    texto(t('hud.puesto', { n: puesto, total: carrera.coches.length }), ANCHO_LUPA - 12, BARRA / 2 - 6, { tam: 20, color: COLOR.hud, peso: 800, alinear: 'right' });
+  }
+  carrera.coches.slice(0, carrera.coches.length > 2 ? 1 : 2).forEach((slot, i) => {
     const izquierda = i === 0;
     const borde = izquierda ? 12 : ANCHO_LUPA - 12;
     const lado = izquierda ? 1 : -1;
@@ -289,6 +293,12 @@ export function dibujarMarcadorLupa(carrera, humanos, rotulo = null) {
       texto(rotulo, ANCHO_LUPA / 2, y + 55, { tam: 16, color: COLOR.ambar, peso: 700 });
     }
   }
+}
+
+/** Quién va delante: por lo que ha corrido (o, ya en la meta, por cuándo llegó). */
+function ordenEnCarrera(carrera) {
+  if (carrera.fase !== 'carrera') return ordenLlegada(carrera);
+  return carrera.coches.map((_, i) => i).sort((a, b) => carrera.coches[b].progreso - carrera.coches[a].progreso);
 }
 
 /** Los carteles (la última vuelta), bajo el mapa. */
@@ -357,7 +367,8 @@ export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null, 
   const x = ANCHO_LUPA / 2, y = altoLienzo / 2;
   if (campeonato) {
     pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y - 230, 40);
-    pintarTablaCampeonato(campeonato, carrera, humanos, { x, y: y - 150, mitad: 230, tam: 18, fila: 40 });
+    const cuatro = carrera.coches.length > 2;
+    pintarTablaCampeonato(campeonato, carrera, humanos, { x, y: y - 150, mitad: cuatro ? 250 : 230, tam: cuatro ? 15 : 18, fila: 40 });
     for (const caja of botonesFinCampeonatoLupa(campeonato, ids)) boton(caja, t(ETIQUETA_BOTON[caja.id]), DESTACADO.has(caja.id), 20);
     confeti(particulas);
     return;
@@ -365,12 +376,17 @@ export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null, 
   const ganador = carrera.coches[carrera.ganador];
   texto(t('slot.gana', { quien: nombreSlot(carrera.ganador, humanos) }), x, y - 130, { tam: 44, color: ganador.coche.color, peso: 800 });
   texto(t('fin.tiempo', { tiempo: formatearTiempo(ganador.terminado) }), x, y - 70, { tam: 28, color: COLOR.hud, peso: 700 });
-  carrera.coches.forEach((slot, i) => {
-    const fila = y - 10 + i * 60;
+  // Con cuatro, por orden de llegada, con su puesto y el resumen al lado: no cabe debajo.
+  const cuatro = carrera.coches.length > 2;
+  ordenLlegada(carrera).forEach((i, k) => {
+    const slot = carrera.coches[i];
+    const fila = y - 10 + k * (cuatro ? 40 : 60);
     ctx.fillStyle = slot.coche.color;
     rectanguloRedondo(x - 220, fila - 9, 18, 18, 4);
-    texto(nombreSlot(i, humanos), x - 192, fila, { tam: 20, color: COLOR.hud, peso: 800, alinear: 'left' });
-    texto(t('slot.resumen', { tiempo: formatearTiempo(mejorVueltaSlot(slot)), n: slot.salidas }), x, fila + 26, { tam: 16, color: COLOR.texto });
+    texto((cuatro ? `${k + 1}.  ` : '') + nombreSlot(i, humanos), x - 192, fila, { tam: 20, color: COLOR.hud, peso: 800, alinear: 'left' });
+    const resumen = t('slot.resumen', { tiempo: formatearTiempo(mejorVueltaSlot(slot)), n: slot.salidas });
+    if (cuatro) texto(resumen, x + 220, fila, { tam: 15, color: COLOR.texto, alinear: 'right' });
+    else texto(resumen, x, fila + 26, { tam: 16, color: COLOR.texto });
   });
   for (const caja of botonesFinLupa(ids)) {
     ctx.globalAlpha = caja.id === 'denunciado' ? 0.45 : 1;

@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Publicado (v1.0.0): carreras de slot en seis circuitos (*La horquilla*, y *El
 ocho*, *El nudo*, *El resbalón*, *La bañera* y *La diagonal*, de piezas), dos coches enganchados a carriles que se cambian en cada
-carrera, solo apretar y soltar (un gatillo que se
+carrera, y la pista de cuatro carriles (un modo propio, con *El ocho largo* y cuatro
+coches), solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, un puente que frena al subir y empuja al bajar, choques en las X, los cruces, las estrechas y el desvío (el golpe se
 suma al derrape: siguen los dos, se sale uno o los dos; y uno que se sale se lleva por delante al
 otro), una curva deslizante y una mano que devuelve el
@@ -124,7 +125,8 @@ argumentos: siempre corre todas las secciones enteras. Es `.mjs` a propósito: e
 `.htaccess` deniega `*.mjs` (y `*.md`, `pnyk.json`), así que no se publica; por lo
 mismo, un módulo que cargue el navegador tiene que ser `.js`. **Pásalo tras
 cualquier cambio en la física, la pista o las reglas.** Las secciones 1 a 3 corren en
-cada circuito de `CIRCUITOS`; las cifras de abajo son las de La horquilla (las de los
+cada circuito de `CIRCUITOS` y de `CIRCUITOS_CUATRO` (la pista de cuatro carriles: cada
+medida por carril, los encuentros por cada pareja de carriles y cuatro CPU juntas); las cifras de abajo son las de La horquilla (las de los
 demás, en `BITACORA.md`). Mide y comprueba:
 
 1. **El circuito**: cabe en el lienzo y dos tramos lejanos por la pista (> 300 px de `s`)
@@ -252,7 +254,8 @@ nucleo/decorado.js     DÓNDE va cada pieza del decorado: PRNG propio, cabe(),
                        (boxes, vallas, comisarios, aparcamiento). No dibuja
 nucleo/lienzo.js       `ctx` (enlace vivo), primitivas y capas fuera de pantalla
 
-circuitos/indice.js    CIRCUITOS: la lista, en el orden de la portada (tecla C)
+circuitos/indice.js    CIRCUITOS: la lista, en el orden de la portada (tecla C), y
+                       CIRCUITOS_CUATRO, los de la pista de cuatro carriles
 circuitos/primero.js   «La horquilla», por vértices (heredada de Race Panic)
 circuitos/ocho.js      «El ocho», de piezas: cruce, peralte, chicane, derrape
 circuitos/nudo.js      «El nudo», de piezas: X, baches, horquilla, derrape, chicane
@@ -260,6 +263,8 @@ circuitos/resbalon.js  «El resbalón», de piezas: las estrechas (corta y larga
                        curva deslizante y una chicane
 circuitos/banera.js    «La bañera», de piezas: la recta más larga, dos peraltadas,
                        una X, el valle con el desvío y una de derrape
+circuitos/ochoLargo.js «El ocho largo», de piezas y de cuatro carriles: dos lazos y
+                       dos diagonales que se cruzan en ángulo recto
 circuitos/diagonal.js  «La diagonal», de piezas: un ocho torcido cuya diagonal
                        pasa bajo un puente, un valle de baches, una peraltada y un
                        lazo estrecho con su estrecha
@@ -343,6 +348,10 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   (`elevacion`) no chocan. El tablero se pinta en su capa (`dibujarPuentes`) encima
   solo de los que pasan por debajo (`bajoPuente`, por la pose: también en la
   repetición y con el fantasma); los demás, encima de él.
+- **Los carriles los da el circuito** (`circuito.carriles`): dos a ±`CARRIL`, o cuatro
+  (`carriles: 4`) en la pista ancha, más ancha y con más margen en el cruce
+  (`ventanaCruce`). Nada da por hecho que son dos: el `turno` reparte
+  `(i + turno) % carriles` y los choques se comprueban por parejas (`carrera.toques`).
 - **El carril lo da la pieza**: el desplazamiento real es `lateralEn(circuito, lateral,
   s)`, nunca `slot.lateral` a secas (en la X cambia de lado, y con un número impar de
   X, cada vuelta; en la estrecha se acerca al eje, a `ESTRECHA`; en el desvío, además,
@@ -368,6 +377,9 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   cosméticos.
 - **Lo pulsable se define una vez**: la misma función da la caja para dibujarla y para
   saber si se ha pulsado.
+- **La pista de cuatro, un modo**: si el circuito es de cuatro carriles, la carrera es de
+  cuatro coches (PISTA, tecla P, cambia de lista). Solo los coches 0 y 1 pueden ser de
+  una persona; el 2 y el 3 son siempre de la CPU.
 - **Un dedo por jugador**: la mitad izquierda es J1 y la derecha J2. Ninguna mecánica
   nueva puede exigir un control que el móvil no tenga.
 - **En vertical, la lupa** (`estado.lupa`): toda la pantalla es el J1 y el otro carril, la

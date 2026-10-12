@@ -6,7 +6,7 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, NIVELES_CPU,
+  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COCHE_REFERENCIA, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, NIVELES_CPU,
   SITE_ORIGIN, TECLAS_BLOQUEADAS, TRAS_META, VELOCIDAD_SLOT
 } from './config.js';
 import {
@@ -16,7 +16,7 @@ import {
   leerEscenario, leerLlave, leerMisCircuitos, leerModelos, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
-import { CIRCUITOS } from './circuitos/indice.js';
+import { CIRCUITOS, CIRCUITOS_CUATRO } from './circuitos/indice.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
 import { avanzarSlot, crearCarreraSlot, ponerModelo } from './nucleo/slot.js';
 import { generarDecorado } from './nucleo/decorado.js';
@@ -96,9 +96,16 @@ let MIOS = cargarMios();
 // El último elegido en la galería: va el primero de la lista y no se recuerda.
 let PUBLICO = null;
 
+/*
+ * La pista de cuatro carriles es otro modo, con sus circuitos: lo decide el
+ * circuito elegido (`cuatro()`), y la tecla C solo pasa por los de su pista.
+ */
 function listaCircuitos() {
+  if (cuatro()) return CIRCUITOS_CUATRO;
   return [...(DIBUJADO ? [DIBUJADO] : []), ...(PUBLICO ? [PUBLICO] : []), ...CIRCUITOS, ...MIOS];
 }
+
+const cuatro = () => estado.circuito.carriles.length > 2;
 
 function cargarMios() {
   return leerMisCircuitos().map(({ n, codigo }) => circuitoDeCodigo(codigo, n)).filter(Boolean);
@@ -133,6 +140,7 @@ function circuitoDeCodigo(codigo, mio = null) {
  * la del nivel elegido, NIVELES_CPU en config.js). La semilla cambia en cada carrera.
  */
 const EXHIBICION = [{ prudencia: 1.6, variacion: 0.25, fallo: 0.04 }, { prudencia: 1.3, variacion: 0.25, fallo: 0.04 }];
+const pilotoExhibicion = (i) => crearPiloto({ ...EXHIBICION[i % EXHIBICION.length], semilla: semilla() });
 const semilla = () => Math.floor(Math.random() * 2 ** 32);
 
 // --- Partidas -------------------------------------------------------------
@@ -184,10 +192,21 @@ function cambiarColor(i, color) {
 }
 
 function vestir(carrera) {
+  const colores = coloresCarrera(carrera.coches.length);
   carrera.coches.forEach((slot, i) => {
-    ponerModelo(slot, estado.modelos[i]);
-    slot.coche.color = estado.colores[i];
+    ponerModelo(slot, estado.modelos[i] ?? COCHE_REFERENCIA);
+    slot.coche.color = colores[i];
   });
+}
+
+/*
+ * El color de cada coche: los de los dos jugadores y, en la pista de cuatro,
+ * los de la CPU, los primeros de la paleta que no lleve nadie. Las CPU de
+ * más llevan el coche de siempre.
+ */
+function coloresCarrera(n) {
+  const libres = COLORES_COCHE.filter((c) => !estado.colores.includes(c));
+  return Array.from({ length: n }, (_, i) => estado.colores[i] ?? libres[i - estado.colores.length]);
 }
 
 /** Carrera suelta o campeonato: lo que arranca la portada. */
@@ -232,14 +251,32 @@ function cambiarCircuito() {
   irAPortada();
 }
 
+/*
+ * La pista de dos carriles o la de cuatro: el primer circuito de la otra (o,
+ * de vuelta a la de dos, el que se corría en ella).
+ */
+let circuitoDeDos = null;
+
+function cambiarPista() {
+  if (cuatro()) estado.circuito = circuitoDeDos || CIRCUITOS[0];
+  else {
+    circuitoDeDos = estado.circuito;
+    estado.circuito = CIRCUITOS_CUATRO[0];
+  }
+  if (estado.circuito !== DIBUJADO && estado.circuito !== PUBLICO) guardarCircuito(estado.circuito.clave);
+  estado.decorado = generarDecorado(estado.circuito, estado.escenario);
+  irAPortada();
+}
+
 // --- El campeonato ---------------------------------------------------------
 
 /*
- * Los circuitos oficiales, uno detrás de otro (`nucleo/campeonato.js`).
- * Mientras dura, el fin lleva a la carrera siguiente y ESC lo abandona.
+ * Los circuitos oficiales, uno detrás de otro (`nucleo/campeonato.js`); en la
+ * pista de cuatro, los suyos. Mientras dura, el fin lleva a la carrera
+ * siguiente y ESC lo abandona.
  */
 function empezarCampeonato() {
-  estado.campeonato = crearCampeonato(CIRCUITOS);
+  estado.campeonato = crearCampeonato(cuatro() ? CIRCUITOS_CUATRO : CIRCUITOS);
   evento('empezar_campeonato', { vueltas: vueltasElegidas(), cpu: estado.nivel, tactil: estado.tactil, lupa: estado.lupa });
   correrSiguiente();
 }
@@ -591,14 +628,18 @@ function limpiarPista() {
   estado.particulas.length = 0;
 }
 
-/** La portada hace correr a dos pilotos por el circuito: enseña de qué va el juego. */
+/*
+ * La portada hace correr a un piloto por carril (dos, o cuatro en la pista
+ * ancha): enseña de qué va el juego.
+ */
 function irAPortada() {
   estado.fase = 'portada';
   if (conRecords()) cargarRecords(estado.circuito.clave);
-  estado.carrera = crearCarreraSlot(estado.circuito, estado.colores, 0, { modelos: estado.modelos });
+  const n = estado.circuito.carriles.length;
+  estado.carrera = crearCarreraSlot(estado.circuito, coloresCarrera(n), 0, { modelos: estado.modelos });
   vestir(estado.carrera);
-  estado.pilotos = EXHIBICION.map((opciones) => crearPiloto({ ...opciones, semilla: semilla() }));
-  estado.humanos = [false, false];
+  estado.pilotos = estado.carrera.coches.map((_, i) => pilotoExhibicion(i));
+  estado.humanos = estado.carrera.coches.map(() => false);
   estado.carrera.fase = 'carrera';   // sin cuenta atrás: la exhibición ya está en marcha
   limpiarPista();
 }
@@ -613,16 +654,18 @@ function empezarCarrera() {
   if (estado.circuito.publico) apuntarJugado(estado.circuito.publico.id);
   estado.denuncia = null;
   estado.fase = 'carrera';
-  // Cada carrera, los coches se cambian de carril: no son iguales.
-  estado.turno = 1 - estado.turno;
-  estado.carrera = crearCarreraSlot(estado.circuito, estado.colores, estado.turno, {
+  // Cada carrera, los coches se cambian de carril: no son iguales. En la
+  // pista de cuatro, cada uno pasa al de al lado (y el último, al primero).
+  const n = estado.circuito.carriles.length;
+  estado.turno = (estado.turno + 1) % n;
+  estado.carrera = crearCarreraSlot(estado.circuito, coloresCarrera(n), estado.turno, {
     vueltas: vueltasElegidas(), grabar: conRecords(), modelos: estado.modelos
   });
   vestir(estado.carrera);
   estado.carrera.anochece = !!CARRERAS.find((c) => c.id === estado.duracion).anochece;
   const { piloto } = NIVELES_CPU.find((n) => n.id === estado.nivel);
-  estado.pilotos = [0, 1].map(() => crearPiloto({ ...piloto, semilla: semilla() }));
-  estado.humanos = [false, false];
+  estado.pilotos = estado.carrera.coches.map(() => crearPiloto({ ...piloto, semilla: semilla() }));
+  estado.humanos = estado.carrera.coches.map(() => false);
   if (eligeJugadores()) {
     estado.carrera.coches.forEach((slot, i) => {
       if (estado.jugadores[i] !== 'humano') return;
@@ -894,13 +937,17 @@ function pulsada(codigos) {
   return codigos.some((codigo) => teclas[codigo]);
 }
 
-/** Los mandos de cada carril: el humano que lo haya tomado o su CPU. */
+/*
+ * Los mandos de cada carril: el humano que lo haya tomado o su CPU. Solo los
+ * dos primeros coches pueden ser de una persona: en la pista de cuatro, los
+ * otros dos son siempre de la CPU.
+ */
 function mandos() {
   const lados = new Set(punteros.values());
   const { carrera } = estado;
   return carrera.coches.map((slot, i) => {
-    // En la lupa se juega solo: el otro carril es siempre de la CPU.
-    if (estado.lupa && i === 1) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
+    // En la lupa se juega solo: los otros carriles son siempre de la CPU.
+    if (i > 1 || (estado.lupa && i > 0)) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
     const pulsado = pulsada(CONTROLES_SLOT[i]) || lados.has(i === 0 ? 'izq' : 'der');
     // Con teclado, el carril de la CPU no se toma pulsando.
     if (eligeJugadores() && !estado.humanos[i]) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
@@ -972,6 +1019,7 @@ function opcionPulsada(id) {
   else if (id === 'j1') cambiarJugador(0);
   else if (id === 'j2') cambiarJugador(1);
   else if (id === 'circuito') cambiarCircuito();
+  else if (id === 'pista') cambiarPista();
   else if (id === 'sonido') alternarSilencio();
   else if (id === 'idioma') { cambiarIdioma(1); textosDelDocumento(); }
   else if (id === 'escenario') cambiarEscenario();
@@ -1333,6 +1381,7 @@ const ESCENAS = {
       else if (codigo === 'KeyL') { cambiarIdioma(1); textosDelDocumento(); }
       else if (codigo === 'KeyE') cambiarEscenario();
       else if (codigo === 'KeyC') cambiarCircuito();
+      else if (codigo === 'KeyP') cambiarPista();
       else if (codigo === 'KeyH') cambiarHora();
       else if (codigo === 'KeyV') cambiarDuracion();
       else if (codigo === 'KeyD') cambiarNivel();
@@ -1603,8 +1652,9 @@ estado.colores = leerColores(COLORES_COCHE);
 estado.modo = leerModo();
 estado.jugadores = leerJugadores();
 estado.tipoFantasma = leerTipoFantasma();
-const elegido = leerCircuito([...CIRCUITOS, ...MIOS].map((c) => c.clave));
-estado.circuito = DIBUJADO || [...CIRCUITOS, ...MIOS].find((c) => c.clave === elegido);
+const elegibles = [...CIRCUITOS, ...MIOS, ...CIRCUITOS_CUATRO];
+const elegido = leerCircuito(elegibles.map((c) => c.clave));
+estado.circuito = DIBUJADO || elegibles.find((c) => c.clave === elegido);
 estado.decorado = generarDecorado(estado.circuito, estado.escenario);
 iniciarLienzo(lienzo);
 aplicarVista();

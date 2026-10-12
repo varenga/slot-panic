@@ -68,31 +68,13 @@ Los mejores momentos ya se repiten al acabar (`BITACORA.md`, rama `34`). Lo que 
 
 # 5. La pista de cuatro carriles
 
-Recrear los circuitos clásicos de cuatro carriles: **cuatro coches**, como mucho dos
-humanos (J1 y J2, cada uno con su mitad de la pantalla, como hoy) y la CPU con los otros.
-En la lupa, el J1 contra tres CPU.
+En curso: `TODO.md` › Fase 4. Lo que queda aquí, sin fase:
 
-- **Circuitos sencillos**, para que quepan: la pista de cuatro carriles es el doble de
-  ancha (hoy `ANCHO_PISTA` = 64 con dos carriles a ±`CARRIL`). Un óvalo, una judía o un
-  ocho largo con alguna curva de radio distinto. Sin X ni estrechas: en el clásico de
-  cuatro carriles no las hay.
-- **Las mangas**: el carril de fuera es más largo que el de dentro, y con cuatro la
-  diferencia ya no se arregla cambiando de carril cada carrera. En el clásico se corre
-  una manga por carril y cada piloto pasa por los cuatro. Gana la suma de tiempos (o de
-  vueltas en un tiempo fijo). Encaja con lo que ya hace `campeonato.js`.
-- **Choques**: sin X ni cruces, los coches solo se tocan al salirse (uno fuera arrolla
-  al de al lado) o si la mano lo posa encima de otro. Con cuatro, más tráfico: más mano.
-- **Lo que hoy da por hecho que son dos**: `CARRILES` (dos laterales), `turno` (cambiar
-  de carril cada carrera), `comprobarChoque` (con dos coches; con cuatro, cada par de
-  vecinos), el marcador, el cartel de fin, los momentos, el fantasma y los récords
-  (¿por carril?), el zumbido de los coches (cuatro a la vez) y la portada.
-- **Arnés**: las secciones 1 a 3 con cuatro carriles (los de fuera también por el
-  asfalto y lejos de otro tramo), ningún carril que se pase de lado en una curva a su
-  punta, la diferencia entre carriles medida y compensada por las mangas.
-
-Por decidir: si es un circuito (o varios) aparte, con su propio modo en la portada, o
-una opción de cualquier circuito oficial que quepa; y si el constructor llega a dibujar
-pistas de cuatro.
+- **Que el constructor dibuje pistas de cuatro.**
+- **Más circuitos de cuatro**: el huevo (una horquilla cerrada y una peraltada amplia),
+  la judía (la recta de abajo hundida hacia dentro) y la ele (seis curvas de 90°, una a
+  la izquierda). En todos, el carril de fuera es 565 px más largo por vuelta que el de
+  dentro (2π · 90): piden mangas.
 
 # 6. Partidas en línea
 

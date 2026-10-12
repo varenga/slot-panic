@@ -20,10 +20,11 @@ import { circulo, ctx, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { BANDA_TEXTO } from './nucleo/decorado.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { clasificacion } from './nucleo/campeonato.js';
-import { CIRCUITOS } from './circuitos/indice.js';
+import { CIRCUITOS, CIRCUITOS_CUATRO } from './circuitos/indice.js';
 import { nombreCompuesto, t } from './i18n.js';
 
-const CIRCUITOS_CAMPEONATO = CIRCUITOS.length;
+/** Los circuitos del campeonato: los oficiales o, en la pista de cuatro, los suyos. */
+const circuitosCampeonato = (circuito) => (circuito.carriles.length > 2 ? CIRCUITOS_CUATRO : CIRCUITOS).length;
 
 /** Dónde van la portada y los carteles: el interior del circuito, o el centro. */
 function centro(circuito) {
@@ -135,7 +136,7 @@ export function dibujarPortada({ circuito, tiempo, tactil, duracion, modo, marca
 
 /** Lo que se va a correr: el circuito y las vueltas, o el campeonato entero. */
 export function tituloPortada(circuito, duracion, modo) {
-  if (modo === 'campeonato') return t('portada.campeonato', { n: CIRCUITOS_CAMPEONATO, vueltas: vueltasDe(duracion) });
+  if (modo === 'campeonato') return t('portada.campeonato', { n: circuitosCampeonato(circuito), vueltas: vueltasDe(duracion) });
   return t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: vueltasDe(duracion) });
 }
 
@@ -218,7 +219,8 @@ export function nombreSlot(i, humanos) {
 /*
  * El marcador, en la barra de arriba: el J1 a la izquierda y el J2 a la
  * derecha, cada uno del lado de su mitad de la pantalla (la que acelera en el
- * móvil), y en el centro la cuenta atrás o el tiempo.
+ * móvil), y en el centro la cuenta atrás o el tiempo. En la pista de cuatro,
+ * las dos CPU de más van hacia dentro, más apretadas: sin la mejor vuelta.
  */
 export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null) {
   const alto = BANDA_TEXTO;
@@ -239,17 +241,22 @@ export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null) {
  * la vuelta y la mejor; debajo, la potencia. El J2 es el espejo del J1.
  */
 function marcadorCoche(carrera, slot, i, humanos, alto) {
-  const lado = i === 0 ? 1 : -1;
-  const borde = i === 0 ? 16 : ANCHO - 16;
-  const alinear = i === 0 ? 'left' : 'right';
+  const izquierda = i % 2 === 0;
+  const lado = izquierda ? 1 : -1;
+  const apretado = carrera.coches.length > 2;
+  // Con cuatro, el J1 y el J2 en los bordes y las otras dos CPU, hacia dentro.
+  const desde = i < 2 ? 16 : 300;
+  const borde = izquierda ? desde : ANCHO - desde;
+  const alinear = izquierda ? 'left' : 'right';
+  const barra = apretado ? 210 : 240;
   const y = alto / 2 - 5;
   ctx.fillStyle = slot.coche.color;
-  rectanguloRedondo(i === 0 ? borde : borde - 22, y - 11, 22, 22, 5);
+  rectanguloRedondo(izquierda ? borde : borde - 22, y - 11, 22, 22, 5);
   texto(nombreSlot(i, humanos), borde + lado * 32, y, { tam: 22, color: COLOR.hud, peso: 800, alinear });
-  texto(t('hud.vuelta', { n: vueltaSlot(carrera, slot), total: carrera.vueltas }), borde + lado * 112, y, { tam: 22, color: COLOR.hud, peso: 700, alinear });
+  texto(t('hud.vuelta', { n: vueltaSlot(carrera, slot), total: carrera.vueltas }), borde + lado * 100, y, { tam: apretado ? 18 : 22, color: COLOR.hud, peso: 700, alinear });
   const mejor = mejorVueltaSlot(slot);
-  if (mejor !== null) texto(t('hud.mejor', { tiempo: formatearTiempo(mejor) }), borde + lado * 280, y, { tam: 16, color: COLOR.texto, alinear });
-  barraPotencia(slot, i === 0 ? borde : borde - 240, alto - 11, 240);
+  if (mejor !== null && !apretado) texto(t('hud.mejor', { tiempo: formatearTiempo(mejor) }), borde + lado * 280, y, { tam: 16, color: COLOR.texto, alinear });
+  barraPotencia(slot, izquierda ? borde : borde - barra, alto - 11, barra);
 }
 
 /*
@@ -270,12 +277,16 @@ export function barraPotencia(slot, x, y, ancho) {
  * móvil, las dos mitades de la pantalla, cada una del color de su coche.
  */
 function guiaSlot(carrera, humanos, tactil, rotulo) {
-  const y = 150;
+  // En la pista de cuatro, arriba están la recta y la parrilla: los paneles van
+  // en el hueco de cada lazo, más estrechos.
+  const cuatro = carrera.coches.length > 2;
+  const y = cuatro ? 380 : 150;
   if (rotulo) {
     panel(ANCHO / 2, y + 60, 440, 36);
     texto(rotulo, ANCHO / 2, y + 79, { tam: 16, color: COLOR.ambar, peso: 700 });
   }
-  carrera.coches.forEach((slot, i) => {
+  // Solo los dos primeros coches pueden ser de una persona: cada uno, su mitad.
+  carrera.coches.slice(0, 2).forEach((slot, i) => {
     const cx = ANCHO / 4 + i * ANCHO / 2;
     if (tactil) {
       ctx.globalAlpha = 0.08;
@@ -283,7 +294,7 @@ function guiaSlot(carrera, humanos, tactil, rotulo) {
       ctx.fillRect(i * ANCHO / 2, 0, ANCHO / 2, ALTO);
       ctx.globalAlpha = 1;
     }
-    panel(cx, y - 34, 300, 68);
+    panel(cx, y - 34, cuatro ? 220 : 300, 68);
     texto(nombreSlot(i, humanos), cx, y - 14, { tam: 22, color: slot.coche.color, peso: 800 });
     // Con teclado, las teclas de cada humano; el de la CPU no lleva nada.
     const ayuda = tactil ? t('slot.mantener') : humanos[i] ? t('slot.teclas' + (i + 1)) : '';
@@ -298,19 +309,27 @@ function guiaSlot(carrera, humanos, tactil, rotulo) {
 
 /*
  * Una etiqueta del color de cada coche, al lado de fuera de su carril (lejos
- * del otro coche, que va pegado), con quién lo lleva.
+ * del otro coche, que va pegado), con quién lo lleva. Con cuatro no hay lado
+ * de fuera para los del medio: cada una va delante de su coche, en su carril.
  */
 function etiquetasParrilla(carrera, humanos) {
-  const [a, b] = carrera.coches.map((slot) => slot.coche);
-  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const coches = carrera.coches.map((slot) => slot.coche);
+  const mx = coches.reduce((s, c) => s + c.x, 0) / coches.length, my = coches.reduce((s, c) => s + c.y, 0) / coches.length;
   carrera.coches.forEach((slot, i) => {
     const { coche } = slot;
-    const d = Math.hypot(coche.x - mx, coche.y - my) || 1;
-    const ux = (coche.x - mx) / d, uy = (coche.y - my) / d;
-    const x = coche.x + ux * 34, y = coche.y + uy * 34;
     const nombre = nombreSlot(i, humanos);
     ctx.font = `800 15px ${FUENTE}`;
     const ancho = ctx.measureText(nombre).width + 16;
+    let x, y;
+    if (coches.length > 2) {
+      const delante = slot.ficha.largo / 2 + ancho / 2 + 6;
+      x = coche.x + Math.cos(coche.angulo) * delante;
+      y = coche.y + Math.sin(coche.angulo) * delante;
+    } else {
+      const d = Math.hypot(coche.x - mx, coche.y - my) || 1;
+      x = coche.x + (coche.x - mx) / d * 34;
+      y = coche.y + (coche.y - my) / d * 34;
+    }
     ctx.fillStyle = slot.coche.color;
     rectanguloRedondo(x - ancho / 2, y - 12, ancho, 24, 6);
     texto(nombre, x, y + 1, { tam: 15, color: COLOR.fondo, peso: 800 });
@@ -328,15 +347,30 @@ export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null, ids 
   const ganador = carrera.coches[carrera.ganador];
   texto(t('slot.gana', { quien: nombreSlot(carrera.ganador, humanos) }), x, y - 120, { tam: 44, color: ganador.coche.color, peso: 800 });
   texto(t('fin.tiempo', { tiempo: formatearTiempo(ganador.terminado) }), x, y - 60, { tam: 28, color: COLOR.hud, peso: 700 });
-  carrera.coches.forEach((slot, i) => {
-    const fila = y - 10 + i * 34;
+  // Con cuatro, por orden de llegada y con su puesto, más juntas.
+  const cuatro = carrera.coches.length > 2;
+  ordenLlegada(carrera).forEach((i, k) => {
+    const slot = carrera.coches[i];
+    const fila = (cuatro ? y - 22 : y - 10) + k * (cuatro ? 28 : 34);
     ctx.fillStyle = slot.coche.color;
     rectanguloRedondo(x - 260, fila - 8, 16, 16, 4);
-    texto(nombreSlot(i, humanos), x - 234, fila, { tam: 16, color: COLOR.hud, peso: 800, alinear: 'left' });
+    texto((cuatro ? `${k + 1}.  ` : '') + nombreSlot(i, humanos), x - 234, fila, { tam: 16, color: COLOR.hud, peso: 800, alinear: 'left' });
     texto(t('slot.resumen', { tiempo: formatearTiempo(mejorVueltaSlot(slot)), n: slot.salidas }), x + 260, fila, { tam: 16, color: COLOR.texto, alinear: 'right' });
   });
   if (!tactil) texto(t('fin.repetir'), x, y + 95, { tam: 14, color: COLOR.texto, peso: 500 });
   botones(botonesFin(ids));
+}
+
+/*
+ * Los coches por orden de llegada: los que han acabado, por su tiempo; los
+ * demás, por lo que han corrido. Lo comparte la lupa.
+ */
+export function ordenLlegada(carrera) {
+  const { coches } = carrera;
+  return coches.map((_, i) => i).sort((a, b) => {
+    const ta = coches[a].terminado ?? Infinity, tb = coches[b].terminado ?? Infinity;
+    return ta - tb || coches[b].progreso - coches[a].progreso;
+  });
 }
 
 /*
@@ -346,7 +380,7 @@ export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null, ids 
 function dibujarFinCampeonato(carrera, humanos, tactil, campeonato, ids = idsFinCampeonato(campeonato)) {
   const x = ANCHO / 2, y = ALTO / 2;
   pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y - 165, 40);
-  pintarTablaCampeonato(campeonato, carrera, humanos, { x, y: y - 90, mitad: 280, tam: 16, fila: 30 });
+  pintarTablaCampeonato(campeonato, carrera, humanos, { x, y: y - 90, mitad: carrera.coches.length > 2 ? 380 : 280, tam: 16, fila: 30 });
   botones(botonesFin(ids));
   if (!tactil) {
     const pista = clasificacion(campeonato).acabado ? 'fin.otroCampeonato' : 'fin.siguiente';
@@ -384,7 +418,9 @@ export function pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y, tam
  * correr, en gris.
  */
 export function pintarTablaCampeonato(campeonato, carrera, humanos, { x, y, mitad, tam, fila }) {
-  const columnas = [x + mitad * 0.35, x + mitad];
+  // Una columna por coche, de la mitad a la derecha (con dos, a 0,35 y al borde).
+  const n = carrera.coches.length;
+  const columnas = carrera.coches.map((_, i) => x + mitad * (0.35 + 0.65 * i / (n - 1)));
   const izquierda = x - mitad;
   carrera.coches.forEach((slot, i) => {
     ctx.fillStyle = slot.coche.color;

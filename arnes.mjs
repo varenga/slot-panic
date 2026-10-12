@@ -18,11 +18,11 @@ import {
 } from './config.js';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { CIRCUITOS } from './circuitos/indice.js';
+import { CIRCUITOS, CIRCUITOS_CUATRO } from './circuitos/indice.js';
 import { enCruce } from './nucleo/circuito.js';
 import { crearPiloto, decidirSlot } from './nucleo/piloto.js';
 import {
-  avanzarSlot, CARRILES, contacto, crearCarreraSlot, formatearTiempo, largoCarril, mejorVueltaSlot, radioAgarre, trazadoCarril
+  avanzarSlot, contacto, crearCarreraSlot, formatearTiempo, largoCarril, lateralEn, mejorVueltaSlot, radioAgarre, radioCarril, trazadoCarril
 } from './nucleo/slot.js';
 import { RADIO_COCHE } from './nucleo/slot.js';
 import { CATALOGOS } from './i18n.js';
@@ -150,21 +150,23 @@ function seccionCircuito(circuito, oficial, { decorado: conDecorado = true } = {
  * romper sin que se note: coordenadas, mesa, progreso y la mano; y cuenta los
  * choques, y si alguno se repite sin que los coches hayan avanzado.
  */
+const COLORES = ['#f00', '#00f', '#0a0', '#fa0'];
+
 function correrUna(circuito, opciones, turno, limite, vueltas = VUELTAS_SLOT, modelos = []) {
-  const carrera = crearCarreraSlot(circuito, opciones.map((_, i) => ['#f00', '#00f'][i]), turno, { vueltas, modelos });
+  const carrera = crearCarreraSlot(circuito, opciones.map((_, i) => COLORES[i]), turno, { vueltas, modelos });
   const pilotos = opciones.map((o) => crearPiloto(o));
   const medida = {
     noFinito: false, fueraDeMesa: false, retrocede: false, manoMax: 0, manos: [], recolocaLejos: 0,
     choques: 0, choqueRepetido: 0
   };
   const salida = carrera.coches.map(() => null);
-  let ultimoChoque = null;
+  const ultimoChoque = {};   // por pareja de coches: el progreso de los dos en su último choque
   let t = 0;
   while (carrera.coches.some((c) => c.terminado === null) && t < limite) {
     const antes = carrera.coches.map((c) => c.progreso);
     avanzarSlot(carrera, carrera.coches.map((c, i) => decidirSlot(pilotos[i], c, circuito)), DT);
     t += DT;
-    // Para medir los dos carriles, la carrera sigue tras el ganador.
+    // Para medir todos los carriles, la carrera sigue tras el ganador.
     if (carrera.fase === 'fin') carrera.fase = 'carrera';
     carrera.coches.forEach((c, i) => {
       const { coche } = c;
@@ -176,10 +178,13 @@ function correrUna(circuito, opciones, turno, limite, vueltas = VUELTAS_SLOT, mo
       const c = carrera.coches[e.coche];
       if (e.tipo === 'choque') {
         medida.choques++;
-        // Dos choques sin que ninguno de los dos haya avanzado 100 px: la mano los ha dejado chocando.
-        const progreso = carrera.coches.map((k) => k.progreso);
-        if (ultimoChoque && progreso.every((p, k) => p - ultimoChoque[k] < 100)) medida.choqueRepetido++;
-        ultimoChoque = progreso;
+        // Dos choques de la misma pareja sin que ninguno de los dos haya avanzado
+        // 100 px: la mano los ha dejado chocando.
+        const pareja = e.coches.join('-');
+        const progreso = e.coches.map((k) => carrera.coches[k].progreso);
+        const ultimo = ultimoChoque[pareja];
+        if (ultimo && progreso.every((p, k) => p - ultimo[k] < 100)) medida.choqueRepetido++;
+        ultimoChoque[pareja] = progreso;
       }
       if (e.tipo === 'sale') salida[e.coche] = { t, s: c.s };
       if (e.tipo === 'clac' && salida[e.coche]) {
@@ -196,8 +201,8 @@ function correrUna(circuito, opciones, turno, limite, vueltas = VUELTAS_SLOT, mo
 
 /*
  * Lo que mide al piloto, cada coche solo en la pista y por su carril (el
- * primero por el carril 0 y el segundo por el 1): así los choques no
- * ensucian las medidas. `juntos` los pone a los dos en la misma carrera.
+ * primero por el carril 0, el segundo por el 1…): así los choques no
+ * ensucian las medidas. `juntos` los pone a todos en la misma carrera.
  * `modelos`, el coche de cada uno (COCHES); si no, el de siempre.
  */
 function correrSlot(circuito, opciones, { limite = 400, juntos = false, vueltas = VUELTAS_SLOT, modelos = [] } = {}) {
@@ -235,12 +240,15 @@ const limita = (p) => p.radio !== Infinity || p.efecto === 'baches' || p.radioDe
 /** La ficha de un modelo (COCHES); sin modelo, la del de siempre. */
 const ficha = (modelo) => COCHES[modelo ?? COCHE_REFERENCIA];
 
-/** Arranca parado en cada curva, a fondo, por los dos carriles: cuántas veces, y cuántas se sale en ella. */
+/** Los índices de los carriles de un circuito: 0 y 1, o de 0 a 3 en la pista de cuatro. */
+const carrilesDe = (circuito) => [...circuito.carriles.keys()];
+
+/** Arranca parado en cada curva, a fondo, por cada carril: cuántas veces, y cuántas se sale en ella. */
 function arrancarEnCurvas(circuito, modelo) {
   let arranques = 0, salen = 0;
   for (let s0 = 0; s0 < circuito.largo; s0 += 20) {
     if (!limita(circuito.eje[circuito.puntoEn(s0).indice])) continue;
-    for (const i of [0, 1]) {
+    for (const i of carrilesDe(circuito)) {
       const c = cocheSolo(circuito, i, modelo);
       const [slot] = c.coches;
       slot.s = s0;
@@ -273,7 +281,7 @@ function aToques(circuito, modelo) {
  * veces que se sale por cada carril.
  */
 function humanoTarde(circuito, modelo, retraso = 0.25) {
-  return [0, 1].map((turno) => {
+  return carrilesDe(circuito).map((turno) => {
     const c = cocheSolo(circuito, turno, modelo);
     const piloto = crearPiloto({ prudencia: 1.2 });
     const cola = [];
@@ -285,13 +293,22 @@ function humanoTarde(circuito, modelo, retraso = 0.25) {
   });
 }
 
-/** Entrando lanzado a la punta del coche y sin soltar, las curvas que se pasan (por qué carril). */
+/*
+ * Entrando lanzado a la punta del coche y sin soltar, las curvas que se pasan
+ * (por qué carril). En la pista de cuatro, el carril de más afuera de una
+ * curva (a más de 2 · CARRIL del eje por fuera) no cuenta: va tan abierto que
+ * se pasa a fondo, y es lo que tiene ese carril. En el ocho largo lo paga en
+ * el otro lazo, por dentro, y los carriles siguen midiendo lo mismo; con las
+ * curvas tan cerradas como para que no se pasara (radio 70), el de dentro
+ * quedaba a 25 px y los carriles se separaban un 7 %.
+ */
 function curvasATope(circuito, modelo) {
   const inicios = circuito.eje.filter((p, i, eje) => limita(p) && !limita(eje[(i - 1 + eje.length) % eje.length]));
   const tope = VELOCIDAD_SLOT * ficha(modelo).punta;
   const pasan = [];
   for (const p of inicios) {
-    for (const k of [0, 1]) {
+    for (const k of carrilesDe(circuito)) {
+      if (p.radio !== Infinity && radioCarril(p, lateralEn(circuito, circuito.carriles[k], p.s)) > p.radio + 2 * CARRIL) continue;
       const c = cocheSolo(circuito, k, modelo);
       const [slot] = c.coches;
       Object.assign(slot, { s: p.s - 40, v: tope, potencia: 1 });
@@ -318,7 +335,7 @@ function curvasATope(circuito, modelo) {
  * Darse otra vez sin la mano es legítimo: el de detrás, frenado por el golpe,
  * alcanza al otro y le vuelve a dar.
  */
-function encuentros(circuito, modelos = []) {
+function encuentros(circuito, modelos = [], carriles = [0, 1]) {
   const lista = [
     ...circuito.cruces.map((c) => c.s),
     ...circuito.eje.filter((p, i, eje) => p.tipo === 'x' && eje[(i - 1 + eje.length) % eje.length].tipo !== 'x')
@@ -330,7 +347,7 @@ function encuentros(circuito, modelos = []) {
     let chocan = 0, repetidos = 0;
     const desenlaces = [0, 0, 0];
     const aguanta = (s0) => Math.min(...circuito.eje.filter((p) => p.s > s0 - 200 && p.s <= s0)
-      .map((p) => Math.sqrt(agarre * Math.min(radioAgarre(p, CARRIL * p.carril), radioAgarre(p, -CARRIL * p.carril)))));
+      .map((p) => Math.sqrt(agarre * Math.min(...circuito.carriles.map((l) => radioAgarre(p, l * p.carril))))));
     const lanzada = Math.min(250, 0.9 * aguanta(sa), 0.9 * aguanta(sb));
     // ±80 px: tras una curva cerrada, el coche de dentro llega ~50 px de s por delante.
     for (let desfase = -80; desfase <= 80; desfase += 8) {
@@ -338,6 +355,7 @@ function encuentros(circuito, modelos = []) {
       c.fase = 'carrera';
       c.coches[0].s = sa - 150;
       c.coches[1].s = sb - 150 + desfase;
+      c.coches.forEach((slot, i) => { slot.lateral = circuito.carriles[carriles[i]]; });
       for (const slot of c.coches) Object.assign(slot, { v: lanzada, potencia: lanzada / (VELOCIDAD_SLOT * slot.ficha.punta) });
       /*
        * Dónde choca cada vez (la s del primer coche). Repetir es volver a chocar
@@ -359,8 +377,14 @@ function encuentros(circuito, modelos = []) {
         desenlaces[c.coches.filter((slot) => slot.salidas > 0).length]++;
       }
     }
-    return { sa, sb, chocan, repetidos, lanzada, desenlaces };
+    return { sa, sb, chocan, repetidos, lanzada, desenlaces, carriles };
   });
+}
+
+/** Los encuentros de cada pareja de carriles: con dos, la única. */
+function encuentrosPorCarriles(circuito, modelos = []) {
+  const indices = carrilesDe(circuito);
+  return indices.flatMap((i) => indices.filter((j) => j > i).flatMap((j) => encuentros(circuito, modelos, [i, j])));
 }
 
 /*
@@ -380,7 +404,7 @@ function bajoElPuente(circuito) {
       let toca = false;
       for (let k = 0; k < 2 / DT; k++) {
         avanzarSlot(c, c.coches.map((slot) => ({ acelerar: slot.v < 200 })), DT);
-        if (c.toque || c.eventos.some((e) => e.tipo === 'choque')) toca = true;
+        if (Object.keys(c.toques).length || c.eventos.some((e) => e.tipo === 'choque')) toca = true;
       }
       if (toca) tocan++;
     }
@@ -426,23 +450,25 @@ function seccionSlot(circuito, oficial) {
   const calibrar = oficial ? comprobar : () => {};
   console.log(`\nSlot en «${circuito.clave}»`);
   // Los carriles (por el asfalto, dentro del lienzo y separados) los mide la sección 1.
-  const largos = CARRILES.map((l) => largoCarril(circuito, l));
-  console.log(`  carriles de ${largos.map((l) => l.toFixed(0)).join(' y ')} px`);
+  const largos = circuito.carriles.map((l) => largoCarril(circuito, l));
+  console.log(`  carriles de ${largos.map((l) => l.toFixed(0)).join(', ')} px`);
+  // El mismo piloto en cada carril.
+  const cada = (piloto) => circuito.carriles.map(() => piloto);
 
   /*
    * Soltar en las curvas tiene que ganar a ir a fondo, y por mucho. Desde el
    * playtest, pasado el agarre se derrapa antes de salirse: el prudente no
    * pasa del agarre (×1), el fino entra derrapando y el que va a fondo se sale.
    */
-  const prudente = correrSlot(circuito, [{ prudencia: 1 }, { prudencia: 1 }]);
+  const prudente = correrSlot(circuito, cada({ prudencia: 1 }));
   let fino = null;
   // En un circuito dibujado no se calibra: basta un piloto fino.
   for (const prudencia of oficial ? [1.2, 1.4, 1.6, 1.8] : [1.4]) {
-    const r = correrSlot(circuito, [{ prudencia }, { prudencia }]);
+    const r = correrSlot(circuito, cada({ prudencia }));
     const mejor = Math.min(...r.carrera.coches.map((c) => c.terminado ?? Infinity));
     if (!fino || mejor < fino.mejor) fino = { ...r, mejor, prudencia };
   }
-  const aFondo = correrSlot(circuito, [{ aFondo: true }, { aFondo: true }]);
+  const aFondo = correrSlot(circuito, cada({ aFondo: true }));
   const resumen = (r) => r.carrera.coches.map((c) =>
     `${c.terminado?.toFixed(2)} s, vuelta ${mejorVueltaSlot(c)?.toFixed(2)}, ${c.salidas} salidas`).join(' | ');
   console.log(`  prudente (x1):          ${resumen(prudente)}`);
@@ -450,7 +476,7 @@ function seccionSlot(circuito, oficial) {
   console.log(`  a fondo:                ${resumen(aFondo)}`);
 
   for (const [nombre, r] of [['prudente', prudente], ['al límite', fino], ['a fondo', aFondo]]) {
-    comprobar(r.carrera.coches.every((c) => c.vueltas.length === VUELTAS_SLOT), `el piloto ${nombre} no completa las ${VUELTAS_SLOT} vueltas en los dos carriles`);
+    comprobar(r.carrera.coches.every((c) => c.vueltas.length === VUELTAS_SLOT), `el piloto ${nombre} no completa las ${VUELTAS_SLOT} vueltas en todos los carriles`);
     comprobar(!r.noFinito, `el piloto ${nombre} produce coordenadas no finitas`);
     comprobar(!r.fueraDeMesa, `un coche del piloto ${nombre} se cae de la mesa`);
     comprobar(!r.retrocede, `el progreso del piloto ${nombre} retrocede`);
@@ -516,13 +542,13 @@ function seccionSlot(circuito, oficial) {
     let repetida = null;
     const semillas = oficial ? 6 : 1;
     for (let semilla = 1; semilla <= semillas; semilla++) {
-      const r = correrSlot(circuito, [{ ...CPU_SLOT, semilla }, { ...CPU_SLOT, semilla }]);
+      const r = correrSlot(circuito, cada({ ...CPU_SLOT, semilla }));
       const [c] = r.carrera.coches;
       vueltas.push(c.terminado / VUELTAS_SLOT);
       salidas.push(c.salidas);
       if (semilla === 1) repetida = c.terminado;
     }
-    const otra = correrSlot(circuito, [{ ...CPU_SLOT, semilla: 1 }, { ...CPU_SLOT, semilla: 1 }]).carrera.coches[0].terminado;
+    const otra = correrSlot(circuito, cada({ ...CPU_SLOT, semilla: 1 })).carrera.coches[0].terminado;
     const media = vueltas.reduce((a, b) => a + b, 0) / vueltas.length;
     const margen = media - fino.mejor / VUELTAS_SLOT;
     console.log(`  la CPU da vueltas de ${media.toFixed(2)} s de media, ${margen.toFixed(2)} s más que el mejor piloto, y se sale ${salidas.join(', ')} veces en ${semillas === 6 ? 'seis carreras' : 'una carrera'}`);
@@ -540,7 +566,7 @@ function seccionSlot(circuito, oficial) {
       const margenes = NIVELES_CPU.map(({ id, piloto }) => {
         if (piloto === CPU_SLOT) return margen;
         const tiempos = [1, 2, 3, 4, 5, 6].flatMap((semilla) =>
-          correrSlot(circuito, [{ ...piloto, semilla }, { ...piloto, semilla }]).carrera.coches.map((c) => c.terminado / VUELTAS_SLOT));
+          correrSlot(circuito, cada({ ...piloto, semilla })).carrera.coches.map((c) => c.terminado / VUELTAS_SLOT));
         return tiempos.reduce((a, b) => a + b, 0) / tiempos.length - fino.mejor / VUELTAS_SLOT;
       });
       const [facil, , dificil] = margenes;
@@ -566,7 +592,7 @@ function seccionSlot(circuito, oficial) {
    */
   {
     const { curvas, pasan } = curvasATope(circuito);
-    console.log(`  a tope contra las ${curvas} curvas, por los dos carriles: se pasan ${pasan.length}`);
+    console.log(`  a tope contra las ${curvas} curvas, por cada carril: se pasan ${pasan.length}`);
     calibrar(pasan.length === 0, `se pasan a tope ${pasan.join(', ')}`);
   }
 
@@ -574,13 +600,13 @@ function seccionSlot(circuito, oficial) {
    * Los carriles no son iguales, por eso se cambian en cada carrera. Con una
    * X, cada coche corre la mitad de las vueltas por cada uno: casi iguales.
    */
-  const [t1, t2] = prudente.carrera.coches.map((c) => c.terminado);
-  const desigualdad = Math.abs(t1 - t2) / Math.min(t1, t2);
+  const terminados = prudente.carrera.coches.map((c) => c.terminado);
+  const desigualdad = (Math.max(...terminados) - Math.min(...terminados)) / Math.min(...terminados);
   console.log(`  entre carriles, con el mismo piloto: ${(desigualdad * 100).toFixed(1)} % (se cambian en cada carrera)`);
-  calibrar(desigualdad < 0.08, `un carril saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
+  calibrar(desigualdad < 0.08, `un carril saca un ${(desigualdad * 100).toFixed(1)} % a otro`);
   if (circuito.cambiosCarril % 2) calibrar(desigualdad < 0.02, `con una X, un carril aún saca un ${(desigualdad * 100).toFixed(1)} % al otro`);
-  const cambiada = crearCarreraSlot(circuito, ['#f00', '#00f'], 1);
-  comprobar(cambiada.coches[0].lateral === CARRILES[1] && cambiada.coches[1].lateral === CARRILES[0],
+  const cambiada = crearCarreraSlot(circuito, COLORES.slice(0, circuito.carriles.length), 1);
+  comprobar(cambiada.coches.every((slot, i) => slot.lateral === circuito.carriles[(i + 1) % circuito.carriles.length]),
     'con el turno cambiado los coches no se cambian de carril');
 
   /*
@@ -591,19 +617,36 @@ function seccionSlot(circuito, oficial) {
    * acaba cada choque lo decide el golpe: en un oficial, no siempre salen los dos.
    */
   {
-    const juntos = correrSlot(circuito, [{ prudencia: 1 }, { prudencia: 1 }], { juntos: true });
+    const juntos = correrSlot(circuito, cada({ prudencia: 1 }), { juntos: true });
     const completa = juntos.carrera.coches.every((c) => c.vueltas.length === VUELTAS_SLOT);
-    console.log(`  dos coches iguales en la misma pista: ${juntos.choques} choques`);
+    console.log(`  ${juntos.carrera.coches.length} coches iguales en la misma pista: ${juntos.choques} choques`);
     // Con una X pueden chocar (si llegan a la vez) y en una estrecha, si van a
     // la par; sin X, cruces ni estrechas, nunca.
     if (!circuito.cambiosCarril && !circuito.cruces.length && !estrechas(circuito).length) {
-      comprobar(juntos.choques === 0, `dos coches iguales chocan ${juntos.choques} veces sin X, cruces ni estrechas`);
+      comprobar(juntos.choques === 0, `coches iguales chocan ${juntos.choques} veces sin X, cruces ni estrechas`);
     }
-    comprobar(completa, 'dos coches juntos no terminan la carrera');
+    comprobar(completa, 'los coches juntos no terminan la carrera');
     comprobar(juntos.choqueRepetido === 0, `la mano deja dos coches chocando ${juntos.choqueRepetido} veces`);
 
-    for (const { sa, sb, chocan, repetidos, lanzada, desenlaces } of encuentros(circuito)) {
-      console.log(`  en el encuentro de s ${sa.toFixed(0)} y ${sb.toFixed(0)}: chocan en ${chocan} de 21 desfases (a ${lanzada.toFixed(0)} px/s); ` +
+    /*
+     * En la pista de cuatro, cuatro CPU juntas, cada una con su semilla: en el
+     * cruce se encuentran de verdad. Acaban todas, nada se rompe y la mano no
+     * las deja chocando.
+     */
+    if (circuito.carriles.length > 2) {
+      const carreras = [1, 2, 3].map((semilla) =>
+        correrSlot(circuito, circuito.carriles.map((_, i) => ({ ...CPU_SLOT, semilla: 10 * semilla + i })), { juntos: true }));
+      console.log(`  ${circuito.carriles.length} CPU juntas: ${carreras.map((r) => r.choques).join(', ')} choques en tres carreras`);
+      for (const r of carreras) {
+        comprobar(r.carrera.coches.every((c) => c.vueltas.length === VUELTAS_SLOT), `${circuito.carriles.length} CPU juntas no terminan la carrera`);
+        comprobar(!r.noFinito && !r.fueraDeMesa && !r.retrocede, `${circuito.carriles.length} CPU juntas rompen algo (no finito, fuera de la mesa o retrocede)`);
+        comprobar(r.choqueRepetido === 0, `la mano deja a las CPU chocando ${r.choqueRepetido} veces`);
+      }
+    }
+
+    for (const { sa, sb, chocan, repetidos, lanzada, desenlaces, carriles } of encuentrosPorCarriles(circuito)) {
+      const pareja = circuito.carriles.length > 2 ? ` (carriles ${carriles.join(' y ')})` : '';
+      console.log(`  en el encuentro de s ${sa.toFixed(0)} y ${sb.toFixed(0)}${pareja}: chocan en ${chocan} de 21 desfases (a ${lanzada.toFixed(0)} px/s); ` +
         `siguen los dos en ${desenlaces[0]}, se sale uno en ${desenlaces[1]} y los dos en ${desenlaces[2]}`);
       comprobar(chocan > 0, `dos coches que llegan a la vez al encuentro de s ${sa.toFixed(0)} no chocan`);
       comprobar(repetidos === 0, `en el encuentro de s ${sa.toFixed(0)} la mano los deja chocando otra vez ${repetidos} veces`);
@@ -631,9 +674,11 @@ function seccionSlot(circuito, oficial) {
   }
 }
 
-for (const circuito of CIRCUITOS) seccionCircuito(circuito, true);
+// Los oficiales y los de la pista de cuatro carriles.
+const PISTAS = [...CIRCUITOS, ...CIRCUITOS_CUATRO];
+for (const circuito of PISTAS) seccionCircuito(circuito, true);
 const DESENLACES = [0, 0, 0];
-for (const circuito of CIRCUITOS) seccionSlot(circuito, true);
+for (const circuito of PISTAS) seccionSlot(circuito, true);
 console.log(`
 Los choques en los oficiales: siguen los dos en ${DESENLACES[0]}, se sale uno en ${DESENLACES[1]} y los dos en ${DESENLACES[2]}`);
 comprobar(DESENLACES.every((n) => n > 0), `los choques acaban siempre igual: ${DESENLACES.join(' / ')}`);
@@ -1080,6 +1125,32 @@ console.log('\nEl campeonato');
   empate.carreras[2].tiempos = [46, 47];
   empate.carreras[1].tiempos = [70, 60];
   comprobar(clasificacion(empate).delante === 1, 'con 2-2 el desempate no cambia con los tiempos');
+
+  /*
+   * El de la pista de cuatro: cuatro coches de verdad en sus circuitos, y las
+   * victorias de cuatro (con carreras de mentira): el que tiene más gana, y
+   * con las mismas, el menor tiempo, aunque otro sume menos con menos victorias.
+   */
+  {
+    const cuatro = crearCampeonato(CIRCUITOS_CUATRO);
+    while (!clasificacion(cuatro).acabado || !cuatro.carreras.length) {
+      const circuito = circuitoDelCampeonato(cuatro);
+      const r = correrSlot(circuito, circuito.carriles.map((_, i) => ({ ...CPU_SLOT, semilla: 20 + i })), { juntos: true });
+      anotarCarrera(cuatro, r.carrera, [true, false, false, false]);
+    }
+    const { victorias, tiempos } = clasificacion(cuatro);
+    comprobar(victorias.length === 4 && tiempos.every(Number.isFinite), `el campeonato de cuatro no cuenta a los cuatro (${victorias.join(', ')})`);
+    comprobar(victorias.reduce((a, b) => a + b, 0) === CIRCUITOS_CUATRO.length, 'las victorias de cuatro no suman las carreras');
+    const mentira = crearCampeonato([0, 1, 2, 3]);
+    for (const [ganador, tiemposCarrera] of [[2, [50, 51, 49, 40]], [1, [62, 60, 61, 40]], [2, [40, 45, 39, 30]]]) {
+      mentira.carreras.push({ clave: 'x', ganador, tiempos: tiemposCarrera, humanos: [true, false, false, false] });
+    }
+    comprobar(clasificacion(mentira).delante === 2, 'con cuatro no gana el que tiene más victorias');
+    // 2-2 entre el 1 y el 2; el 3 suma menos tiempo, pero sin victorias.
+    mentira.carreras.push({ clave: 'x', ganador: 1, tiempos: [55, 50, 58, 30], humanos: [true, false, false, false] });
+    const empatados = clasificacion(mentira);
+    comprobar(empatados.delante === 1 && empatados.porTiempo, 'con cuatro y 2-2 no gana el menor tiempo de los empatados');
+  }
 
   // Las carreras que se eligen (rápida, normal, resistencia): acaban en sus
   // vueltas, y el que no acaba lleva su ritmo con esas vueltas, no con las de serie.
