@@ -224,13 +224,14 @@ export function nombreSlot(i, humanos) {
  * derecha, cada uno del lado de su mitad de la pantalla (la que acelera en el
  * móvil), y en el centro la cuenta atrás o el tiempo. En la pista de cuatro,
  * las dos CPU de más van hacia dentro, más apretadas: sin la mejor vuelta.
+ * En mangas, con `suma` (`sumaEnCarrera`), lo que lleva cada uno en la suma.
  */
-export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null) {
+export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null, suma = null) {
   const alto = BANDA_TEXTO;
   if (carrera.fase === 'cuenta') guiaSlot(carrera, humanos, tactil, rotulo);
   ctx.fillStyle = COLOR.banda;
   ctx.fillRect(0, 0, ANCHO, alto);
-  carrera.coches.forEach((slot, i) => marcadorCoche(carrera, slot, i, humanos, alto));
+  carrera.coches.forEach((slot, i) => marcadorCoche(carrera, slot, i, humanos, alto, suma));
   if (carrera.fase === 'cuenta') {
     texto(String(Math.ceil(carrera.cuenta)), ANCHO / 2, alto / 2 + 1, { tam: 38, color: COLOR.ambar, peso: 800 });
   } else {
@@ -243,7 +244,7 @@ export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null) {
  * Lo de un coche en la barra, de fuera hacia dentro: su color, quién lo lleva,
  * la vuelta y la mejor; debajo, la potencia. El J2 es el espejo del J1.
  */
-function marcadorCoche(carrera, slot, i, humanos, alto) {
+function marcadorCoche(carrera, slot, i, humanos, alto, suma) {
   const izquierda = i % 2 === 0;
   const lado = izquierda ? 1 : -1;
   const apretado = carrera.coches.length > 2;
@@ -256,10 +257,22 @@ function marcadorCoche(carrera, slot, i, humanos, alto) {
   ctx.fillStyle = slot.coche.color;
   rectanguloRedondo(izquierda ? borde : borde - 22, y - 11, 22, 22, 5);
   texto(nombreSlot(i, humanos), borde + lado * 32, y, { tam: 22, color: COLOR.hud, peso: 800, alinear });
-  texto(t('hud.vuelta', { n: vueltaSlot(carrera, slot), total: carrera.vueltas }), borde + lado * 100, y, { tam: apretado ? 18 : 22, color: COLOR.hud, peso: 700, alinear });
+  // Con cuatro y la suma, la vuelta sin rótulo: si no, no cabe.
+  const vuelta = apretado && suma ? `${vueltaSlot(carrera, slot)}/${carrera.vueltas}` : t('hud.vuelta', { n: vueltaSlot(carrera, slot), total: carrera.vueltas });
+  texto(vuelta, borde + lado * 100, y, { tam: apretado ? 18 : 22, color: COLOR.hud, peso: 700, alinear });
+  if (suma) {
+    const primero = suma.orden[0] === i;
+    texto(diferenciaSuma(suma, i), borde + lado * (apretado ? 150 : 280), y, { tam: 16, color: primero ? COLOR.ambar : COLOR.texto, peso: 700, alinear });
+  }
   const mejor = mejorVueltaSlot(slot);
-  if (mejor !== null && !apretado) texto(t('hud.mejor', { tiempo: formatearTiempo(mejor) }), borde + lado * 280, y, { tam: 16, color: COLOR.texto, alinear });
+  if (mejor !== null && !apretado && !suma) texto(t('hud.mejor', { tiempo: formatearTiempo(mejor) }), borde + lado * 280, y, { tam: 16, color: COLOR.texto, alinear });
   barraPotencia(slot, izquierda ? borde : borde - barra, alto - 11, barra);
+}
+
+/** «Σ +1.23»: lo que lleva un coche sobre el primero de la suma; el primero, «Σ −0.85» sobre el segundo. */
+export function diferenciaSuma(suma, i) {
+  const d = suma.diferencias[i];
+  return `Σ ${d < 0 ? '−' : '+'}${Math.abs(d).toFixed(2)}`;
 }
 
 /*

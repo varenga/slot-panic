@@ -62,8 +62,8 @@ la portada, con cuatro coches siempre, las mangas y *La judía* y *La ele*
       entiende que el carril de fuera de un lazo va a fondo?, ¿los paneles de la cuenta
       atrás en los lazos se leen?, ¿cuatro zumbidos a la vez cansan?
 - [ ] Playtest de las mangas: ¿cuatro mangas de 10 vueltas (~7 min) se hacen largas?,
-      ¿se entiende que gana la suma y no el que gana más mangas?, ¿se echa de menos ver
-      la suma en carrera, no solo en el fin?
+      ¿se entiende que gana la suma y no el que gana más mangas?, ¿el ámbar del primero
+      de la suma, que al empezar la primera manga salta de un coche a otro, molesta?
 - [ ] Playtest de *La judía* y *La ele*: ¿se entiende que el carril de fuera va casi a
       fondo y el de dentro hay que soltar?, ¿el carril de dentro de *La ele* (radio 25)
       se ve demasiado cerrado?

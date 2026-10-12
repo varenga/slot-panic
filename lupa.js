@@ -24,7 +24,7 @@ import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lien
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { serieAcabada } from './nucleo/mangas.js';
 import {
-  barraPotencia, boton, DESTACADO, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, ordenLlegada, panel, pintarCabeceraCampeonato,
+  barraPotencia, boton, DESTACADO, diferenciaSuma, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, ordenLlegada, panel, pintarCabeceraCampeonato,
   pintarCabeceraSerie, pintarTablaCampeonato, pintarTablaSerie, semaforo, tituloPortada
 } from './pantalla.js';
 import { dibujarConfeti } from './particulas.js';
@@ -256,12 +256,17 @@ export function dibujarMapa(circuito, coches) {
 /*
  * El marcador: el J1 a la izquierda y la CPU a la derecha, cada uno con su
  * vuelta; en el centro, la cuenta atrás o el tiempo. Debajo del J1, su
- * potencia. En la pista de cuatro, a la derecha, el puesto del J1.
+ * potencia. En la pista de cuatro, a la derecha, el puesto del J1; en mangas,
+ * con `suma` (`sumaEnCarrera`), el de la suma y, debajo, lo que lleva en ella.
  */
-export function dibujarMarcadorLupa(carrera, humanos, rotulo = null) {
+export function dibujarMarcadorLupa(carrera, humanos, rotulo = null, suma = null) {
   ctx.fillStyle = COLOR.banda;
   ctx.fillRect(0, 0, ANCHO_LUPA, BARRA);
-  if (carrera.coches.length > 2) {
+  if (suma) {
+    const puesto = suma.orden.indexOf(0) + 1;
+    texto(t('hud.suma', { n: puesto, total: carrera.coches.length }), ANCHO_LUPA - 12, BARRA / 2 - 8, { tam: 18, color: COLOR.hud, peso: 800, alinear: 'right' });
+    texto(diferenciaSuma(suma, 0), ANCHO_LUPA - 12, BARRA - 12, { tam: 14, color: puesto === 1 ? COLOR.ambar : COLOR.texto, peso: 700, alinear: 'right' });
+  } else if (carrera.coches.length > 2) {
     const puesto = ordenEnCarrera(carrera).indexOf(0) + 1;
     texto(t('hud.puesto', { n: puesto, total: carrera.coches.length }), ANCHO_LUPA - 12, BARRA / 2 - 6, { tam: 20, color: COLOR.hud, peso: 800, alinear: 'right' });
   }

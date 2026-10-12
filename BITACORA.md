@@ -1778,3 +1778,24 @@ app en la consola de Play.
   elegidos se mezclan con choques, llegadas y la vuelta rápida. El arnés lo prueba con
   una carrera de mentira de cuatro: el cuarto pasa al tercero y solo sale ese.
 - `pnyk.json`: 1.15.1.
+
+## La suma en carrera (12/10/2026)
+
+- El playtest de las mangas preguntaba si se echaba de menos ver la suma mientras se
+  corre, no solo en el fin. Se probó en el móvil tras `?suma` y se queda.
+- `sumaEnCarrera` (`nucleo/mangas.js`): lo de las mangas acabadas más lo de esta, en la
+  que a cada coche se le cuenta lo que tarda, a su ritmo, en llegar adonde va el
+  primero. Es la misma cuenta que `tiempoFinal` al acabar, así que lo que se ve al
+  cruzar la meta es lo que apunta la tabla del fin. El ritmo de media no cuenta por
+  debajo del 20 % de `VELOCIDAD_SLOT`: al salir aún es casi cero y la diferencia se
+  disparaba.
+- En la mesa, cada coche lleva «Σ +0.84» tras su vuelta (que, con la suma, pierde el
+  rótulo: «1/3», o no cabe con cuatro); el primero, en ámbar, lo que le saca al
+  segundo («Σ −0.63»). En la lupa, el puesto de la suma («SUMA 2/4») sustituye al de
+  la carrera, que en mangas engaña (cada uno va por un carril), y debajo la
+  diferencia. En la cuenta atrás de la primera manga no hay nada que sumar.
+- Medido (arnés, cuatro CPU, 3 vueltas): al acabar cada manga se separa 0,000 s de la
+  serie; corriendo, salta como mucho 0,05 s (*La judía*) y 0,10 s (*La ele*) de un
+  fotograma a otro. Al empezar la primera manga, el primero de la suma cambia mucho
+  (las diferencias son de centésimas).
+- `pnyk.json`: 1.16.0.
