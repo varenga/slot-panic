@@ -71,10 +71,10 @@ Los mejores momentos ya se repiten al acabar (`BITACORA.md`, rama `34`). Lo que 
 En curso: `TODO.md` › Fase 4. Lo que queda aquí, sin fase:
 
 - **Que el constructor dibuje pistas de cuatro.**
-- **Más circuitos de cuatro**: el huevo (una horquilla cerrada y una peraltada amplia),
-  la judía (la recta de abajo hundida hacia dentro) y la ele (seis curvas de 90°, una a
-  la izquierda). En todos, el carril de fuera es 565 px más largo por vuelta que el de
-  dentro (2π · 90): piden mangas.
+- **Más circuitos de cuatro**: ya están la judía y la ele (en mangas). El huevo (una
+  horquilla cerrada y una peraltada amplia) se probó y no da: con dos curvas la vuelta
+  se queda en ~7 s y por el carril de fuera ir a fondo es lo más rápido (`BITACORA.md`).
+  Un circuito de cuatro pide unas ocho curvas de radio 70-90 para dar vueltas de 9-16 s.
 
 # 6. Partidas en línea
 

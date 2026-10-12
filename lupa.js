@@ -22,9 +22,10 @@ import {
 } from './config.js';
 import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
+import { serieAcabada } from './nucleo/mangas.js';
 import {
   barraPotencia, boton, DESTACADO, ETIQUETA_BOTON, idsFinCampeonato, nombreCircuito, nombreSlot, ordenLlegada, panel, pintarCabeceraCampeonato,
-  pintarTablaCampeonato, semaforo, tituloPortada
+  pintarCabeceraSerie, pintarTablaCampeonato, pintarTablaSerie, semaforo, tituloPortada
 } from './pantalla.js';
 import { dibujarConfeti } from './particulas.js';
 import { t } from './i18n.js';
@@ -356,20 +357,27 @@ export function botonesFinLupa(ids = ['repetir', 'menu'], y = altoLienzo / 2 + 1
   });
 }
 
-/** Los del campeonato van más abajo: encima va la tabla. */
-export function botonesFinCampeonatoLupa(campeonato, ids = idsFinCampeonato(campeonato)) {
+/** Los del campeonato y los de las mangas van más abajo: encima va la tabla. */
+export function botonesFinTablaLupa(ids) {
   return botonesFinLupa(ids, altoLienzo / 2 + 230);
 }
 
-export function dibujarFinLupa(carrera, humanos, particulas, campeonato = null, ids = undefined) {
+export function dibujarFinLupa(carrera, humanos, particulas, { campeonato = null, serie = null } = {}, ids = undefined) {
   ctx.fillStyle = COLOR.velo;
   ctx.fillRect(0, 0, ANCHO_LUPA, altoLienzo);
   const x = ANCHO_LUPA / 2, y = altoLienzo / 2;
-  if (campeonato) {
-    pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y - 230, 40);
+  if (campeonato || serie) {
     const cuatro = carrera.coches.length > 2;
-    pintarTablaCampeonato(campeonato, carrera, humanos, { x, y: y - 150, mitad: cuatro ? 250 : 230, tam: cuatro ? 15 : 18, fila: 40 });
-    for (const caja of botonesFinCampeonatoLupa(campeonato, ids)) boton(caja, t(ETIQUETA_BOTON[caja.id]), DESTACADO.has(caja.id), 20);
+    const tabla = { x, y: y - 150, mitad: cuatro ? 250 : 230, tam: cuatro ? 15 : 18, fila: 40 };
+    // A media serie, las mangas; acabada, el campeonato si lo hay.
+    if (campeonato && !(serie && !serieAcabada(serie))) {
+      pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y - 230, 40);
+      pintarTablaCampeonato(campeonato, carrera, humanos, tabla);
+    } else {
+      pintarCabeceraSerie(carrera, humanos, serie, x, y - 230, 40);
+      pintarTablaSerie(serie, carrera, humanos, tabla);
+    }
+    for (const caja of botonesFinTablaLupa(ids ?? idsFinCampeonato(campeonato))) boton(caja, t(ETIQUETA_BOTON[caja.id]), DESTACADO.has(caja.id), 20);
     confeti(particulas);
     return;
   }

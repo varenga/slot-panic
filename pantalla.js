@@ -20,6 +20,7 @@ import { circulo, ctx, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { BANDA_TEXTO } from './nucleo/decorado.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { clasificacion } from './nucleo/campeonato.js';
+import { mangasDe, serieAcabada, sumaSerie } from './nucleo/mangas.js';
 import { CIRCUITOS, CIRCUITOS_CUATRO } from './circuitos/indice.js';
 import { nombreCompuesto, t } from './i18n.js';
 
@@ -137,6 +138,8 @@ export function dibujarPortada({ circuito, tiempo, tactil, duracion, modo, marca
 /** Lo que se va a correr: el circuito y las vueltas, o el campeonato entero. */
 export function tituloPortada(circuito, duracion, modo) {
   if (modo === 'campeonato') return t('portada.campeonato', { n: circuitosCampeonato(circuito), vueltas: vueltasDe(duracion) });
+  const mangas = mangasDe(circuito);
+  if (mangas > 1) return t('carrera.tituloMangas', { circuito: nombreCircuito(circuito), mangas, vueltas: vueltasDe(duracion) });
   return t('carrera.titulo', { circuito: nombreCircuito(circuito), vueltas: vueltasDe(duracion) });
 }
 
@@ -195,11 +198,11 @@ export function botonesFin(ids = ['repetir', 'menu'], y = ALTO / 2 + 130) {
 }
 
 export const ETIQUETA_BOTON = {
-  repetir: 'fin.botonRepetir', siguiente: 'fin.botonSiguiente', menu: 'fin.botonMenu',
+  repetir: 'fin.botonRepetir', siguiente: 'fin.botonSiguiente', manga: 'fin.botonManga', menu: 'fin.botonMenu',
   momentos: 'fin.botonMomentos', denunciar: 'fin.botonDenunciar', confirmarDenuncia: 'fin.botonConfirmarDenuncia', denunciado: 'fin.botonDenunciado'
 };
 // Los que van destacados (en ámbar).
-export const DESTACADO = new Set(['repetir', 'siguiente', 'confirmarDenuncia']);
+export const DESTACADO = new Set(['repetir', 'siguiente', 'manga', 'confirmarDenuncia']);
 
 function botones(cajas) {
   for (const caja of cajas) {
@@ -278,27 +281,30 @@ export function barraPotencia(slot, x, y, ancho) {
  */
 function guiaSlot(carrera, humanos, tactil, rotulo) {
   // En la pista de cuatro, arriba están la recta y la parrilla: los paneles van
-  // en el hueco de cada lazo, más estrechos.
+  // más abajo (en el ocho largo, en el hueco de cada lazo), más estrechos. Un
+  // circuito que no tenga hueco ahí dice dónde (`circuito.guia`, los centros).
   const cuatro = carrera.coches.length > 2;
   const y = cuatro ? 380 : 150;
+  const { guia = {} } = carrera.circuito;
   if (rotulo) {
-    panel(ANCHO / 2, y + 60, 440, 36);
-    texto(rotulo, ANCHO / 2, y + 79, { tam: 16, color: COLOR.ambar, peso: 700 });
+    const r = guia.rotulo || { x: ANCHO / 2, y: y + 78 };
+    panel(r.x, r.y - 18, 440, 36);
+    texto(rotulo, r.x, r.y + 1, { tam: 16, color: COLOR.ambar, peso: 700 });
   }
   // Solo los dos primeros coches pueden ser de una persona: cada uno, su mitad.
   carrera.coches.slice(0, 2).forEach((slot, i) => {
-    const cx = ANCHO / 4 + i * ANCHO / 2;
+    const { x: cx, y: cy } = guia.paneles?.[i] || { x: ANCHO / 4 + i * ANCHO / 2, y };
     if (tactil) {
       ctx.globalAlpha = 0.08;
       ctx.fillStyle = slot.coche.color;
       ctx.fillRect(i * ANCHO / 2, 0, ANCHO / 2, ALTO);
       ctx.globalAlpha = 1;
     }
-    panel(cx, y - 34, cuatro ? 220 : 300, 68);
-    texto(nombreSlot(i, humanos), cx, y - 14, { tam: 22, color: slot.coche.color, peso: 800 });
+    panel(cx, cy - 34, cuatro ? 220 : 300, 68);
+    texto(nombreSlot(i, humanos), cx, cy - 14, { tam: 22, color: slot.coche.color, peso: 800 });
     // Con teclado, las teclas de cada humano; el de la CPU no lleva nada.
     const ayuda = tactil ? t('slot.mantener') : humanos[i] ? t('slot.teclas' + (i + 1)) : '';
-    if (ayuda) texto(ayuda, cx, y + 14, { tam: 15, color: COLOR.hud, peso: 700 });
+    if (ayuda) texto(ayuda, cx, cy + 14, { tam: 15, color: COLOR.hud, peso: 700 });
   });
   etiquetasParrilla(carrera, humanos);
   // La barra de arriba es el marcador: la ayuda va abajo, en dos líneas.
@@ -336,11 +342,19 @@ function etiquetasParrilla(carrera, humanos) {
   });
 }
 
-export function dibujarFinSlot(carrera, humanos, tactil, campeonato = null, ids = undefined) {
+/*
+ * El cartel de fin. En el campeonato, su tabla; en mangas, la de las mangas
+ * (y, acabada la última, si es del campeonato, la del campeonato).
+ */
+export function dibujarFinSlot(carrera, humanos, tactil, { campeonato = null, serie = null } = {}, ids = undefined) {
   ctx.fillStyle = COLOR.velo;
   ctx.fillRect(0, 0, ANCHO, ALTO);
-  if (campeonato) {
+  if (campeonato && !(serie && !serieAcabada(serie))) {
     dibujarFinCampeonato(carrera, humanos, tactil, campeonato, ids);
+    return;
+  }
+  if (serie) {
+    dibujarFinSerie(carrera, humanos, tactil, serie, ids);
     return;
   }
   const x = ANCHO / 2, y = ALTO / 2;
@@ -388,6 +402,33 @@ function dibujarFinCampeonato(carrera, humanos, tactil, campeonato, ids = idsFin
   }
 }
 
+/*
+ * El fin de una manga: quién la ha ganado (o, en la última, quién gana la
+ * suma) y la tabla de las mangas.
+ */
+function dibujarFinSerie(carrera, humanos, tactil, serie, ids) {
+  const x = ANCHO / 2, y = ALTO / 2;
+  pintarCabeceraSerie(carrera, humanos, serie, x, y - 165, 40);
+  pintarTablaSerie(serie, carrera, humanos, { x, y: y - 90, mitad: 380, tam: 16, fila: 30 });
+  botones(botonesFin(ids));
+  if (!tactil) texto(t(serieAcabada(serie) ? 'fin.repetir' : 'fin.siguienteManga'), x, y + 205, { tam: 14, color: COLOR.texto, peso: 500 });
+}
+
+/** El titular de una manga y, debajo, cuál era; acabada la serie, quién gana la suma. Lo comparte la lupa. */
+export function pintarCabeceraSerie(carrera, humanos, serie, x, y, tam) {
+  const acabada = serieAcabada(serie);
+  const quien = acabada ? sumaSerie(serie).ganador : carrera.ganador;
+  texto(t('slot.gana', { quien: nombreSlot(quien, humanos) }), x, y, { tam, color: carrera.coches[quien].coche.color, peso: 800 });
+  const debajo = acabada ? t('manga.suma', { n: serie.total }) : t('manga.n', { n: serie.mangas.length, total: serie.total });
+  texto(debajo, x, y + tam * 0.95, { tam: Math.round(tam * 0.38), color: COLOR.ambar, peso: 700 });
+}
+
+/** La tabla de las mangas: una fila por manga y, debajo, el tiempo sumado. Lo comparte la lupa. */
+export function pintarTablaSerie(serie, carrera, humanos, opciones) {
+  const filas = Array.from({ length: serie.total }, (_, k) => ({ nombre: t('manga.fila', { n: k + 1 }), hecha: serie.mangas[k] }));
+  pintarTabla(carrera, humanos, filas, [['campeonato.tiempo', sumaSerie(serie).tiempos.map(formatearTiempo)]], opciones);
+}
+
 /** Los botones del fin en el campeonato: la siguiente carrera o, acabado, otro campeonato. */
 export function idsFinCampeonato(campeonato) {
   return [clasificacion(campeonato).acabado ? 'repetir' : 'siguiente', 'menu'];
@@ -417,7 +458,18 @@ export function pintarCabeceraCampeonato(carrera, humanos, campeonato, x, y, tam
  * de su color), y debajo las victorias y el tiempo sumado. Lo que falta por
  * correr, en gris.
  */
-export function pintarTablaCampeonato(campeonato, carrera, humanos, { x, y, mitad, tam, fila }) {
+export function pintarTablaCampeonato(campeonato, carrera, humanos, opciones) {
+  const filas = campeonato.circuitos.map((circuito, k) => ({ nombre: nombreCircuito(circuito), hecha: campeonato.carreras[k] }));
+  const { victorias, tiempos } = clasificacion(campeonato);
+  pintarTabla(carrera, humanos, filas, [['campeonato.victorias', victorias.map(String)], ['campeonato.tiempo', tiempos.map(formatearTiempo)]], opciones);
+}
+
+/*
+ * Una tabla de resultados: una columna por coche; una fila por carrera (o por
+ * manga) con el tiempo de cada uno (`hecha`, o null si falta por correr) y,
+ * debajo, los totales (`[clave, valores]`).
+ */
+function pintarTabla(carrera, humanos, filas, totales, { x, y, mitad, tam, fila }) {
   // Una columna por coche, de la mitad a la derecha (con dos, a 0,35 y al borde).
   const n = carrera.coches.length;
   const columnas = carrera.coches.map((_, i) => x + mitad * (0.35 + 0.65 * i / (n - 1)));
@@ -427,25 +479,23 @@ export function pintarTablaCampeonato(campeonato, carrera, humanos, { x, y, mita
     rectanguloRedondo(columnas[i] - 14, y - 7, 14, 14, 3);
     texto(nombreSlot(i, humanos), columnas[i] - 22, y, { tam, color: COLOR.hud, peso: 800, alinear: 'right' });
   });
-  campeonato.circuitos.forEach((circuito, k) => {
+  filas.forEach(({ nombre, hecha }, k) => {
     const yFila = y + (k + 1) * fila;
-    const hecha = campeonato.carreras[k];
-    texto(nombreCircuito(circuito), izquierda, yFila, { tam, color: hecha ? COLOR.hud : COLOR.texto, peso: 600, alinear: 'left' });
+    texto(nombre, izquierda, yFila, { tam, color: hecha ? COLOR.hud : COLOR.texto, peso: 600, alinear: 'left' });
     columnas.forEach((cx, i) => {
       const gana = hecha && hecha.ganador === i;
       const cadena = hecha ? formatearTiempo(hecha.tiempos[i]) : '—';
       texto(cadena, cx, yFila, { tam, color: gana ? carrera.coches[i].coche.color : COLOR.texto, peso: gana ? 800 : 500, alinear: 'right' });
     });
   });
-  const { victorias, tiempos } = clasificacion(campeonato);
-  const yTotal = y + (campeonato.circuitos.length + 1) * fila + fila * 0.4;
+  const yTotal = y + (filas.length + 1) * fila + fila * 0.4;
   ctx.fillStyle = 'rgba(230, 232, 238, 0.25)';
   ctx.fillRect(izquierda, yTotal - fila * 0.7, mitad * 2, 1);
-  for (const [k, clave, valores] of [[0, 'campeonato.victorias', victorias.map(String)], [1, 'campeonato.tiempo', tiempos.map(formatearTiempo)]]) {
+  totales.forEach(([clave, valores], k) => {
     const yFila = yTotal + k * fila;
     texto(t(clave), izquierda, yFila, { tam, color: COLOR.hud, peso: 700, alinear: 'left' });
     valores.forEach((v, i) => texto(v, columnas[i], yFila, { tam, color: COLOR.hud, peso: 800, alinear: 'right' }));
-  }
+  });
 }
 
 /** Solo sirviendo en local. La «deriva» es la exigencia del J1 en %: 100 se sale. */
