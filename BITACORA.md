@@ -1799,3 +1799,18 @@ app en la consola de Play.
   fotograma a otro. Al empezar la primera manga, el primero de la suma cambia mucho
   (las diferencias son de centésimas).
 - `pnyk.json`: 1.16.0.
+
+## Las luces de noche: el puente tapa y los pilotos (13/10/2026)
+
+- En *La diagonal* de noche, las balizas ámbar de la curva que pasa bajo el puente se
+  veían encima del tablero, como si fuera de cristal: la luz se pinta después del
+  puente. Ahora las balizas que caen bajo el tablero (a menos de medio ancho + 8 px
+  de un punto de la pieza `puente`) no se encienden, y lo que alumbra un coche que
+  pasa por debajo (`bajoPuente`, el mismo criterio que lo pinta bajo el tablero) se
+  recorta del tablero: su hueco en la oscuridad se vuelve a tapar con la oscuridad
+  horneada del tablero y su brillo va en una capa aparte sin él. `pintarHora` recibe
+  esos coches (`debajo`).
+- Los pilotos, de noche: un punto rojo en cada esquina de la cola, con su brillo, y un
+  reflejo rojo en el asfalto detrás. Soltando el gatillo (`coche.frenando`, el que ya
+  daba la física) se encienden más, como las luces de freno: se ve dónde frena cada
+  uno.
