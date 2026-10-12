@@ -1800,7 +1800,7 @@ app en la consola de Play.
   (las diferencias son de centésimas).
 - `pnyk.json`: 1.16.0.
 
-## Las luces de noche: el puente tapa y los pilotos (13/10/2026)
+## Slot Panic 1.16.1: las luces de noche, el puente tapa y los pilotos (13/10/2026)
 
 - En *La diagonal* de noche, las balizas ámbar de la curva que pasa bajo el puente se
   veían encima del tablero, como si fuera de cristal: la luz se pinta después del
