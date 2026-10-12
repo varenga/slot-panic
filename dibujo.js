@@ -30,6 +30,8 @@ let capaDecorado = null;    // gradas y piezas, sin sombra: transparente
 let claveCapa = '';
 let capaCarriles = null;
 let claveCarriles = '';
+let capaPuentes = null;
+let clavePuentes = '';
 const JUNTA = 96;        // px de eje entre dos juntas de las piezas
 
 /*
@@ -1476,10 +1478,7 @@ export function dibujarCarriles(circuito, decorado) {
         [...trazadoCarril(circuito, lateral), trazadoCarril(circuito, impar ? -lateral : lateral)[0]]);
       // En el escenario juguete, las trencillas trenzadas: un gris de metal con un
       // punteado claro encima.
-      const capas = juguete
-        ? [['#80868f', 8, null], ['#d6dae2', 7, [1.5, 1.5]], [COLOR.ranura, 3, null]]
-        : [[COLOR.carril, 7, null], [COLOR.ranura, 3, null]];
-      for (const [color, grosor, raya] of capas) {
+      for (const [color, grosor, raya] of capasCarril(juguete)) {
         ctx.strokeStyle = color;
         ctx.lineWidth = grosor;
         ctx.setLineDash(raya ?? []);
@@ -1490,6 +1489,136 @@ export function dibujarCarriles(circuito, decorado) {
     claveCarriles = clave;
   }
   ctx.drawImage(capaCarriles, 0, 0);
+}
+
+/** Cómo se pinta un carril: en el juguete, la trencilla; si no, el metal con su ranura. */
+const capasCarril = (juguete) => juguete
+  ? [['#80868f', 8, null], ['#d6dae2', 7, [1.5, 1.5]], [COLOR.ranura, 3, null]]
+  : [[COLOR.carril, 7, null], [COLOR.ranura, 3, null]];
+
+const SOMBRA_PUENTE = { x: 9, y: 12 };   // px que cae la sombra del tablero, arriba del todo
+const PASO_RAMPA = 12;                   // px entre las estrías de la rampa
+
+/*
+ * Los puentes (la pieza `puente` de `nucleo/piezas.js`), en su propia capa:
+ * va encima de los coches que pasan por debajo (`bajoPuente`) y debajo de
+ * todos los demás (`juego.js` los pinta en ese orden). La sombra del tablero en la
+ * pista de abajo, el tramo que sube (con su calzada, estrías en las rampas,
+ * barandillas en lo alto) y sus carriles.
+ */
+export function dibujarPuentes(circuito, decorado) {
+  const { eje } = circuito;
+  if (!eje.some((p) => p.elevacion > 0)) return;
+  const juguete = decorado.escenario.juguete;
+  const clave = circuito.clave + (juguete ? '/juguete' : '');
+  if (clavePuentes !== clave) {
+    capaPuentes = crearCapa(ANCHO, ALTO);
+    dibujarEn(capaPuentes, () => pintarPuentes(circuito, juguete));
+    clavePuentes = clave;
+  }
+  ctx.drawImage(capaPuentes, 0, 0);
+}
+
+/*
+ * Los tramos del eje que van por un puente, como listas de índices: solo los
+ * puntos de la pieza. Un coche fuera de ella se pinta debajo del tablero, así
+ * que el tablero no puede pisar ni un punto más.
+ */
+function tramosAltos(eje) {
+  const tramos = [];
+  let actual = null;
+  eje.forEach((p, i) => {
+    if (p.efecto !== 'puente') actual = null;
+    else if (actual) actual.push(i);
+    else tramos.push(actual = [i]);
+  });
+  return tramos;
+}
+
+function pintarPuentes(circuito, juguete) {
+  const { eje, ancho } = circuito;
+  const a = (p, d) => ({ x: p.x - Math.sin(p.angulo) * d, y: p.y + Math.cos(p.angulo) * d });
+  for (const tramo of tramosAltos(eje)) {
+    const puntos = tramo.map((i) => eje[i]);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'butt';
+    // La sombra del tablero, más lejos cuanto más alto: cae en la pista de abajo.
+    const caido = (f) => puntos.map((p) => ({ x: p.x + SOMBRA_PUENTE.x * p.elevacion * f, y: p.y + SOMBRA_PUENTE.y * p.elevacion * f }));
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.38)';
+    ctx.lineWidth = ancho + 6;
+    polilinea(caido(1), false);
+    // El costado del tablero, del lado de la sombra: que se lea el grosor.
+    ctx.strokeStyle = juguete ? '#2a2d33' : '#3a3d46';
+    ctx.lineWidth = ancho + 4;
+    polilinea(caido(0.4), false);
+    // El canto y la calzada, como en `pintarPista`.
+    ctx.strokeStyle = juguete ? PLASTICO.canto : COLOR.borde;
+    ctx.lineWidth = ancho + 4;
+    polilinea(puntos, false);
+    ctx.strokeStyle = juguete ? PLASTICO.pista : COLOR.calzada;
+    ctx.lineWidth = ancho;
+    polilinea(puntos, false);
+    if (juguete) {
+      ctx.strokeStyle = PLASTICO.brillo;
+      ctx.lineWidth = ancho * 0.45;
+      polilinea(puntos, false);
+    }
+    // Las rampas: estrías a lo ancho, más claras cuanto más empinado.
+    ctx.lineWidth = 2;
+    for (let k = 1; k < puntos.length; k++) {
+      const p = puntos[k - 1], q = puntos[k];
+      if (!p.pendiente || Math.floor(q.s / PASO_RAMPA) === Math.floor(p.s / PASO_RAMPA)) continue;
+      const u = a(p, -ancho / 2), v = a(p, ancho / 2);
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 + 0.5 * Math.abs(p.pendiente)})`;
+      ctx.beginPath();
+      ctx.moveTo(u.x, u.y);
+      ctx.lineTo(v.x, v.y);
+      ctx.stroke();
+    }
+    // Las barandillas, donde ya va alto: a los dos lados, con su sombra.
+    const altos = puntos.filter((p) => p.elevacion > 0.35);
+    ctx.lineCap = 'round';
+    for (const lado of [-1, 1]) {
+      const borde = altos.map((p) => a(p, lado * (ancho / 2 + 3)));
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.lineWidth = 5;
+      polilinea(borde.map((b) => ({ x: b.x + 1.5, y: b.y + 2 })), false);
+      ctx.strokeStyle = juguete ? PLASTICO.reborde : '#d9dce4';
+      ctx.lineWidth = 3.5;
+      polilinea(borde, false);
+    }
+    // Los carriles del tramo.
+    ctx.lineCap = 'butt';
+    for (const [color, grosor, raya] of capasCarril(juguete)) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = grosor;
+      ctx.setLineDash(raya ?? []);
+      for (const lateral of CARRILES) {
+        const trazado = trazadoCarril(circuito, lateral);
+        polilinea(tramo.map((i) => trazado[i]), false);
+      }
+    }
+    ctx.setLineDash([]);
+  }
+}
+
+const CERCA_PUENTE = 90;   // px del cruce en que un coche puede estar debajo del tablero
+
+/*
+ * ¿Pasa `pose` por debajo de un puente? Cerca del cruce y sin el rumbo del
+ * tablero (el de abajo lo cruza con otro), o rodando suelto por la mesa
+ * (`estado` 'fuera'). Solo esos se pintan debajo: con cualquier otra regla, el
+ * tablero tapaba al que empezaba a subir. Sirve para los coches, los de la
+ * repetición y el fantasma, que no llevan más que la pose.
+ */
+export function bajoPuente(circuito, pose, estado = 'carril') {
+  if (estado === 'mano') return false;
+  return circuito.puentes.some(({ x, y, s }) => {
+    if (Math.hypot(pose.x - x, pose.y - y) > CERCA_PUENTE) return false;
+    if (estado === 'fuera') return true;
+    const arriba = s.map((si) => circuito.eje[circuito.puntoEn(si).indice]).find((p) => p.elevacion > 0.5);
+    return Math.abs(Math.cos(pose.angulo - arriba.angulo)) < 0.9;
+  });
 }
 
 /*

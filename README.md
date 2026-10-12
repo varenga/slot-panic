@@ -54,7 +54,7 @@ vistos desde arriba (con apodos, nunca marcas): cambian la forma, no la carrera.
 
 # Lo que se quiere
 
-- **Circuitos de piezas** (recta, curva, X, cruce, chicane, peralte, derrape, baches;
+- **Circuitos de piezas** (recta, curva, X, cruce, puente, chicane, peralte, derrape, baches;
   ya hay dos) y un **constructor** para el jugador: se dibuja con el dedo en una
   cuadrícula, se corre y se publica sin registrarse (un alias y una llave en el
   dispositivo), y los demás eligen entre los publicados. Lo publicado se puede denunciar.

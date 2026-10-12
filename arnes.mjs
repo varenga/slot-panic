@@ -363,6 +363,65 @@ function encuentros(circuito, modelos = []) {
   });
 }
 
+/*
+ * Los puentes: en cada uno, los dos coches lanzados hacia el cruce, uno por
+ * arriba y otro por abajo, con 21 desfases (como en los encuentros). Van a
+ * distinta altura: no se tocan nunca.
+ */
+function bajoElPuente(circuito) {
+  return circuito.puentes.map(({ s: [sa, sb] }) => {
+    let tocan = 0;
+    for (let desfase = -80; desfase <= 80; desfase += 8) {
+      const c = crearCarreraSlot(circuito, ['#f00', '#00f'], 0);
+      c.fase = 'carrera';
+      c.coches[0].s = sa - 150;
+      c.coches[1].s = sb - 150 + desfase;
+      for (const slot of c.coches) Object.assign(slot, { v: 200, potencia: 200 / VELOCIDAD_SLOT });
+      let toca = false;
+      for (let k = 0; k < 2 / DT; k++) {
+        avanzarSlot(c, c.coches.map((slot) => ({ acelerar: slot.v < 200 })), DT);
+        if (c.toque || c.eventos.some((e) => e.tipo === 'choque')) toca = true;
+      }
+      if (toca) tocan++;
+    }
+    return { sa, sb, tocan };
+  });
+}
+
+/*
+ * Lo que la rampa frena y empuja: un coche a fondo desde 150 px antes del
+ * puente (a 200 px/s, lo que deja la curva de antes), en la pista de verdad y
+ * en una igual sin pendiente. Su velocidad arriba (donde empieza el tablero) y
+ * abajo (donde acaba la rampa), en las dos.
+ */
+function rampas(circuito) {
+  const plana = { ...circuito, eje: circuito.eje.map((p) => ({ ...p, pendiente: 0 })) };
+  const piezas = [];
+  circuito.eje.forEach((p, i, eje) => {
+    if (p.efecto !== 'puente') return;
+    if (eje[(i - 1 + eje.length) % eje.length].efecto !== 'puente') piezas.push([]);
+    piezas[piezas.length - 1].push(p);
+  });
+  return piezas.map((puntos) => {
+    const desde = puntos[0].s;
+    const arriba = puntos.find((p) => p.elevacion === 1).s;
+    const abajo = puntos[puntos.length - 1].s;
+    const medir = (pista) => {
+      const c = crearCarreraSlot(pista, ['#f00'], 0);
+      c.fase = 'carrera';
+      const slot = c.coches[0];
+      Object.assign(slot, { s: desde - 150, v: 200, potencia: 200 / VELOCIDAD_SLOT });
+      const v = {};
+      while (slot.s < abajo && slot.estado === 'carril') {
+        avanzarSlot(c, [{ acelerar: true }], DT);
+        if (v.arriba === undefined && slot.s >= arriba) v.arriba = slot.v;
+      }
+      return { ...v, abajo: slot.v, sale: slot.salidas > 0 };
+    };
+    return { s: desde, con: medir(circuito), sin: medir(plana) };
+  });
+}
+
 function seccionSlot(circuito, oficial) {
   const calibrar = oficial ? comprobar : () => {};
   console.log(`\nSlot en «${circuito.clave}»`);
@@ -551,6 +610,24 @@ function seccionSlot(circuito, oficial) {
       calibrar(desenlaces[2] < chocan, `en el encuentro de s ${sa.toFixed(0)} salen siempre los dos`);
       if (oficial) desenlaces.forEach((n, i) => { DESENLACES[i] += n; });
     }
+    for (const { sa, sb, tocan } of bajoElPuente(circuito)) {
+      console.log(`  en el puente de s ${sa.toFixed(0)} y ${sb.toFixed(0)}: se tocan en ${tocan} de 21 desfases`);
+      comprobar(tocan === 0, `en el puente de s ${sa.toFixed(0)}, uno por arriba y otro por abajo se tocan en ${tocan} de 21 desfases`);
+    }
+  }
+
+  /*
+   * El puente: al subir frena y al bajar empuja, sin ser mucho. A fondo, arriba
+   * llega un 10-35 % más lento que sin pendiente (hoy 17 %) y abajo, un 3-20 %
+   * más rápido (hoy 7 %).
+   */
+  for (const { s, con, sin } of rampas(circuito)) {
+    const pierde = 1 - con.arriba / sin.arriba, gana = con.abajo / sin.abajo - 1;
+    console.log(`  el puente de s ${s.toFixed(0)}, a fondo: arriba ${con.arriba.toFixed(0)} px/s (${sin.arriba.toFixed(0)} sin pendiente, ` +
+      `un ${(pierde * 100).toFixed(0)} % menos), abajo ${con.abajo.toFixed(0)} (${sin.abajo.toFixed(0)}, un ${(gana * 100).toFixed(0)} % más)`);
+    comprobar(!con.sale && !sin.sale, `a fondo se sale en el puente de s ${s.toFixed(0)}`);
+    calibrar(pierde > 0.1 && pierde < 0.35, `la subida del puente de s ${s.toFixed(0)} frena un ${(pierde * 100).toFixed(0)} %`);
+    calibrar(gana > 0.03 && gana < 0.2, `la bajada del puente de s ${s.toFixed(0)} empuja un ${(gana * 100).toFixed(0)} %`);
   }
 }
 

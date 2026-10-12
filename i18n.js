@@ -321,7 +321,7 @@ export const CATALOGOS = {
     'page.circ.nudo': 'una X en la que los coches cambian de carril, una recta de baches, una horquilla y una chicane.',
     'page.circ.resbalon': 'dos estrechas en las que los carriles se juntan (a la par, los coches se tocan) y una curva deslizante que se toma derrapando.',
     'page.circ.banera': 'la recta de meta más larga, dos peraltadas, una X en la recta de abajo y, en el valle, un desvío en que los carriles se juntan y se quiebran de lado entre balas de paja.',
-    'page.circ.diagonal': 'un ocho torcido que se cruza en diagonal, un valle con baches, una peraltada, un lazo estrecho con su estrecha y una curva de derrape.',
+    'page.circ.diagonal': 'un ocho torcido en el que la diagonal pasa bajo un puente, un valle con baches, una peraltada, un lazo estrecho con su estrecha y una curva de derrape.',
     'page.langTitle': 'Idiomas',
     "page.privacy": "Privacidad"
   },
@@ -616,7 +616,7 @@ export const CATALOGOS = {
     'page.circ.nudo': 'a crossover where the cars swap lanes, a bumpy straight, a hairpin and a chicane.',
     'page.circ.resbalon': 'two narrow sections where the lanes squeeze together (side by side, the cars touch) and a skid bend you take sliding.',
     'page.circ.banera': 'the longest home straight, two banked bends, a crossover on the bottom straight and, down in the dip, a chicane where the lanes squeeze together and jink sideways between straw bales.',
-    'page.circ.diagonal': 'a crooked figure eight that crosses on the diagonal, a bumpy dip, a banked bend, a narrow loop with a narrow section and a drift bend.',
+    'page.circ.diagonal': 'a crooked figure eight whose diagonal runs under a bridge, a bumpy dip, a banked bend, a narrow loop with a narrow section and a drift bend.',
     'page.langTitle': 'Languages',
     "page.privacy": "Privacy"
   },
@@ -911,7 +911,7 @@ export const CATALOGOS = {
     'page.circ.nudo': 'um X onde os carros trocam de pista, uma reta de lombas, um gancho e uma chicane.',
     'page.circ.resbalon': 'duas estreitas onde as pistas se juntam (lado a lado, os carros tocam-se) e uma curva deslizante que se faz a derrapar.',
     'page.circ.banera': 'a reta da meta mais longa, duas curvas inclinadas, um X na reta de baixo e, no vale, um desvio onde as pistas se juntam e se desviam de lado entre fardos de palha.',
-    'page.circ.diagonal': 'um oito torto que se cruza na diagonal, um vale com lombas, uma curva inclinada, um laço estreito com a sua estreita e uma curva de derrapagem.',
+    'page.circ.diagonal': 'um oito torto em que a diagonal passa por baixo de uma ponte, um vale com lombas, uma curva inclinada, um laço estreito com a sua estreita e uma curva de derrapagem.',
     'page.langTitle': 'Idiomas',
     "page.privacy": "Privacidade"
   },
@@ -1206,7 +1206,7 @@ export const CATALOGOS = {
     'page.circ.nudo': 'unha X na que os coches cambian de carril, unha recta de fochancas, unha gancha e unha chicane.',
     'page.circ.resbalon': 'dúas estreitas nas que os carrís se xuntan (á par, os coches tócanse) e unha curva escorregadiza que se colle derrapando.',
     'page.circ.banera': 'a recta de meta máis longa, dúas peraltadas, unha X na recta de abaixo e, no val, un desvío no que os carrís se xuntan e se quebran de lado entre pacas de palla.',
-    'page.circ.diagonal': 'un oito torto que se cruza en diagonal, un val con fochancas, unha peraltada, un lazo estreito coa súa estreita e unha curva de derrape.',
+    'page.circ.diagonal': 'un oito torto no que a diagonal pasa baixo unha ponte, un val con fochancas, unha peraltada, un lazo estreito coa súa estreita e unha curva de derrape.',
     'page.langTitle': 'Idiomas',
     "page.privacy": "Privacidade"
   },
@@ -1501,7 +1501,7 @@ export const CATALOGOS = {
     'page.circ.nudo': 'una X on els cotxes canvien de carril, una recta de sots, una forquilla i una xicana.',
     'page.circ.resbalon': "dos estrets on els carrils s'ajunten (de costat, els cotxes es toquen) i una corba lliscant que es pren derrapant.",
     'page.circ.banera': "la recta de meta més llarga, dues peraltades, una X a la recta de baix i, a la vall, un desviament on els carrils s'ajunten i es trenquen de costat entre bales de palla.",
-    'page.circ.diagonal': 'un vuit tort que es creua en diagonal, una vall amb sots, una peraltada, un llaç estret amb el seu estret i un revolt de derrapada.',
+    'page.circ.diagonal': 'un vuit tort on la diagonal passa sota un pont, una vall amb sots, una peraltada, un llaç estret amb el seu estret i un revolt de derrapada.',
     'page.langTitle': 'Idiomes',
     "page.privacy": "Privadesa"
   },
@@ -1796,7 +1796,7 @@ export const CATALOGOS = {
     'page.circ.nudo': 'una X dove le auto cambiano corsia, un rettilineo di dossi, un tornante e una chicane.',
     'page.circ.resbalon': 'due strettoie dove le corsie si avvicinano (affiancate, le auto si toccano) e una curva scivolosa da prendere in derapata.',
     'page.circ.banera': 'il rettilineo d’arrivo più lungo, due curve sopraelevate, una X sul rettilineo in basso e, nella valle, una deviazione dove le corsie si avvicinano e scartano di lato tra balle di paglia.',
-    'page.circ.diagonal': 'un otto storto che si incrocia in diagonale, una valle con dossi, una curva sopraelevata, un anello stretto con la sua strettoia e una curva di derapata.',
+    'page.circ.diagonal': 'un otto storto in cui la diagonale passa sotto un ponte, una valle con dossi, una curva sopraelevata, un anello stretto con la sua strettoia e una curva di derapata.',
     'page.langTitle': 'Lingue',
     "page.privacy": "Privacy"
   },
@@ -2091,7 +2091,7 @@ export const CATALOGOS = {
     'page.circ.nudo': 'un X où les voitures changent de rail, une ligne droite à bosses, une épingle et une chicane.',
     'page.circ.resbalon': 'deux rétrécissements où les rails se rapprochent (côte à côte, les voitures se touchent) et un virage glissant à prendre en dérapage.',
     'page.circ.banera': "la ligne droite d'arrivée la plus longue, deux virages relevés, un X dans la ligne droite du bas et, dans le creux, une déviation où les rails se rapprochent et se décalent de côté entre des bottes de paille.",
-    'page.circ.diagonal': 'un huit tordu qui se croise en diagonale, un creux à bosses, un virage relevé, une boucle étroite avec son rétrécissement et un virage de dérapage.',
+    'page.circ.diagonal': 'un huit tordu dont la diagonale passe sous un pont, un creux à bosses, un virage relevé, une boucle étroite avec son rétrécissement et un virage de dérapage.',
     'page.langTitle': 'Langues',
     "page.privacy": "Confidentialité"
   }

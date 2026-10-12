@@ -25,13 +25,14 @@ Está en siete idiomas, cada uno con su URL:
 - EL NUDO: una X en la que los coches cambian de carril, una recta de baches, una horquilla y una chicane.
 - EL RESBALÓN: dos estrechas en las que los carriles se juntan (a la par, los coches se tocan) y una curva deslizante que se toma derrapando.
 - LA BAÑERA: la recta de meta más larga, dos peraltadas, una X en la recta de abajo y, en el valle, un desvío en que los carriles se juntan y se quiebran de lado entre balas de paja.
-- LA DIAGONAL: un ocho torcido que se cruza en diagonal, un valle con baches, una peraltada, un lazo estrecho con su estrecha y una curva de derrape.
+- LA DIAGONAL: un ocho torcido en el que la diagonal pasa bajo un puente, un valle con baches, una peraltada, un lazo estrecho con su estrecha y una curva de derrape.
 
 ## Notas
 - Pasado el agarre el coche derrapa; si insiste, se sale y una mano lo devuelve al
   carril donde se salió: salirse cuesta tiempo, no la carrera.
 - En las piezas en X los carriles se cruzan y los coches cambian de carril; en una X
-  o un cruce, dos coches que llegan a la vez chocan.
+  o un cruce, dos coches que llegan a la vez chocan. Por un puente no: al subir el coche
+  frena algo y al bajar gana algo.
 - Récords de vuelta en los circuitos oficiales (una tabla por circuito, firmada con tres
   letras) y un fantasma para correr contra la mejor vuelta propia o la del récord.
 - Campeonato: los circuitos oficiales seguidos; gana quien gane más carreras y, con
