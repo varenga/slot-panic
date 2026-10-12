@@ -11,15 +11,16 @@
  *   recorta, horneado una vez, la pista entera a media luz, la mancha de cada
  *   torre de iluminación (las coloca el decorado) y las gradas; y en cada
  *   fotograma, los dos haces de los faros y un halo por coche. Luego, sumando
- *   color, el brillo de faros y focos, las balizas de las curvas cerradas y
- *   los flashes de las cámaras en las gradas.
+ *   color, el brillo de faros, pilotos y focos, las balizas de las curvas
+ *   cerradas y los flashes de las cámaras en las gradas. Lo que alumbra un
+ *   coche que pasa bajo un puente no se ve encima del tablero.
  *
  * La luz es un número: 0 de día, 1 al atardecer y 2 de noche. Entre medias se
  * funden: en una carrera de resistencia cae la tarde mientras se corre
  * (`luzDeCarrera`).
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, GAME_SLUG, LARGO_COCHE } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, COCHES, GAME_SLUG, LARGO_COCHE } from './config.js';
 import { crearCapa, ctx, dibujarEn } from './nucleo/lienzo.js';
 import { RADIO_CURVA_NEUMATICOS } from './nucleo/decorado.js';
 
@@ -101,6 +102,11 @@ const FARO_ABRE = 0.13;      // rad a cada lado del eje del haz
 const FARO_ABRE_FUERA = 0.03;   // rad que cada haz se abre hacia su lado
 const FARO_LADO = ANCHO_COCHE / 2 - 2.1;   // px del eje a cada faro: casi en las esquinas (dibujo.js)
 const HALO = 22;             // px alrededor de cada coche: que se vea siempre
+const PILOTO_LADO = ANCHO_COCHE / 2 - 2.5;   // px del eje a cada piloto
+const PILOTO_BRILLO = 6;     // px del brillo de cada piloto…
+const PILOTO_FRENA = 9;      // …y frenando, que se encienden más
+const PILOTO_ESTELA = 14;    // px del reflejo rojo en el asfalto, detrás del coche
+const TABLERO_MAS = 8;       // px que el tablero de un puente tapa más allá de la pista (barandillas)
 const BALIZA_RITMO = 7;      // pasos por segundo de la ola de las balizas
 const BALIZA_OLA = 4;        // cada cuántas balizas va encendida una
 const BALIZA_PASO = 16;      // px de pista entre dos balizas de una curva
@@ -122,6 +128,10 @@ let balizas = [];            // { x, y, k }: k, su orden dentro de su curva
 let flashes = [];            // { x, y, vida }
 let antes = 0;               // el reloj del fotograma anterior, para los flashes
 let cono = null;             // sprite: el cono de los faros, mirando a +x
+let rojo = null;             // el foco, en rojo: los pilotos
+let tablero = null;          // los puentes, opacos: lo que tapa la luz de debajo (o null)
+let tableroOscuro = null;    // la oscuridad de la base, solo donde hay tablero
+let abajo = null;            // la capa del brillo de los que pasan bajo un puente
 
 /** Un sprite de degradado redondo: se pinta una vez y se estampa escalado. */
 function crearFoco(color = '255, 255, 255') {
@@ -213,6 +223,49 @@ function hornearBase(circuito, decorado) {
 }
 
 /*
+ * Los tramos que van por un puente (la pieza `puente`), como en `dibujo.js`:
+ * listas de puntos del eje.
+ */
+function tramosAltos(eje) {
+  const tramos = [];
+  let actual = null;
+  for (const p of eje) {
+    if (p.efecto !== 'puente') actual = null;
+    else if (actual) actual.push(p);
+    else tramos.push(actual = [p]);
+  }
+  return tramos;
+}
+
+/*
+ * El tablero de los puentes, opaco, con sus barandillas: lo que alumbra un
+ * coche que pasa por debajo no puede verse encima. Sin puentes, null.
+ */
+function hornearTablero(circuito) {
+  const tramos = tramosAltos(circuito.eje);
+  if (!tramos.length) return null;
+  const capa = crearCapa(ANCHO, ALTO);
+  dibujarEn(capa, () => {
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = circuito.ancho + 2 * TABLERO_MAS;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'butt';
+    for (const tramo of tramos) {
+      ctx.beginPath();
+      tramo.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      ctx.stroke();
+    }
+  });
+  return capa;
+}
+
+/** ¿Cae (x, y) bajo el tablero de un puente? */
+function bajoTablero(circuito, x, y) {
+  const r = circuito.ancho / 2 + TABLERO_MAS;
+  return circuito.eje.some((p) => p.efecto === 'puente' && Math.hypot(p.x - x, p.y - y) < r);
+}
+
+/*
  * Los dos haces de los faros, en la capa que toque: recortando o sumando luz.
  * Cada uno sale de su faro, casi en una esquina del morro: cerca del coche se
  * ven dos y a unos 35 px se funden en una sola mancha, como unos faros de
@@ -234,36 +287,94 @@ function pintarConos(coches) {
   }
 }
 
+/*
+ * Los pilotos, sumando luz: un punto rojo en cada esquina de la cola, con su
+ * brillo, y un reflejo rojo en el asfalto detrás. Frenando (soltando el
+ * gatillo) se encienden más, como las luces de freno.
+ */
+function pintarPilotos(coches, fuerza) {
+  for (const coche of coches) {
+    const l = (COCHES[coche.modelo]?.largo ?? LARGO_COCHE) / 2;
+    const cos = Math.cos(coche.angulo), sin = Math.sin(coche.angulo);
+    const en = (u, v) => [coche.x + u * cos - v * sin, coche.y + u * sin + v * cos];
+    const frena = coche.frenando;
+    ctx.globalAlpha = (frena ? 0.3 : 0.14) * fuerza;
+    estampar(rojo, ...en(-l - 6, 0), PILOTO_ESTELA);
+    for (const lado of [-1, 1]) {
+      const [x, y] = en(-l + 1, lado * PILOTO_LADO);
+      ctx.globalAlpha = (frena ? 0.85 : 0.5) * fuerza;
+      estampar(rojo, x, y, frena ? PILOTO_FRENA : PILOTO_BRILLO);
+      ctx.globalAlpha = fuerza;
+      estampar(rojo, x, y, 1.6);
+    }
+  }
+}
+
+/** El brillo que suman los coches: los haces de los faros, cálidos, y los pilotos. */
+function pintarBrillo(coches, fuerza) {
+  ctx.globalAlpha = 0.12 * fuerza;
+  pintarConos(coches);
+  pintarPilotos(coches, fuerza);
+}
+
 /**
  * Pinta la luz (0 día, 1 atardecer, 2 noche, o entre medias) sobre el mundo ya
- * dibujado. `coches`: los que llevan faros. De día no hace nada.
+ * dibujado. `coches`: los que llevan faros; `debajo`, los de ellos que pasan
+ * bajo un puente (su luz no se ve encima del tablero). De día no hace nada.
  */
-export function pintarHora(luz, circuito, decorado, coches) {
+export function pintarHora(luz, circuito, decorado, coches, debajo = []) {
   if (luz <= 0) return;
   // Hasta el atardecer, su velo crece; anocheciendo, se va bajo la noche.
   if (luz < 2) pintarAtardecer(luz <= 1 ? luz : 2 - luz);
-  if (luz > 1) pintarNoche(luz - 1, circuito, decorado, coches);
+  if (luz > 1) pintarNoche(luz - 1, circuito, decorado, coches, debajo);
 }
 
 /** La noche, con su fuerza: `fuerza` 1 es la noche cerrada. */
-function pintarNoche(fuerza, circuito, decorado, coches) {
-  if (!foco) { foco = crearFoco(); ambar = crearFoco('255, 160, 30'); cono = crearCono(); trabajo = crearCapa(ANCHO, ALTO); }
+function pintarNoche(fuerza, circuito, decorado, coches, debajo) {
+  if (!foco) {
+    foco = crearFoco(); ambar = crearFoco('255, 160, 30'); rojo = crearFoco('255, 30, 20'); cono = crearCono();
+    trabajo = crearCapa(ANCHO, ALTO); abajo = crearCapa(ANCHO, ALTO);
+  }
 
   const clave = circuito.clave + '/' + decorado.nombre;
   if (clave !== claveBase) {
     torres = decorado.torres;
-    balizas = balizasDe(circuito);
+    // Las balizas de una curva que pasa bajo un puente las tapa el tablero.
+    balizas = balizasDe(circuito).filter((b) => !bajoTablero(circuito, b.x, b.y));
     flashes = [];
     base = hornearBase(circuito, decorado);
+    tablero = hornearTablero(circuito);
+    tableroOscuro = tablero && crearCapa(ANCHO, ALTO);
+    if (tablero) {
+      dibujarEn(tableroOscuro, () => {
+        ctx.drawImage(base, 0, 0);
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(tablero, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+      });
+    }
     claveBase = clave;
   }
+  // Sin puente, nadie pasa por debajo.
+  const tapados = tablero ? coches.filter((c) => debajo.includes(c)) : [];
+  const encima = coches.filter((c) => !tapados.includes(c));
+  const recortar = (lista) => {
+    pintarConos(lista);
+    for (const coche of lista) estampar(foco, coche.x, coche.y, HALO);
+  };
 
   dibujarEn(trabajo, () => {
     ctx.globalCompositeOperation = 'copy';
     ctx.drawImage(base, 0, 0);
     ctx.globalCompositeOperation = 'destination-out';
-    pintarConos(coches);
-    for (const coche of coches) estampar(foco, coche.x, coche.y, HALO);
+    if (tapados.length) {
+      // Los de abajo alumbran la pista de abajo, no el tablero: se vuelve a oscurecer.
+      recortar(tapados);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(tableroOscuro, 0, 0);
+      ctx.globalCompositeOperation = 'destination-out';
+    }
+    recortar(encima);
     ctx.globalCompositeOperation = 'source-over';
   });
   ctx.save();
@@ -271,12 +382,28 @@ function pintarNoche(fuerza, circuito, decorado, coches) {
   ctx.drawImage(trabajo, 0, 0);
   ctx.restore();
 
-  // El brillo, sumando: los haces de los faros, cálidos, y los focos de cada
-  // torre, blancos, encendidos en su cabeza.
+  // El brillo de los de abajo, en su capa y sin el tablero.
+  if (tapados.length) {
+    dibujarEn(abajo, () => {
+      ctx.clearRect(0, 0, ANCHO, ALTO);
+      ctx.globalCompositeOperation = 'lighter';
+      pintarBrillo(tapados, 1);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.drawImage(tablero, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+    });
+  }
+
+  // El brillo, sumando: los faros y los pilotos de los coches y los focos de
+  // cada torre, blancos, encendidos en su cabeza.
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = 0.12 * fuerza;
-  pintarConos(coches);
+  if (tapados.length) {
+    ctx.globalAlpha = fuerza;
+    ctx.drawImage(abajo, 0, 0);
+  }
+  pintarBrillo(encima, fuerza);
   for (const t of torres) {
     const cx = t.x + Math.cos(t.angulo) * 4, cy = t.y + Math.sin(t.angulo) * 4;
     ctx.globalAlpha = 0.9 * fuerza;
