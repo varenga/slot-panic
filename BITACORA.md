@@ -1698,3 +1698,7 @@ app en la consola de Play.
   victorias y, con las mismas, el de menos tiempo. El arnés corre el campeonato de cuatro
   con cuatro CPU y prueba el desempate con cuatro.
 
+## Slot Panic 1.14.0 (12/10/2026)
+
+- La pista de cuatro carriles: un modo propio (PISTA, tecla P) con *El ocho largo*,
+  cuatro coches (el J1, el J2 y dos CPU) y su campeonato. `pnyk.json`: 1.14.0.

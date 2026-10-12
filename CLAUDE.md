@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Publicado (v1.0.0): carreras de slot en seis circuitos (*La horquilla*, y *El
 ocho*, *El nudo*, *El resbalón*, *La bañera* y *La diagonal*, de piezas), dos coches enganchados a carriles que se cambian en cada
-carrera, solo apretar y soltar (un gatillo que se
+carrera, y la pista de cuatro carriles (un modo propio, con *El ocho largo* y cuatro
+coches), solo apretar y soltar (un gatillo que se
 dosifica a toques), derrape antes de salirse, un puente que frena al subir y empuja al bajar, choques en las X, los cruces, las estrechas y el desvío (el golpe se
 suma al derrape: siguen los dos, se sale uno o los dos; y uno que se sale se lleva por delante al
 otro), una curva deslizante y una mano que devuelve el
