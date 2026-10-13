@@ -1839,3 +1839,48 @@ app en la consola de Play.
   contrario (`porElTablero`, en `luz.js`): ¿va por el tablero o sus rampas (encima y
   con su rumbo)? La de todos los demás, que van por el suelo, la tapa el tablero.
   `pintarHora` ya no recibe los de debajo.
+
+## Slot Panic 1.16.3: los módulos a la vez y las versiones por partes (13/10/2026, rama `50-modulepreload`)
+
+### Los módulos, todos a la vez: `modulepreload`
+
+- Sin service worker (la primera visita, o quien no instala la PWA) el navegador
+  descubre los módulos por capas: el HTML trae `juego.js`, este 32 módulos y esos los
+  12 últimos (los circuitos, `geometria.js`, `trazo.js`, `circuito.js`). Cada capa es
+  una ida y vuelta, y con `no-cache` también lo es revalidar.
+- Ahora cada página lleva un `<link rel="modulepreload">` por módulo (45, `juego.js`
+  el primero), de la misma lista que `PRECACHE` (`MODULOS`, en `gen-pages.mjs`). La
+  lista de `PRECACHE` no cambia de orden: es el contrato con `app/sync.sh`.
+- Medido contra producción (HTTP/2 y brotli) con Chrome sin ventana y la red de
+  DevTools, inyectando los enlaces en el HTML; la mediana de 5 cargas, dos tandas
+  (`load`, con los módulos ya ejecutados):
+
+  | red | caché | antes | con `modulepreload` |
+  |---|---|---|---|
+  | 4G lenta | sí (revalida) | 2,42 s | 2,03 s |
+  | 4G rápida | sí (revalida) | 1,15 s | 0,90 s |
+  | 4G rápida | no | 1,13 s | 1,02 s |
+  | 4G lenta | no | 3,4-3,5 s | igual (ruido) |
+
+  Se gana una ida y vuelta, no dos: `juego.js` ya lo encontraba pronto el escáner del
+  HTML. Sin caché y en 4G lenta manda el ancho de banda (los ~210 KB). Los pedidos
+  son los mismos (ninguno se pide dos veces) y no hay errores.
+
+### Una versión nueva solo baja lo que ha cambiado
+
+- Hasta ahora, cada versión cambiaba `CACHE` y el service worker se reinstalaba
+  pidiendo los 62 ficheros de `PRECACHE` (~250 KB) aunque cambiara uno.
+- Ahora el service worker lleva la huella de cada fichero (`HUELLAS`, la misma de
+  `huella()` en `gen-pages.mjs`, en un bloque aparte de `PRECACHE`: `app/sync.sh` lee
+  ese y no debe ver otra cosa). Cada caché guarda, en la entrada `slotpanic-huellas`,
+  las huellas con las que se llenó, y se escribe la última: una caché sin ella está a
+  medias y no sirve de origen. Al instalarse, lo que tiene la misma huella en una
+  caché anterior se copia de allí y solo lo demás va a la red (con `cache: 'reload'`,
+  como antes). La caché nueva queda entera y de una sola versión: no se mezclan.
+- Probado en Chrome sin ventana con `?sw`: instalada una versión, se cambia un
+  comentario de `luz.js` y se regenera; la actualización pide al servidor
+  `service-worker.js` y `luz.js`, nada más, y la caché nueva tiene sus 62 ficheros, el
+  de `luz.js` el nuevo, y la vieja se borra.
+- La primera actualización desde la 1.16.2 todavía lo baja todo: su caché no tiene
+  índice. Los `modulepreload` no llevan huella en la dirección, así que cambiar un
+  módulo no cambia las páginas: un cambio en un módulo baja ese módulo.

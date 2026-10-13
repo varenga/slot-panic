@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-299e20bf';
+const CACHE = 'slotpanic-f3a166ca';
 
 const PRECACHE = [
   'index.html',
@@ -74,17 +74,111 @@ const PRECACHE = [
   'iconos/icon-maskable-512.png',
 ];
 
+// La huella del contenido de cada fichero de PRECACHE.
+const HUELLAS = {
+  'index.html':                   'dadb19f2',
+  'en/index.html':                '223688b1',
+  'pt/index.html':                'da1dd815',
+  'gl/index.html':                '3f7a7e7d',
+  'ca/index.html':                'a0c11551',
+  'it/index.html':                '22c9376f',
+  'fr/index.html':                'b38c9db4',
+  'analitica.js':                 'bccaef26',
+  'audio.js':                     '936e65ae',
+  'circuitos/banera.js':          '89b3bfc0',
+  'circuitos/diagonal.js':        '131faa47',
+  'circuitos/ele.js':             'ea63a1ae',
+  'circuitos/indice.js':          '0ca5c55d',
+  'circuitos/judia.js':           'cd09d0a8',
+  'circuitos/nudo.js':            '33ddb5c6',
+  'circuitos/ocho.js':            '54adea02',
+  'circuitos/ochoLargo.js':       'f2e26f77',
+  'circuitos/primero.js':         '936cf9c2',
+  'circuitos/resbalon.js':        'cc7c10f6',
+  'coches.js':                    'd1b69522',
+  'config.js':                    '922a0ae4',
+  'constructor.js':               'a4944864',
+  'dibujo.js':                    '8cfcf72e',
+  'escenarios.js':                '448d173f',
+  'estado.js':                    '5bef040f',
+  'galeria.js':                   '625d65a3',
+  'i18n.js':                      '43c3d747',
+  'juego.js':                     '9c36ec7d',
+  'lupa.js':                      '8915c703',
+  'luz.js':                       '57dee04d',
+  'menu.js':                      '4a4ea491',
+  'nucleo/campeonato.js':         '5fab5848',
+  'nucleo/circuito.js':           '7c9b7eb5',
+  'nucleo/cuadricula.js':         'ae7eca4d',
+  'nucleo/decorado.js':           '869552ff',
+  'nucleo/fantasma.js':           '2e160b50',
+  'nucleo/geometria.js':          '8c5572a4',
+  'nucleo/lienzo.js':             '7d46a02d',
+  'nucleo/mangas.js':             '8f1e9a08',
+  'nucleo/momentos.js':           '06a10f40',
+  'nucleo/piezas.js':             '2765d349',
+  'nucleo/piloto.js':             '797dde5c',
+  'nucleo/slot.js':               '9424ad3b',
+  'nucleo/trazo.js':              'baeee985',
+  'nucleo/validar.js':            '4a20240f',
+  'pantalla.js':                  '09986786',
+  'particulas.js':                '2e764b4e',
+  'publicar.js':                  'f1a47901',
+  'publicos.js':                  '63cec294',
+  'records.js':                   'f29f8ad1',
+  'repeticion.js':                '009956df',
+  'tablaRecords.js':              '68277b09',
+  'vendor/pnyk/red.js':           '73a46da0',
+  'vendor/pnyk/pie.js':           'bc866a2f',
+  'vendor/pnyk/consentimiento.js':'df9a1409',
+  'style.css':                    '12f120b4',
+  'favicon.svg':                  '423ea574',
+  'manifest.webmanifest':         'ddd3731a',
+  'iconos/icon-192.png':          'cc0e9575',
+  'iconos/icon-512.png':          'e9c91cf6',
+  'iconos/icon-maskable-192.png': '4869011c',
+  'iconos/icon-maskable-512.png': '84d281c1',
+};
+
 // Las rutas de PRECACHE son relativas a la carpeta del service worker, que es la
 // raíz del sitio. Así funciona igual en slot.pnyk.es que en local.
 const SCOPE = new URL('./', self.location).pathname;
 const PROPIOS = new Set(PRECACHE);
 
+// Cada caché guarda, en esta entrada, las huellas con las que se llenó. Se
+// escribe la última: una caché sin ella está a medias y no sirve de origen.
+const INDICE = 'slotpanic-huellas';
+
+// Una versión nueva no baja lo que no ha cambiado: lo que tiene la misma huella
+// en una caché anterior se copia de allí, y solo lo demás va a la red. La caché
+// nueva queda entera y de una sola versión, como si se hubiera bajado todo.
+async function llenar(cache) {
+  const anteriores = [];
+  for (const clave of await caches.keys()) {
+    if (!clave.startsWith('slotpanic-') || clave === CACHE) continue;
+    const vieja = await caches.open(clave);
+    const indice = await vieja.match(INDICE);
+    if (indice) anteriores.push({ vieja, huellas: await indice.json() });
+  }
+  await Promise.all(PRECACHE.map(async (f) => {
+    for (const { vieja, huellas } of anteriores) {
+      if (huellas[f] !== HUELLAS[f]) continue;
+      const guardado = await vieja.match(f);
+      if (guardado) return cache.put(f, guardado);
+    }
+    // cache: 'reload' salta la caché HTTP del navegador: sin él podría guardarse
+    // un módulo viejo junto a un index.html nuevo, y la mezcla quedaría fijada.
+    const respuesta = await fetch(new Request(f, { cache: 'reload' }));
+    if (!respuesta.ok) throw new Error(f + ': ' + respuesta.status);
+    return cache.put(f, respuesta);
+  }));
+  await cache.put(INDICE, new Response(JSON.stringify(HUELLAS)));
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      // cache: 'reload' salta la caché HTTP del navegador: sin él, addAll podría
-      // guardar un módulo viejo junto a un index.html nuevo, y la mezcla quedaría fijada.
-      .then((cache) => cache.addAll(PRECACHE.map((f) => new Request(f, { cache: 'reload' }))))
+      .then(llenar)
       .then(() => self.skipWaiting())
   );
 });

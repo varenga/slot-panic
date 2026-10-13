@@ -108,6 +108,13 @@ function modulos(entrada) {
   return [...vistos].sort();
 }
 
+// Todos los módulos del juego, juego.js el primero. Van en PRECACHE y en un
+// <link rel="modulepreload"> cada uno: sin service worker el navegador
+// descubre los import capa a capa (una ida y vuelta por nivel, y con no-cache
+// cada una revalida); así los pide todos a la vez. Medido con 4G lenta y la
+// caché del navegador: el load, de 2,4 a 2,0 s (BITACORA.md).
+const MODULOS = ['juego.js', ...modulos('juego.js').filter((f) => f !== 'juego.js')];
+
 // Los scripts clásicos que index.html carga antes del juego (vendor/pnyk/).
 const CLASICOS = ['vendor/pnyk/red.js', 'vendor/pnyk/pie.js', 'vendor/pnyk/consentimiento.js'];
 
@@ -205,6 +212,7 @@ ${ogAlternativas}
   <link rel="apple-touch-icon" href="${versionado('iconos/icon-192.png')}">
   <link rel="manifest" href="${base}manifest.webmanifest">
   <link rel="stylesheet" href="${versionado('style.css')}">
+${MODULOS.map((f) => `  <link rel="modulepreload" href="${base}${f}">`).join('\n')}
 
   <script type="application/ld+json">
 ${jsonLd}
@@ -317,7 +325,7 @@ function manifest() {
  */
 const PRECACHE = [
   ...IDIOMAS.map((l) => l.dir + 'index.html'),
-  ...modulos('juego.js'),
+  ...[...MODULOS].sort(),
   ...CLASICOS,
   'style.css',
   'favicon.svg',
@@ -328,12 +336,16 @@ const PRECACHE = [
 /*
  * La versión de la caché es la huella de todo lo que precarga: cualquier
  * cambio en un módulo cambia el service worker, el navegador lo detecta y se
- * reinstala. Se calcula después de escribir las páginas y el manifest.
+ * reinstala. Se calcula después de escribir las páginas y el manifest. Va
+ * también la huella de cada fichero (HUELLAS, aparte de PRECACHE: sync.sh lee
+ * ese bloque y no debe ver otra cosa), para que al reinstalarse solo baje lo
+ * que ha cambiado.
  */
 function serviceWorker() {
   const version = crypto.createHash('sha1')
     .update(PRECACHE.map((f) => f + ' ' + huella(f)).join('\n'))
     .digest('hex').slice(0, 8);
+  const ancho = Math.max(...PRECACHE.map((f) => f.length)) + 3;
 
   return `// Generado por tools/gen-pages.mjs. No editar a mano.
 //
@@ -350,17 +362,50 @@ const PRECACHE = [
 ${PRECACHE.map((f) => `  '${f}',`).join('\n')}
 ];
 
+// La huella del contenido de cada fichero de PRECACHE.
+const HUELLAS = {
+${PRECACHE.map((f) => `  ${(`'${f}':`).padEnd(ancho)}'${huella(f)}',`).join('\n')}
+};
+
 // Las rutas de PRECACHE son relativas a la carpeta del service worker, que es la
 // raíz del sitio. Así funciona igual en slot.pnyk.es que en local.
 const SCOPE = new URL('./', self.location).pathname;
 const PROPIOS = new Set(PRECACHE);
 
+// Cada caché guarda, en esta entrada, las huellas con las que se llenó. Se
+// escribe la última: una caché sin ella está a medias y no sirve de origen.
+const INDICE = '${GAME_SLUG}-huellas';
+
+// Una versión nueva no baja lo que no ha cambiado: lo que tiene la misma huella
+// en una caché anterior se copia de allí, y solo lo demás va a la red. La caché
+// nueva queda entera y de una sola versión, como si se hubiera bajado todo.
+async function llenar(cache) {
+  const anteriores = [];
+  for (const clave of await caches.keys()) {
+    if (!clave.startsWith('${GAME_SLUG}-') || clave === CACHE) continue;
+    const vieja = await caches.open(clave);
+    const indice = await vieja.match(INDICE);
+    if (indice) anteriores.push({ vieja, huellas: await indice.json() });
+  }
+  await Promise.all(PRECACHE.map(async (f) => {
+    for (const { vieja, huellas } of anteriores) {
+      if (huellas[f] !== HUELLAS[f]) continue;
+      const guardado = await vieja.match(f);
+      if (guardado) return cache.put(f, guardado);
+    }
+    // cache: 'reload' salta la caché HTTP del navegador: sin él podría guardarse
+    // un módulo viejo junto a un index.html nuevo, y la mezcla quedaría fijada.
+    const respuesta = await fetch(new Request(f, { cache: 'reload' }));
+    if (!respuesta.ok) throw new Error(f + ': ' + respuesta.status);
+    return cache.put(f, respuesta);
+  }));
+  await cache.put(INDICE, new Response(JSON.stringify(HUELLAS)));
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      // cache: 'reload' salta la caché HTTP del navegador: sin él, addAll podría
-      // guardar un módulo viejo junto a un index.html nuevo, y la mezcla quedaría fijada.
-      .then((cache) => cache.addAll(PRECACHE.map((f) => new Request(f, { cache: 'reload' }))))
+      .then(llenar)
       .then(() => self.skipWaiting())
   );
 });
