@@ -1840,7 +1840,9 @@ app en la consola de Play.
   con su rumbo)? La de todos los demás, que van por el suelo, la tapa el tablero.
   `pintarHora` ya no recibe los de debajo.
 
-## Los módulos, todos a la vez: `modulepreload` (13/10/2026, rama `50-modulepreload`)
+## Slot Panic 1.16.3: los módulos a la vez y las versiones por partes (13/10/2026, rama `50-modulepreload`)
+
+### Los módulos, todos a la vez: `modulepreload`
 
 - Sin service worker (la primera visita, o quien no instala la PWA) el navegador
   descubre los módulos por capas: el HTML trae `juego.js`, este 32 módulos y esos los
@@ -1863,3 +1865,22 @@ app en la consola de Play.
   Se gana una ida y vuelta, no dos: `juego.js` ya lo encontraba pronto el escáner del
   HTML. Sin caché y en 4G lenta manda el ancho de banda (los ~210 KB). Los pedidos
   son los mismos (ninguno se pide dos veces) y no hay errores.
+
+### Una versión nueva solo baja lo que ha cambiado
+
+- Hasta ahora, cada versión cambiaba `CACHE` y el service worker se reinstalaba
+  pidiendo los 62 ficheros de `PRECACHE` (~250 KB) aunque cambiara uno.
+- Ahora el service worker lleva la huella de cada fichero (`HUELLAS`, la misma de
+  `huella()` en `gen-pages.mjs`, en un bloque aparte de `PRECACHE`: `app/sync.sh` lee
+  ese y no debe ver otra cosa). Cada caché guarda, en la entrada `slotpanic-huellas`,
+  las huellas con las que se llenó, y se escribe la última: una caché sin ella está a
+  medias y no sirve de origen. Al instalarse, lo que tiene la misma huella en una
+  caché anterior se copia de allí y solo lo demás va a la red (con `cache: 'reload'`,
+  como antes). La caché nueva queda entera y de una sola versión: no se mezclan.
+- Probado en Chrome sin ventana con `?sw`: instalada una versión, se cambia un
+  comentario de `luz.js` y se regenera; la actualización pide al servidor
+  `service-worker.js` y `luz.js`, nada más, y la caché nueva tiene sus 62 ficheros, el
+  de `luz.js` el nuevo, y la vieja se borra.
+- La primera actualización desde la 1.16.2 todavía lo baja todo: su caché no tiene
+  índice. Los `modulepreload` no llevan huella en la dirección, así que cambiar un
+  módulo no cambia las páginas: un cambio en un módulo baja ese módulo.

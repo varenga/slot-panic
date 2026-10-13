@@ -77,11 +77,6 @@ lo precarga) y a cambio traería un build, dos códigos (el arnés importa las f
 errores ilegibles en producción. Se reconsidera solo si un día hay build por otra
 razón. Lo que sí, por orden:
 
-- [ ] Una versión nueva no baja lo que no ha cambiado. Hoy cada versión cambia
-      `CACHE` y reinstala los 70+ ficheros (~250 KB) aunque cambie uno. `gen-pages`
-      guarda la huella de cada fichero y el service worker, al instalarse, copia de la
-      caché anterior los de la misma huella y solo pide a la red los cambiados. Cada
-      caché sigue siendo entera y de una sola versión: no se mezclan.
 - [ ] Medir el tiempo de fotograma, no solo los FPS: en la depuración, la media y el
       peor 5 %. Y una grabación de DevTools › Performance en un Android modesto, en el
       peor caso (de noche, cuatro coches, la lupa). Con eso se decide lo de abajo.
