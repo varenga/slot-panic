@@ -150,7 +150,8 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
   la v0.8.0 o posterior (con la galería), la seguridad de los datos y el contenido de
   usuarios se contestan como dice `app/store/play-console.md`, no con «no recoge
   datos».
-* [ ] Pruebas internas, luego pública.
+* [ ] Prueba cerrada (en curso), luego pública. Segundo bundle: `versionCode` 2,
+  `versionName` 1.16.2, la web de producción (2026-10-13).
 
 ### Fase D — La de iOS
 
