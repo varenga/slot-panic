@@ -1202,7 +1202,7 @@ function pintarMundo(cochesCarrera = estado.carrera.coches, particulas = estado.
   dibujarPuentes(estado.circuito, estado.decorado);
   if (!repeticion) pintarFantasma(false);
   coches.filter((slot) => !debajo(slot)).forEach(dibujarCocheSlot);
-  pintarHora(luz, estado.circuito, estado.decorado, coches.map((slot) => slot.coche), coches.filter(debajo).map((slot) => slot.coche));
+  pintarHora(luz, estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
   dibujarChispas(particulas);
 }
 

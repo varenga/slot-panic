@@ -9,7 +9,7 @@
  * fotograma a fotograma sería tirar el tiempo.
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR, PASO_BACHES } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR, LARGO_COCHE, PASO_BACHES } from './config.js';
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
@@ -1720,6 +1720,27 @@ export function dibujarCoche(coche) {
   ctx.rotate(-coche.angulo);
   ctx.translate(-SOMBRA_COCHE.x, -SOMBRA_COCHE.y);
   ctx.rotate(coche.angulo);
-  pintarModelo(m, coche.color);
+  pintarModelo(m, coche.color, coche.frenando);
+  if (coche.frenando) pintarFreno((COCHES[coche.modelo]?.largo ?? LARGO_COCHE) / 2);
   ctx.restore();
+}
+
+/*
+ * La luz de freno, a cualquier hora: un brillo rojo en cada esquina de la
+ * cola, en las coordenadas del coche. De noche, luz.js suma el suyo encima.
+ */
+const FRENO_LADO = ANCHO_COCHE / 2 - 2.5;   // px del eje a cada piloto, como en luz.js
+const FRENO_BRILLO = 4.5;                    // px del brillo
+function pintarFreno(l) {
+  ctx.globalCompositeOperation = 'lighter';
+  for (const lado of [-1, 1]) {
+    const y = lado * FRENO_LADO;
+    const g = ctx.createRadialGradient(-l + 0.5, y, 0, -l + 0.5, y, FRENO_BRILLO);
+    g.addColorStop(0, 'rgba(255, 60, 40, 0.9)');
+    g.addColorStop(0.4, 'rgba(255, 30, 20, 0.45)');
+    g.addColorStop(1, 'rgba(255, 30, 20, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-l + 0.5 - FRENO_BRILLO, y - FRENO_BRILLO, FRENO_BRILLO * 2, FRENO_BRILLO * 2);
+  }
+  ctx.globalCompositeOperation = 'source-over';
 }

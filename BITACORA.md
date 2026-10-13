@@ -1814,3 +1814,28 @@ app en la consola de Play.
   reflejo rojo en el asfalto detrás. Soltando el gatillo (`coche.frenando`, el que ya
   daba la física) se encienden más, como las luces de freno: se ve dónde frena cada
   uno.
+
+## Slot Panic 1.16.2: la luz de freno a cualquier hora y en la repetición (13/10/2026)
+
+- La luz de freno solo se veía de noche (la pintaba `luz.js`) y en los mejores momentos
+  ni eso: la repetición posaba los coches con `frenando: false`.
+- Ahora la pinta el coche (`dibujarCoche`): frenando, los pilotos de cada modelo pasan
+  de granate apagado a rojo encendido (`coches.js`, que en la lupa es lo que se lee) y
+  un brillo rojo de 4,5 px suma luz en cada esquina de la cola. De noche, `luz.js`
+  suma el suyo encima, como antes.
+- La repetición graba el freno: un campo más por coche y cuadro (`CAMPOS` 8) y
+  `poseEn` lo da con el estado del cuadro de antes. Una carrera de 10 vueltas sigue
+  por debajo de 2 MB. El arnés ya no da por hecho 7 campos y comprueba que se frena y
+  que la repetición enciende la luz donde se grabó.
+
+## La luz bajo el puente de *La diagonal* (13/10/2026)
+
+- De noche, con un coche pasando por debajo, todo el puente se oscurecía: la oscuridad
+  del tablero se volvía a pintar encima de la que ya había y, semitransparente, se
+  sumaba. Ahora primero se borra el tablero y luego se pone la suya: mide lo mismo
+  (71, 75, 88) sin coche, con uno llegando y con uno debajo.
+- Y la luz de uno que llegaba medio pasaba por encima: `bajoPuente` solo cuenta los
+  que están a 90 px del cruce y los faros alumbran 140. Para la luz se pregunta lo
+  contrario (`porElTablero`, en `luz.js`): ¿va por el tablero o sus rampas (encima y
+  con su rumbo)? La de todos los demás, que van por el suelo, la tapa el tablero.
+  `pintarHora` ya no recibe los de debajo.

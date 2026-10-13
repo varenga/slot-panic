@@ -105,7 +105,7 @@ export function cochesRepeticion(rp, coches) {
       estado: pose.estado,
       coche: {
         ...slot.coche, x: pose.x, y: pose.y, angulo: pose.angulo,
-        vx: Math.cos(pose.angulo) * pose.rapidez, vy: Math.sin(pose.angulo) * pose.rapidez, frenando: false, atras: false
+        vx: Math.cos(pose.angulo) * pose.rapidez, vy: Math.sin(pose.angulo) * pose.rapidez, frenando: pose.frenando, atras: false
       }
     };
   });

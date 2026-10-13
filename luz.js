@@ -13,7 +13,7 @@
  *   fotograma, los dos haces de los faros y un halo por coche. Luego, sumando
  *   color, el brillo de faros, pilotos y focos, las balizas de las curvas
  *   cerradas y los flashes de las cámaras en las gradas. Lo que alumbra un
- *   coche que pasa bajo un puente no se ve encima del tablero.
+ *   coche que no va por un puente no se ve encima de su tablero.
  *
  * La luz es un número: 0 de día, 1 al atardecer y 2 de noche. Entre medias se
  * funden: en una carrera de resistencia cae la tarde mientras se corre
@@ -259,10 +259,33 @@ function hornearTablero(circuito) {
   return capa;
 }
 
+/** El punto del puente más cercano a (x, y) que lo tiene encima, o null. */
+function tableroEn(circuito, x, y) {
+  const r = circuito.ancho / 2 + TABLERO_MAS;
+  let cerca = null, mejor = r;
+  for (const p of circuito.eje) {
+    if (p.efecto !== 'puente') continue;
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (d < mejor) { mejor = d; cerca = p; }
+  }
+  return cerca;
+}
+
 /** ¿Cae (x, y) bajo el tablero de un puente? */
 function bajoTablero(circuito, x, y) {
-  const r = circuito.ancho / 2 + TABLERO_MAS;
-  return circuito.eje.some((p) => p.efecto === 'puente' && Math.hypot(p.x - x, p.y - y) < r);
+  return tableroEn(circuito, x, y) !== null;
+}
+
+/*
+ * ¿Va el coche por el tablero (o sus rampas)? Encima de él y con su rumbo: el
+ * de abajo lo cruza con otro (como `bajoPuente` en dibujo.js). Los demás van por
+ * el suelo y el tablero tapa su luz, también la de los faros de uno que se
+ * acerca: alumbran 140 px y `bajoPuente` solo cuenta los que están a 90 del
+ * cruce (la luz se veía a medias encima).
+ */
+function porElTablero(circuito, coche) {
+  const p = tableroEn(circuito, coche.x, coche.y);
+  return p !== null && Math.abs(Math.cos(coche.angulo - p.angulo)) >= 0.9;
 }
 
 /*
@@ -319,18 +342,18 @@ function pintarBrillo(coches, fuerza) {
 
 /**
  * Pinta la luz (0 día, 1 atardecer, 2 noche, o entre medias) sobre el mundo ya
- * dibujado. `coches`: los que llevan faros; `debajo`, los de ellos que pasan
- * bajo un puente (su luz no se ve encima del tablero). De día no hace nada.
+ * dibujado. `coches`: los que llevan faros (la luz de los que no van por un
+ * puente no se ve encima de su tablero). De día no hace nada.
  */
-export function pintarHora(luz, circuito, decorado, coches, debajo = []) {
+export function pintarHora(luz, circuito, decorado, coches) {
   if (luz <= 0) return;
   // Hasta el atardecer, su velo crece; anocheciendo, se va bajo la noche.
   if (luz < 2) pintarAtardecer(luz <= 1 ? luz : 2 - luz);
-  if (luz > 1) pintarNoche(luz - 1, circuito, decorado, coches, debajo);
+  if (luz > 1) pintarNoche(luz - 1, circuito, decorado, coches);
 }
 
 /** La noche, con su fuerza: `fuerza` 1 es la noche cerrada. */
-function pintarNoche(fuerza, circuito, decorado, coches, debajo) {
+function pintarNoche(fuerza, circuito, decorado, coches) {
   if (!foco) {
     foco = crearFoco(); ambar = crearFoco('255, 160, 30'); rojo = crearFoco('255, 30, 20'); cono = crearCono();
     trabajo = crearCapa(ANCHO, ALTO); abajo = crearCapa(ANCHO, ALTO);
@@ -355,8 +378,8 @@ function pintarNoche(fuerza, circuito, decorado, coches, debajo) {
     }
     claveBase = clave;
   }
-  // Sin puente, nadie pasa por debajo.
-  const tapados = tablero ? coches.filter((c) => debajo.includes(c)) : [];
+  // Sin puente, nada lo tapa.
+  const tapados = tablero ? coches.filter((c) => !porElTablero(circuito, c)) : [];
   const encima = coches.filter((c) => !tapados.includes(c));
   const recortar = (lista) => {
     pintarConos(lista);
@@ -368,8 +391,11 @@ function pintarNoche(fuerza, circuito, decorado, coches, debajo) {
     ctx.drawImage(base, 0, 0);
     ctx.globalCompositeOperation = 'destination-out';
     if (tapados.length) {
-      // Los de abajo alumbran la pista de abajo, no el tablero: se vuelve a oscurecer.
+      // Los de abajo alumbran la pista de abajo, no el tablero: se vuelve a
+      // oscurecer. Primero se borra: encima de la oscuridad que había, se sumaba
+      // y todo el puente quedaba el doble de oscuro.
       recortar(tapados);
+      ctx.drawImage(tablero, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
       ctx.drawImage(tableroOscuro, 0, 0);
       ctx.globalCompositeOperation = 'destination-out';
