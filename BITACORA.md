@@ -1815,7 +1815,7 @@ app en la consola de Play.
   daba la física) se encienden más, como las luces de freno: se ve dónde frena cada
   uno.
 
-## La luz de freno, a cualquier hora y en la repetición (13/10/2026)
+## Slot Panic 1.16.2: la luz de freno a cualquier hora y en la repetición (13/10/2026)
 
 - La luz de freno solo se veía de noche (la pintaba `luz.js`) y en los mejores momentos
   ni eso: la repetición posaba los coches con `frenando: false`.
