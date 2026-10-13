@@ -1432,7 +1432,8 @@ console.log('\nLos mejores momentos');
       }
       // El búfer: finito, un cuadro cada PASO_REPETICION como mucho (más los de los eventos) y el ángulo sin saltos.
       const finito = rep.cuadros.every((q) => q.every(Number.isFinite));
-      const salto = rep.cuadros.some((q, i) => i > 0 && [0, 1].some((c) => Math.abs(q[3 + c * 7] - rep.cuadros[i - 1][3 + c * 7]) > Math.PI));
+      const campos = (rep.cuadros[0].length - 1) / rep.coches;   // por coche y cuadro
+      const salto = rep.cuadros.some((q, i) => i > 0 && [0, 1].some((c) => Math.abs(q[3 + c * campos] - rep.cuadros[i - 1][3 + c * campos]) > Math.PI));
       if (!finito || salto) mal.push(!finito ? 'un cuadro no finito' : 'el ángulo salta');
       if (rep.cuadros.length > Math.ceil(rep.t / PASO_REPETICION) + rep.eventos.length + 1) mal.push(`${rep.cuadros.length} cuadros en ${rep.t.toFixed(1)} s`);
       // La repetición: en cada cuadro, la pose es la del cuadro; entre dos, entre ellos.
@@ -1446,6 +1447,10 @@ console.log('\nLos mejores momentos');
           break;
         }
       }
+      // La luz de freno: se graba y la repetición la enciende donde se grabó.
+      const frenadas = rep.cuadros.filter((q) => q[campos] === 1);
+      if (!frenadas.length) mal.push('nunca frena');
+      else if (frenadas.some((q) => !poseEn(rep, q[0])[0].frenando)) mal.push('la repetición no enciende la luz de freno');
       if (eventosEntre(rep, -1, rep.t).length !== rep.eventos.length) mal.push('eventosEntre pierde eventos');
       const duraciones = lista.map((m) => duracionMomento(m));
       peorDuracion = Math.max(peorDuracion, ...duraciones);

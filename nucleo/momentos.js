@@ -50,7 +50,7 @@ export const TIPOS_MOMENTO = {
 };
 
 const ESTADOS = ['carril', 'fuera', 'mano'];
-const CAMPOS = 7;             // por coche y cuadro: x, y, ángulo, altura, estado, derrape, rapidez
+const CAMPOS = 8;             // por coche y cuadro: x, y, ángulo, altura, estado, derrape, rapidez, frenando
 
 /** Un búfer vacío para una carrera de `coches` coches en `circuito`. */
 export function crearRepeticion(circuito, coches) {
@@ -84,7 +84,7 @@ export function grabarCuadro(rep, carrera, dt, humanos = []) {
       const { coche } = slot;
       // El ángulo, desenrollado: el trompo de una salida da vueltas enteras.
       const angulo = ultimo ? ultimo[1 + i * CAMPOS + 2] + normalizarAngulo(coche.angulo - ultimo[1 + i * CAMPOS + 2]) : coche.angulo;
-      cuadro.push(coche.x, coche.y, angulo, slot.altura, ESTADOS.indexOf(slot.estado), slot.derrape, Math.hypot(coche.vx, coche.vy));
+      cuadro.push(coche.x, coche.y, angulo, slot.altura, ESTADOS.indexOf(slot.estado), slot.derrape, Math.hypot(coche.vx, coche.vy), coche.frenando ? 1 : 0);
     });
     rep.cuadros.push(cuadro);
   }
@@ -272,8 +272,8 @@ function cuadroAntes(rep, t) {
 
 /*
  * Cómo estaban los coches a `t` s de lo grabado, interpolando entre los dos
- * cuadros de alrededor: `{ x, y, angulo, altura, estado, derrape, rapidez }`
- * por coche. El estado, el del cuadro de antes.
+ * cuadros de alrededor: `{ x, y, angulo, altura, estado, derrape, rapidez,
+ * frenando }` por coche. El estado y el freno, los del cuadro de antes.
  */
 export function poseEn(rep, t) {
   const { cuadros } = rep;
@@ -286,7 +286,7 @@ export function poseEn(rep, t) {
     const k = 1 + c * CAMPOS;
     return {
       x: mezcla(k), y: mezcla(k + 1), angulo: mezcla(k + 2), altura: mezcla(k + 3),
-      estado: ESTADOS[a[k + 4]], derrape: mezcla(k + 5), rapidez: mezcla(k + 6)
+      estado: ESTADOS[a[k + 4]], derrape: mezcla(k + 5), rapidez: mezcla(k + 6), frenando: a[k + 7] === 1
     };
   });
 }

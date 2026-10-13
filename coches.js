@@ -36,6 +36,8 @@ const escala = (m) => COCHES[m.id].largo / (2 * L);
 const CRISTAL = COLOR.cocheCabina;
 const FARO = '#fff3c4';
 const PILOTO = '#7a2a30';
+const PILOTO_FRENO = '#ff2a1c';   // frenando, encendidos
+let piloto = PILOTO;             // el de este coche: lo pone pintarModelo()
 const LONA = '#2e2a26';
 const CROMO = 'rgba(232, 234, 238, 0.8)';
 const CONTORNO = 'rgba(0, 0, 0, 0.35)';
@@ -159,7 +161,7 @@ export const MODELOS = [
       });
       luces(FARO, 9.4, 3.7, 0.5, 0.65);    // y los del parachoques
       rellenar('rgba(0, 0, 0, 0.4)', () => caja(10.4, 10.8, -1.8, 1.8, 0.2));   // la boca
-      luces(PILOTO, -10.8, 4.6, 0.32, 0.85); // los pilotos, altos y estrechos
+      luces(piloto, -10.8, 4.6, 0.32, 0.85); // los pilotos, altos y estrechos
     }
   },
   {
@@ -186,7 +188,7 @@ export const MODELOS = [
       rayas('rgba(255, 255, 255, 0.1)', -6.6, 2.3, [0]);           // la costura
       rellenar(CRISTAL, () => caja(-8.2, -6.8, -2.1, 2.1, 0.5));   // y la ventanilla de atrás, en la lona
       luces(FARO, 9.1, 3.55, 0.75);
-      luces(PILOTO, -10.7, 2.9, 0.3, 0.55);
+      luces(piloto, -10.7, 2.9, 0.3, 0.55);
     }
   },
   {
@@ -216,7 +218,7 @@ export const MODELOS = [
       rellenar(CRISTAL, () => simetrico([[-6.5, 3.4], [-9.6, 2.3]]));
       luces('#e8913a', -6.3, 3.55, 0.35);   // los intermitentes del techo
       luces(FARO, 10.1, 2.7, 0.5, 0.85);
-      luces(PILOTO, -10.8, 2.5, 0.25, 0.6);
+      luces(piloto, -10.8, 2.5, 0.25, 0.6);
     }
   },
   {
@@ -258,7 +260,7 @@ export const MODELOS = [
       rect(10.7, 11, -3.9, 3.9);                           // los parachoques
       rect(-11, -10.7, -3.9, 3.9);
       luces(FARO, 9.7, 3.2, 0.7, 0.75);
-      luces(PILOTO, -9.9, 3.3, 0.45);
+      luces(piloto, -9.9, 3.3, 0.45);
     }
   },
   {
@@ -287,7 +289,7 @@ export const MODELOS = [
       rect(10.6, 10.95, -4, 4);                            // los parachoques
       rect(-10.95, -10.6, -4, 4);
       luces(FARO, 9.8, 4, 0.75);
-      luces(PILOTO, -10.2, 4.3, 0.4, 0.7);
+      luces(piloto, -10.2, 4.3, 0.4, 0.7);
     }
   },
   {
@@ -338,7 +340,7 @@ export const MODELOS = [
           ctx.closePath();
         }
       });
-      luces(PILOTO, -L + 0.3, 3.9, 0.3, 0.8);
+      luces(piloto, -L + 0.3, 3.9, 0.3, 0.8);
     }
   },
   {
@@ -372,7 +374,7 @@ export const MODELOS = [
       ctx.fillStyle = FARO;              // los faros, cuadrados
       rect(9.6, 10.2, -3.9, -2.2);
       rect(9.6, 10.2, 2.2, 3.9);
-      ctx.fillStyle = PILOTO;            // y los pilotos, que doblan la esquina
+      ctx.fillStyle = piloto;            // y los pilotos, que doblan la esquina
       rect(-10.3, -9.6, -4.3, -2.2);
       rect(-10.3, -9.6, 2.2, 4.3);
       rect(-10.3, -8.9, -4.3, -3.8);
@@ -415,7 +417,7 @@ export const MODELOS = [
           ctx.closePath();
         }
       });
-      ctx.fillStyle = PILOTO;          // los pilotos, por las esquinas
+      ctx.fillStyle = piloto;          // los pilotos, por las esquinas
       rect(-L + 0.1, -7.6, -4.7, -4.15);
       rect(-L + 0.1, -7.6, 4.15, 4.7);
     }
@@ -456,7 +458,7 @@ export const MODELOS = [
       ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
       for (const x of [-8.2, -8.6, -9]) rect(x - 0.1, x + 0.1, -2, 2);
       luces(FARO, 9.5, 3.15, 0.95);              // los ojos
-      ctx.fillStyle = PILOTO;                    // la tira de los pilotos, de lado a lado
+      ctx.fillStyle = piloto;                    // la tira de los pilotos, de lado a lado
       rect(-L + 0.15, -10.5, -3, 3);
     }
   },
@@ -489,7 +491,7 @@ export const MODELOS = [
       rellenar(CRISTAL, () => caja(-10.3, -9.6, -3, 3, 0.3));    // el portón
       rellenar('rgba(0, 0, 0, 0.42)', () => caja(9.7, 10.2, -2.3, 2.3, 0.2));   // la rejilla
       luces(FARO, 9.85, 3.4, 0.62);
-      luces(PILOTO, -10.1, 4.1, 0.3, 0.55);
+      luces(piloto, -10.1, 4.1, 0.3, 0.55);
     }
   },
   {
@@ -514,7 +516,7 @@ export const MODELOS = [
       rect(10.65, 11, -4.4, 4.4);
       rect(-11, -10.65, -4.4, 4.4);
       luces(FARO, 9.3, 4.15, 0.9);
-      luces(PILOTO, -10.2, 4.5, 0.38, 0.7);
+      luces(piloto, -10.2, 4.5, 0.38, 0.7);
     }
   },
   {
@@ -558,7 +560,7 @@ export const MODELOS = [
           ctx.ellipse(8.8, lado * 3.6, 0.95, 0.65, giro, 0, Math.PI * 2);
         }
       });
-      luces(PILOTO, -9.6, 3.5, 0.55);
+      luces(piloto, -9.6, 3.5, 0.55);
     }
   },
   {
@@ -574,7 +576,7 @@ export const MODELOS = [
       rellenar(techo, () => caja(-6.6, 1, -3.6, 3.6, 1));
       rellenar(CRISTAL, () => caja(-7.6, -6.6, -3.2, 3.2, 0.4));
       luces(FARO, L - 0.8, A - 2, 0.6, 0.9);
-      luces(PILOTO, -L + 0.5, A - 2, 0.4, 0.9);
+      luces(piloto, -L + 0.5, A - 2, 0.4, 0.9);
     }
   }
 ];
@@ -594,8 +596,10 @@ export function siguienteModelo(id) {
 /**
  * Dibuja el coche en sus coordenadas (el origen en el centro, el morro a +x),
  * con la sombra ya puesta por quien llama: ruedas, chapa, contorno y detalles.
+ * Frenando, los pilotos se encienden.
  */
-export function pintarModelo(m, color) {
+export function pintarModelo(m, color, frenando = false) {
+  piloto = frenando ? PILOTO_FRENO : PILOTO;
   ctx.save();
   ctx.scale(escala(m), escala(m));
   const via = m.via ?? A - 0.5;
