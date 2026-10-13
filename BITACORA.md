@@ -1839,3 +1839,27 @@ app en la consola de Play.
   contrario (`porElTablero`, en `luz.js`): ¿va por el tablero o sus rampas (encima y
   con su rumbo)? La de todos los demás, que van por el suelo, la tapa el tablero.
   `pintarHora` ya no recibe los de debajo.
+
+## Los módulos, todos a la vez: `modulepreload` (13/10/2026, rama `50-modulepreload`)
+
+- Sin service worker (la primera visita, o quien no instala la PWA) el navegador
+  descubre los módulos por capas: el HTML trae `juego.js`, este 32 módulos y esos los
+  12 últimos (los circuitos, `geometria.js`, `trazo.js`, `circuito.js`). Cada capa es
+  una ida y vuelta, y con `no-cache` también lo es revalidar.
+- Ahora cada página lleva un `<link rel="modulepreload">` por módulo (45, `juego.js`
+  el primero), de la misma lista que `PRECACHE` (`MODULOS`, en `gen-pages.mjs`). La
+  lista de `PRECACHE` no cambia de orden: es el contrato con `app/sync.sh`.
+- Medido contra producción (HTTP/2 y brotli) con Chrome sin ventana y la red de
+  DevTools, inyectando los enlaces en el HTML; la mediana de 5 cargas, dos tandas
+  (`load`, con los módulos ya ejecutados):
+
+  | red | caché | antes | con `modulepreload` |
+  |---|---|---|---|
+  | 4G lenta | sí (revalida) | 2,42 s | 2,03 s |
+  | 4G rápida | sí (revalida) | 1,15 s | 0,90 s |
+  | 4G rápida | no | 1,13 s | 1,02 s |
+  | 4G lenta | no | 3,4-3,5 s | igual (ruido) |
+
+  Se gana una ida y vuelta, no dos: `juego.js` ya lo encontraba pronto el escáner del
+  HTML. Sin caché y en 4G lenta manda el ancho de banda (los ~210 KB). Los pedidos
+  son los mismos (ninguno se pide dos veces) y no hay errores.

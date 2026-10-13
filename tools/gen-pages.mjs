@@ -108,6 +108,13 @@ function modulos(entrada) {
   return [...vistos].sort();
 }
 
+// Todos los módulos del juego, juego.js el primero. Van en PRECACHE y en un
+// <link rel="modulepreload"> cada uno: sin service worker el navegador
+// descubre los import capa a capa (una ida y vuelta por nivel, y con no-cache
+// cada una revalida); así los pide todos a la vez. Medido con 4G lenta y la
+// caché del navegador: el load, de 2,4 a 2,0 s (BITACORA.md).
+const MODULOS = ['juego.js', ...modulos('juego.js').filter((f) => f !== 'juego.js')];
+
 // Los scripts clásicos que index.html carga antes del juego (vendor/pnyk/).
 const CLASICOS = ['vendor/pnyk/red.js', 'vendor/pnyk/pie.js', 'vendor/pnyk/consentimiento.js'];
 
@@ -205,6 +212,7 @@ ${ogAlternativas}
   <link rel="apple-touch-icon" href="${versionado('iconos/icon-192.png')}">
   <link rel="manifest" href="${base}manifest.webmanifest">
   <link rel="stylesheet" href="${versionado('style.css')}">
+${MODULOS.map((f) => `  <link rel="modulepreload" href="${base}${f}">`).join('\n')}
 
   <script type="application/ld+json">
 ${jsonLd}
@@ -317,7 +325,7 @@ function manifest() {
  */
 const PRECACHE = [
   ...IDIOMAS.map((l) => l.dir + 'index.html'),
-  ...modulos('juego.js'),
+  ...[...MODULOS].sort(),
   ...CLASICOS,
   'style.css',
   'favicon.svg',

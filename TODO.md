@@ -77,11 +77,6 @@ lo precarga) y a cambio traería un build, dos códigos (el arnés importa las f
 errores ilegibles en producción. Se reconsidera solo si un día hay build por otra
 razón. Lo que sí, por orden:
 
-- [ ] `<link rel="modulepreload">` de todos los módulos en las páginas generadas
-      (`gen-pages.mjs` ya tiene la lista: `PRECACHE`). Sin service worker (la primera
-      visita, quien no instala), el navegador descubre los `import` por capas: una ida
-      y vuelta por nivel, y con `no-cache` cada una revalida. Medir antes y después la
-      primera carga (DevTools › Network, 4G lenta).
 - [ ] Una versión nueva no baja lo que no ha cambiado. Hoy cada versión cambia
       `CACHE` y reinstala los 70+ ficheros (~250 KB) aunque cambie uno. `gen-pages`
       guarda la huella de cada fichero y el service worker, al instalarse, copia de la
