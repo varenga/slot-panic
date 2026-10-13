@@ -67,3 +67,35 @@ la portada, con cuatro coches siempre, las mangas y *La judía* y *La ele*
 - [ ] Playtest de *La judía* y *La ele*: ¿se entiende que el carril de fuera va casi a
       fondo y el de dentro hay que soltar?, ¿el carril de dentro de *La ele* (radio 25)
       se ve demasiado cerrado?
+
+# Fase 5 — Rendimiento
+
+Medido el 13-10-2026: 48 módulos JS y un CSS, 644 KB en bruto y ~200 KB en gzip, y
+el servidor ya sirve brotli (`juego.js` 70 → 18 KB, `dibujo.js` 70 → 18, `i18n.js`
+118 → 25). **Minificar no entra**: con brotli quitaría 50-70 KB una sola vez (la PWA
+lo precarga) y a cambio traería un build, dos códigos (el arnés importa las fuentes) y
+errores ilegibles en producción. Se reconsidera solo si un día hay build por otra
+razón. Lo que sí, por orden:
+
+- [ ] `<link rel="modulepreload">` de todos los módulos en las páginas generadas
+      (`gen-pages.mjs` ya tiene la lista: `PRECACHE`). Sin service worker (la primera
+      visita, quien no instala), el navegador descubre los `import` por capas: una ida
+      y vuelta por nivel, y con `no-cache` cada una revalida. Medir antes y después la
+      primera carga (DevTools › Network, 4G lenta).
+- [ ] Una versión nueva no baja lo que no ha cambiado. Hoy cada versión cambia
+      `CACHE` y reinstala los 70+ ficheros (~250 KB) aunque cambie uno. `gen-pages`
+      guarda la huella de cada fichero y el service worker, al instalarse, copia de la
+      caché anterior los de la misma huella y solo pide a la red los cambiados. Cada
+      caché sigue siendo entera y de una sola versión: no se mezclan.
+- [ ] Medir el tiempo de fotograma, no solo los FPS: en la depuración, la media y el
+      peor 5 %. Y una grabación de DevTools › Performance en un Android modesto, en el
+      peor caso (de noche, cuatro coches, la lupa). Con eso se decide lo de abajo.
+- [ ] Nada que genere basura en cada fotograma: la luz de freno crea dos degradados
+      radiales por coche y fotograma (`dibujo.js`, `pintarFreno`); pre-pintada en una
+      capa, como los halos de `luz.js`. Buscar más asignaciones por fotograma (arrays,
+      objetos, cadenas de color) en el dibujo y en `slot.js`.
+- [ ] Partir `i18n.js` por idioma (el más grande: 25 KB comprimido, y se bajan siete
+      para usar uno; ahorra ~20 KB en la primera carga). Pide cargar el idioma antes de
+      arrancar y que cambiar de idioma sea asíncrono: `t()` hoy es síncrona.
+- [ ] Si la medida sale justa: bajar a 30 FPS con poca batería (o a elección en
+      AJUSTES).
