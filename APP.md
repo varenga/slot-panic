@@ -151,7 +151,8 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
   usuarios se contestan como dice `app/store/play-console.md`, no con «no recoge
   datos».
 * [ ] Prueba cerrada (en curso), luego pública. Segundo bundle: `versionCode` 2,
-  `versionName` 1.16.2, la web de producción (2026-10-13).
+  `versionName` 1.16.2, la web de producción (2026-10-13). Tercero: `versionCode` 3,
+  `versionName` 1.17.0 (el atardecer fluido y empezar a jugar en horizontal, 2026-10-16).
 
 ### Fase D — La de iOS
 
