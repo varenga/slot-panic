@@ -2046,3 +2046,32 @@ arrancaba la carrera, no se sabía cómo jugar uno o dos ni qué coche era el tu
   dan la vuelta y dejan `t()` en el nuevo. Probado en el navegador: en `/en/` baja
   solo `en.js`; L dos veces seguidas, `pt.js` y `gl.js` y queda en gallego, lienzo y
   pie; `?lang=fr` en la raíz, en francés. Arnés: 2333/2333.
+
+## La medida en un Android (16/10/2026, rama `58-medida-android`)
+
+- **El móvil**: Redmi Note 14 Pro 5G (Dimensity 7300 Ultra, 8 GB, Android 16, pantalla
+  de 120 Hz; Chrome 155 va a 60). Gama media: no es el «modesto» que pedía la fase 5,
+  pero es el primero medido.
+- **Cómo**: servido en local y llevado al móvil con `adb reverse tcp:8124` (así es
+  `localhost` y sale la depuración); DevTools por `adb forward` a
+  `chrome_devtools_remote`, y desde Node, por el protocolo: `localStorage` para
+  elegir circuito, hora y escenario, un bucle de `requestAnimationFrame` que cuenta los
+  cuadros perdidos (> 25 ms) por segundo, el estado vivo con `import(/estado.js)` y
+  una traza. El peor caso: *El ocho largo*, de noche, con los cuatro coches de la
+  exhibición y la lupa (en vertical).
+- **El JavaScript sobra**: el trabajo, 3,6 ms por cuadro (p95 4,7) de 16,7, y ninguna
+  tarea larga.
+- **La GPU es el cuello**: en la traza, su hilo principal (`CrGpuMain`, las órdenes
+  del lienzo) está ocupado la mitad del tiempo, ~8 ms por cuadro, en la lupa de noche.
+  La lupa pinta a densidad 2 (1080 × 1990, 2,3 veces los píxeles de la mesa) y la
+  noche añade dos pasadas de capa entera (la base y los recortes de luz).
+- **Solo pierde cuadros con el SoC caliente**: tras un rato en uso (~60 °C), la lupa
+  de noche iba por rachas de ~15 s perdiendo 10-17 cuadros por segundo (hasta el 15 %
+  de una tanda de 30 s), sin relación con el sitio de la pista; de día, menos. En frío
+  (39-44 °C), 3 minutos seguidos: 0,4 por segundo, ni un tirón que se vea. La misma
+  pestaña en blanco, 0. En horizontal (la mesa, 1280 × 720), de noche y de día, 0,5
+  por segundo.
+- A densidad 1 (forzada con DevTools), en frío, igual que a densidad 2: no se pudo
+  medir si alivia en caliente, porque el SoC no volvió a calentarse.
+- **Se decide**: en este móvil no hace falta nada, y menos bajar a 30 FPS. Queda
+  medir en uno de gama baja; si va justo, la palanca es la GPU en la lupa.

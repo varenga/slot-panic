@@ -77,9 +77,10 @@ lo precarga) y a cambio traería un build, dos códigos (el arnés importa las f
 errores ilegibles en producción. Se reconsidera solo si un día hay build por otra
 razón. Lo que sí, por orden:
 
-- [ ] Medir en un Android modesto, en el peor caso (de noche, cuatro coches, la lupa):
-      el panel de depuración ya da el trabajo y el cuadro (media y p95; sirviendo en la
-      LAN no sale, solo en local: con `chrome://inspect` y reenvío de puertos al 8124),
-      y una grabación de DevTools › Performance. Con eso se decide lo de abajo.
-- [ ] Si la medida sale justa: bajar a 30 FPS con poca batería (o a elección en
-      AJUSTES).
+- [ ] Medir en un Android de gama baja de verdad (el Redmi Note 14 Pro, de gama media,
+      va sobrado en frío y solo pierde cuadros en la lupa con el SoC caliente:
+      `BITACORA.md`). El mismo procedimiento: `adb reverse`, DevTools por
+      `adb forward` y la lupa de noche en *El ocho largo*, en frío y tras un rato.
+- [ ] Solo si esa medida sale justa: la primera palanca es la GPU en la lupa (pinta a
+      densidad 2: 2,3 veces los píxeles de la mesa), no el JavaScript; bajar a 30 FPS
+      con poca batería, después.
