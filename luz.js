@@ -6,7 +6,7 @@
  * interfaz.
  *
  * - Atardecer: un velo cálido, más claro hacia el sol y más oscuro al otro
- *   lado. Un relleno por fotograma.
+ *   lado. Pintado una vez y estampado en cada fotograma.
  * - Noche: como un circuito de noche de verdad. Una capa oscura en la que se
  *   recorta, horneado una vez, la pista entera a media luz, la mancha de cada
  *   torre de iluminación (las coloca el decorado) y las gradas; y en cada
@@ -504,18 +504,32 @@ function pintarFlashes(gradas, coches, fuerza) {
   flashes = flashes.filter((f) => f.vida > 0);
 }
 
+/*
+ * El atardecer, sin modos de mezcla: `multiply` y `soft-light` no los hace la
+ * mezcla de la GPU, y a pantalla completa cada relleno copiaba y releía el
+ * lienzo entero (en Android iba a saltos; la noche, no). El velo es una capa
+ * pintada una vez y estampada con `source-over`: un color y su alcance, más
+ * claro y cálido hacia el sol (bajo, arriba a la izquierda) y malva al otro
+ * lado, ajustados a lo que hacían aquellos dos rellenos (por mínimos cuadrados
+ * sobre grises de 0,1 a 0,9: queda a ~9/255 en el lado del sol).
+ */
+let velo = null;
+function crearVelo() {
+  const capa = crearCapa(ANCHO, ALTO);
+  dibujarEn(capa, () => {
+    const g = ctx.createLinearGradient(0, 0, ANCHO, ALTO);
+    g.addColorStop(0, 'rgba(164, 76, 0, 0.23)');
+    g.addColorStop(1, 'rgba(70, 0, 2, 0.34)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  });
+  return capa;
+}
+
 function pintarAtardecer(fuerza) {
+  velo ??= crearVelo();
   ctx.save();
   ctx.globalAlpha = fuerza;
-  // El sol, bajo y arriba a la izquierda: claro y cálido hacia él, malva al otro lado.
-  ctx.globalCompositeOperation = 'multiply';
-  const g = ctx.createLinearGradient(0, 0, ANCHO, ALTO);
-  g.addColorStop(0, 'rgb(255, 228, 190)');
-  g.addColorStop(1, 'rgb(196, 162, 178)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, ANCHO, ALTO);
-  ctx.globalCompositeOperation = 'soft-light';
-  ctx.fillStyle = 'rgba(255, 150, 70, 0.18)';
-  ctx.fillRect(0, 0, ANCHO, ALTO);
+  ctx.drawImage(velo, 0, 0);
   ctx.restore();
 }
