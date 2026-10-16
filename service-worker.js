@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-43cecca3';
+const CACHE = 'slotpanic-6a7876dc';
 
 const PRECACHE = [
   'index.html',
@@ -77,13 +77,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '044bf365',
-  'en/index.html':                'f7626e1e',
-  'pt/index.html':                '8510c1af',
-  'gl/index.html':                '3944bbaa',
-  'ca/index.html':                '5077bb5c',
-  'it/index.html':                '5384de88',
-  'fr/index.html':                'eb65c248',
+  'index.html':                   '9ff05715',
+  'en/index.html':                '5d44185b',
+  'pt/index.html':                '68ccf3c9',
+  'gl/index.html':                '3c8b2cd7',
+  'ca/index.html':                '71bcf384',
+  'it/index.html':                '0acb9a78',
+  'fr/index.html':                'a9b0e899',
   'analitica.js':                 'bccaef26',
   'audio.js':                     '936e65ae',
   'circuitos/banera.js':          '89b3bfc0',
@@ -106,7 +106,7 @@ const HUELLAS = {
   'i18n.js':                      '43c3d747',
   'juego.js':                     'be42a8a0',
   'lupa.js':                      'a7d78e09',
-  'luz.js':                       '57dee04d',
+  'luz.js':                       '1eefbe21',
   'medida.js':                    '03f10cbb',
   'menu.js':                      '4a4ea491',
   'nucleo/campeonato.js':         '5fab5848',

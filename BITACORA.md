@@ -1913,3 +1913,20 @@ app en la consola de Play.
   coche y con el sprite no se aprecia (está dentro del ruido). Es un banco de pruebas
   tosco, que mide también lo que la GPU tarda en vaciar la cola; la cifra que manda es
   la del Android.
+
+## Slot Panic 1.16.4: el atardecer, fluido en Android (16/10/2026, rama `53-atardecer-fluido`)
+
+- En la PWA de Android, el atardecer iba lento y a saltos aun con dos carriles; la
+  noche, con cuatro, no. El velo eran dos rellenos de pantalla completa por
+  fotograma con `multiply` y `soft-light`, modos que la mezcla de la GPU no hace: cada
+  uno copia y relee el lienzo entero. La noche solo usa `source-over`, `lighter` y
+  `destination-out`.
+- Ahora el velo es una capa pintada una vez (`crearVelo`, `luz.js`) y estampada con
+  `source-over` y `globalAlpha` = la fuerza del atardecer (así sigue fundiéndose en la
+  carrera que anochece). Con mezcla normal no se puede multiplicar por canal, así que
+  el color y el alcance de cada extremo se ajustaron por mínimos cuadrados a lo que
+  hacían los dos rellenos, sobre grises de 0,1 a 0,9: hacia el sol
+  `rgba(164, 76, 0, 0.23)` (queda a ~9/255), al otro lado `rgba(70, 0, 2, 0.34)`
+  (~4/255). En el ordenador la portada con uno y con otro casi no se distingue.
+- Probado en el móvil por la wifi, el viejo y el nuevo tras `?velo`: con el velo va
+  fluido. No queda ningún otro modo de mezcla de esos en el juego.
