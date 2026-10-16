@@ -60,10 +60,11 @@ const LUZ_RADIO = 11;
 const LUZ_PASO = 34;
 const DESVANECER = 0.3;   // s finales de DURACION_SALIDA en que se apaga
 
-export function semaforo(carrera, x, y) {
+export function semaforo(carrera, x, y, apagado = false) {
   let encendidas, color, alfa = 1;
   if (carrera.fase === 'cuenta') {
-    encendidas = Math.min(LUCES, CUENTA_ATRAS - Math.ceil(carrera.cuenta) + 1);
+    // Mientras la salida espera a los dedos (`apagado`), ninguna.
+    encendidas = apagado ? 0 : Math.min(LUCES, CUENTA_ATRAS - Math.ceil(carrera.cuenta) + 1);
     color = COLOR.rojo;
   } else {
     if (carrera.tiempoSalida >= DURACION_SALIDA) return;
@@ -118,22 +119,34 @@ export function marcoMenu() {
 
 export function dibujarPortada({ circuito, tiempo, tactil, duracion, modo, marca, menu, jugadores, modelos, colores }) {
   bandas();
-  if (tactil) texto(t('slot.controlesTactil'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 13, color: COLOR.hud, peso: 500 });
+  if (tactil) texto(t('portada.comoTactil'), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: 15, color: COLOR.hud, peso: 600 });
   else resumenJugadores(jugadores, modelos, colores);
   if (menu) return;
   const { x, y } = centro(circuito);
-  panel(x, y - 120, 470, 252);
+  // Tocando, el circuito y los récords, más grandes (en el móvil un píxel lógico es poco más de medio real).
+  panel(x, y - 120, 470, tactil ? 276 : 252);
   texto('SLOT PANIC', x, y - 70, { tam: 64, color: COLOR.hud, peso: 800 });
   texto(t('slot.lema'), x, y - 22, { tam: 18, color: COLOR.texto, peso: 500 });
 
-  // El parpadeo es lento: llama la atención sin cansar.
-  if (Math.floor(tiempo * 1.6) % 2 === 0) {
-    texto(t(tactil ? 'portada.jugarTactil' : 'portada.jugar'), x, y + 34, { tam: 24, color: COLOR.ambar, peso: 700 });
+  // Tocando, los dos botones: cuántos juegan, y solo ellos arrancan. Con
+  // teclado, Enter, con un parpadeo lento: llama la atención sin cansar.
+  if (tactil) {
+    for (const caja of cajasJugar(circuito)) boton(caja, t(caja.jugadores === 1 ? 'portada.unJugador' : 'portada.dosJugadores'), true, 24);
+  } else if (Math.floor(tiempo * 1.6) % 2 === 0) {
+    texto(t('portada.jugar'), x, y + 34, { tam: 24, color: COLOR.ambar, peso: 700 });
   }
-  texto(tituloPortada(circuito, duracion, modo), x, y + 80, { tam: 14, color: COLOR.texto });
-  // En un oficial, el botón de los récords (con el récord y tu mejor vuelta); si no, tocando, cómo se juega contra la CPU.
-  if (marca && modo !== 'campeonato') boton(cajaRecordsPortada(circuito), marca + '  ›', false, 14);
-  else if (tactil) texto(t('slot.cpuLibre'), x, y + 104, { tam: 14, color: COLOR.texto });
+  texto(tituloPortada(circuito, duracion, modo), x, y + (tactil ? 84 : 80), { tam: tactil ? 20 : 14, color: COLOR.texto, peso: tactil ? 700 : 600 });
+  // En un oficial, el botón de los récords (con el récord y tu mejor vuelta).
+  if (marca && modo !== 'campeonato') boton(cajaRecordsPortada(circuito, tactil), marca + '  ›', false, tactil ? 18 : 14);
+}
+
+/** Tocando, en el panel de la portada: 1 JUGADOR y 2 JUGADORES. Dibujo y pulsación. */
+export function cajasJugar(circuito) {
+  const { x, y } = centro(circuito);
+  const ancho = 200, alto = 56, hueco = 16;
+  return [1, 2].map((jugadores, i) => ({
+    id: 'jugar', jugadores, x: x - ancho - hueco / 2 + i * (ancho + hueco), y: y + 4, ancho, alto
+  }));
 }
 
 /** Lo que se va a correr: el circuito y las vueltas, o el campeonato entero. */
@@ -169,8 +182,9 @@ export function vueltasDe(duracion) {
 }
 
 /** El botón de los récords, en el panel de la portada de un oficial. Dibujo y pulsación. */
-export function cajaRecordsPortada(circuito) {
+export function cajaRecordsPortada(circuito, tactil = false) {
   const { x, y } = centro(circuito);
+  if (tactil) return { id: 'records', x: x - 210, y: y + 104, ancho: 420, alto: 40 };
   return { id: 'records', x: x - 200, y: y + 96, ancho: 400, alto: 28 };
 }
 
@@ -227,18 +241,18 @@ export function nombreSlot(i, humanos) {
  * las dos CPU de más van hacia dentro, más apretadas: sin la mejor vuelta.
  * En mangas, con `suma` (`sumaEnCarrera`), lo que lleva cada uno en la suma.
  */
-export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null, suma = null) {
+export function dibujarMarcadorSlot(carrera, humanos, tactil, rotulo = null, suma = null, espera = null) {
   const alto = BANDA_TEXTO;
-  if (carrera.fase === 'cuenta') guiaSlot(carrera, humanos, tactil, rotulo);
+  if (carrera.fase === 'cuenta') guiaSlot(carrera, humanos, tactil, rotulo, espera);
   ctx.fillStyle = COLOR.banda;
   ctx.fillRect(0, 0, ANCHO, alto);
   carrera.coches.forEach((slot, i) => marcadorCoche(carrera, slot, i, humanos, alto, suma));
   if (carrera.fase === 'cuenta') {
-    texto(String(Math.ceil(carrera.cuenta)), ANCHO / 2, alto / 2 + 1, { tam: 38, color: COLOR.ambar, peso: 800 });
+    if (!espera) texto(String(Math.ceil(carrera.cuenta)), ANCHO / 2, alto / 2 + 1, { tam: 38, color: COLOR.ambar, peso: 800 });
   } else {
     texto(formatearTiempo(carrera.tiempo), ANCHO / 2, alto / 2 + 1, { tam: 32, color: COLOR.hud, peso: 700 });
   }
-  semaforo(carrera, ANCHO / 2, alto + 30);
+  semaforo(carrera, ANCHO / 2, alto + 30, !!espera);
 }
 
 /*
@@ -290,10 +304,14 @@ export function barraPotencia(slot, x, y, ancho) {
 
 /*
  * Durante la cuenta atrás: qué mitad (o qué teclas) es cada coche y, encima
- * de cada uno, en la parrilla, quién es: así se ve de qué carril sale. En el
- * móvil, las dos mitades de la pantalla, cada una del color de su coche.
+ * de cada uno, en la parrilla, quién es: así se ve de qué carril sale. Tocando,
+ * un anillo que late alrededor del coche de cada jugador (con uno solo, «TÚ»)
+ * y, a dos, las dos mitades de la pantalla, cada una del color de su coche.
+ * Antes, mientras la salida espera (`espera`: quién tiene ya el dedo puesto),
+ * cada jugador ve que tiene que apoyarlo, y luego que está listo.
  */
-function guiaSlot(carrera, humanos, tactil, rotulo) {
+function guiaSlot(carrera, humanos, tactil, rotulo, espera) {
+  const uno = tactil && humanos.filter(Boolean).length === 1;
   // En la pista de cuatro, arriba están la recta y la parrilla: los paneles van
   // más abajo (en el ocho largo, en el hueco de cada lazo), más estrechos. Un
   // circuito que no tenga hueco ahí dice dónde (`circuito.guia`, los centros).
@@ -308,23 +326,50 @@ function guiaSlot(carrera, humanos, tactil, rotulo) {
   // Solo los dos primeros coches pueden ser de una persona: cada uno, su mitad.
   carrera.coches.slice(0, 2).forEach((slot, i) => {
     const { x: cx, y: cy } = guia.paneles?.[i] || { x: ANCHO / 4 + i * ANCHO / 2, y };
-    if (tactil) {
+    if (tactil && humanos[i] && !uno) {
       ctx.globalAlpha = 0.08;
       ctx.fillStyle = slot.coche.color;
       ctx.fillRect(i * ANCHO / 2, 0, ANCHO / 2, ALTO);
       ctx.globalAlpha = 1;
     }
     panel(cx, cy - 34, cuatro ? 220 : 300, 68);
-    texto(nombreSlot(i, humanos), cx, cy - 14, { tam: 22, color: slot.coche.color, peso: 800 });
-    // Con teclado, las teclas de cada humano; el de la CPU no lleva nada.
-    const ayuda = tactil ? t('slot.mantener') : humanos[i] ? t('slot.teclas' + (i + 1)) : '';
-    if (ayuda) texto(ayuda, cx, cy + 14, { tam: 15, color: COLOR.hud, peso: 700 });
+    texto(nombreGuia(i, humanos, uno), cx, cy - 14, { tam: 22, color: slot.coche.color, peso: 800 });
+    // Lo que tiene que hacer cada humano (tocando, apoyar el dedo; con teclado, sus teclas); la CPU, nada.
+    let ayuda = '', color = COLOR.hud;
+    if (humanos[i] && tactil && espera) {
+      ayuda = t(espera[i] ? 'slot.listo' : 'slot.mantenerSalir');
+      if (espera[i]) color = COLOR.verde;
+    } else if (humanos[i]) ayuda = tactil ? t('slot.mantener') : t('slot.teclas' + (i + 1));
+    if (ayuda) texto(ayuda, cx, cy + 14, { tam: cuatro ? 13 : 15, color, peso: 700 });
   });
-  etiquetasParrilla(carrera, humanos);
-  // La barra de arriba es el marcador: la ayuda va abajo, en dos líneas.
+  if (tactil) anillos(carrera, humanos);
+  etiquetasParrilla(carrera, humanos, uno);
+  // La barra de arriba es el marcador: la ayuda va abajo.
   bandas(false);
-  texto(t(tactil ? 'slot.controlesTactil' : 'slot.controles'), ANCHO / 2, ALTO - (tactil ? 38 : BANDA_TEXTO / 2), { tam: 13, color: COLOR.hud, peso: 500 });
-  if (tactil) texto(t('slot.cpuLibre'), ANCHO / 2, ALTO - 17, { tam: 12, color: COLOR.texto, peso: 500 });
+  const ayuda = tactil ? (uno ? 'slot.controlesUno' : 'slot.controlesTactil') : 'slot.controles';
+  texto(t(ayuda), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: tactil ? 15 : 13, color: COLOR.hud, peso: tactil ? 600 : 500 });
+}
+
+/* Quién es cada coche en la parrilla: tocando y con un solo jugador, el suyo es «TÚ». */
+function nombreGuia(i, humanos, uno) {
+  return uno && humanos[i] ? t('slot.tu') : nombreSlot(i, humanos);
+}
+
+/* Un anillo que late, del color del coche, alrededor del de cada jugador. */
+function anillos(carrera, humanos) {
+  const latido = 0.5 + 0.5 * Math.sin(performance.now() / 1000 * Math.PI * 2 * 1.2);
+  carrera.coches.slice(0, 2).forEach((slot, i) => {
+    if (!humanos[i]) return;
+    const { coche } = slot;
+    ctx.save();
+    ctx.strokeStyle = coche.color;
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.45 + 0.55 * latido;
+    ctx.beginPath();
+    ctx.arc(coche.x, coche.y, slot.ficha.largo * 0.75 + 4 * latido, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  });
 }
 
 /*
@@ -332,12 +377,12 @@ function guiaSlot(carrera, humanos, tactil, rotulo) {
  * del otro coche, que va pegado), con quién lo lleva. Con cuatro no hay lado
  * de fuera para los del medio: cada una va delante de su coche, en su carril.
  */
-function etiquetasParrilla(carrera, humanos) {
+function etiquetasParrilla(carrera, humanos, uno = false) {
   const coches = carrera.coches.map((slot) => slot.coche);
   const mx = coches.reduce((s, c) => s + c.x, 0) / coches.length, my = coches.reduce((s, c) => s + c.y, 0) / coches.length;
   carrera.coches.forEach((slot, i) => {
     const { coche } = slot;
-    const nombre = nombreSlot(i, humanos);
+    const nombre = nombreGuia(i, humanos, uno);
     ctx.font = `800 15px ${FUENTE}`;
     const ancho = ctx.measureText(nombre).width + 16;
     let x, y;

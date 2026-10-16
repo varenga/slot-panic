@@ -46,7 +46,7 @@ import {
   actualizarParticulas, chispasChoque, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
 } from './particulas.js';
 import {
-  botonesFin, cajaRecordsPortada, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
+  botonesFin, cajaRecordsPortada, cajasJugar, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
   marcoMenu, nombreCircuito
 } from './pantalla.js';
 import {
@@ -224,10 +224,13 @@ function cambiarJugador(i) {
 }
 
 /*
- * Quién juega se elige solo con teclado y en la mesa. Tocando, cada carril es
- * de la CPU hasta que alguien toca su mitad; en la lupa, el J1 contra la CPU.
+ * Quién juega: con teclado y en la mesa, en CARRERA (una persona o la CPU por
+ * carril). Tocando en la mesa, con los dos botones de la portada (1 o 2
+ * jugadores: `juegaTactil`). En la lupa, el J1 contra la CPU, que toma el
+ * carril al tocar.
  */
 const eligeJugadores = () => !estado.tactil && !estado.lupa;
+const juegaTactil = () => estado.tactil && !estado.lupa;
 
 /** Desde la portada: la carrera o el campeonato, según el modo. */
 function arrancar() {
@@ -679,9 +682,9 @@ function empezarCarrera() {
 
 /*
  * Con teclado, cada carril es de quien diga CARRERA (una persona o la CPU).
- * Tocando, lo lleva la CPU hasta que alguien toca su mitad de la pantalla;
- * desde ahí es suyo toda la carrera: juegan uno o dos sin menú. En mangas,
- * cada una empieza igual: tocando, se vuelve a tomar el carril.
+ * Tocando en la mesa, de los jugadores que se eligieron en la portada, y la
+ * salida espera a que cada uno apoye el dedo: nada arranca por sorpresa. En
+ * la lupa, lo lleva la CPU hasta que el J1 toca.
  */
 function correrManga() {
   evento('empezar_carrera', datosCarrera());
@@ -701,13 +704,14 @@ function correrManga() {
   const { piloto } = NIVELES_CPU.find((n) => n.id === estado.nivel);
   estado.pilotos = estado.carrera.coches.map(() => crearPiloto({ ...piloto, semilla: semilla() }));
   estado.humanos = estado.carrera.coches.map(() => false);
-  if (eligeJugadores()) {
+  if (eligeJugadores() || juegaTactil()) {
     estado.carrera.coches.forEach((slot, i) => {
-      if (estado.jugadores[i] !== 'humano') return;
+      if (eligeJugadores() ? estado.jugadores[i] !== 'humano' : i >= estado.jugadoresTactil) return;
       estado.humanos[i] = true;
       slot.humanoDesde = 0;
     });
   }
+  estado.espera = juegaTactil();
   estado.fantasma = fantasmaElegido();
   if (conRecords()) cargarRecords(estado.circuito.clave);
   estado.ultimaAvisada = false;
@@ -983,9 +987,9 @@ function pulsada(codigos) {
 }
 
 /*
- * Los mandos de cada carril: el humano que lo haya tomado o su CPU. Solo los
- * dos primeros coches pueden ser de una persona: en la pista de cuatro, los
- * otros dos son siempre de la CPU.
+ * Los mandos de cada carril: el humano que lo lleva o su CPU. Solo los dos
+ * primeros coches pueden ser de una persona: en la pista de cuatro, los otros
+ * dos son siempre de la CPU. Solo en la lupa se toma un carril tocando.
  */
 function mandos() {
   const lados = new Set(punteros.values());
@@ -994,8 +998,8 @@ function mandos() {
     // En la lupa se juega solo: los otros carriles son siempre de la CPU.
     if (i > 1 || (estado.lupa && i > 0)) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
     const pulsado = pulsada(CONTROLES_SLOT[i]) || lados.has(i === 0 ? 'izq' : 'der');
-    // Con teclado, el carril de la CPU no se toma pulsando.
-    if (eligeJugadores() && !estado.humanos[i]) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
+    // Con teclado y tocando en la mesa, el carril de la CPU no se toma pulsando.
+    if ((eligeJugadores() || juegaTactil()) && !estado.humanos[i]) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
     if (pulsado && !estado.humanos[i]) {
       estado.humanos[i] = true;
       slot.humanoDesde = carrera.fase === 'carrera' ? carrera.tiempo : 0;
@@ -1033,8 +1037,14 @@ function aLienzo(evento) {
   };
 }
 
-// En la lupa, toda la pantalla es el acelerador del J1.
-const ladoDe = (p) => (estado.lupa || p.x < ANCHO / 2 ? 'izq' : 'der');
+// En la lupa, o tocando en la mesa con un solo jugador, toda la pantalla es el acelerador del J1.
+const ladoDe = (p) => (estado.lupa || (juegaTactil() && estado.jugadoresTactil === 1) || p.x < ANCHO / 2 ? 'izq' : 'der');
+
+/* Tocando en la mesa, antes de la salida: qué jugadores tienen ya el dedo (o su tecla) puesto. */
+function listos() {
+  const lados = new Set(punteros.values());
+  return [0, 1].map((i) => estado.humanos[i] && (lados.has(i === 0 ? 'izq' : 'der') || pulsada(CONTROLES_SLOT[i])));
+}
 const dentro = (p, caja) => p.x >= caja.x && p.x <= caja.x + caja.ancho && p.y >= caja.y && p.y <= caja.y + caja.alto;
 
 lienzo.addEventListener('pointerdown', (evento) => {
@@ -1076,7 +1086,7 @@ function opcionPulsada(id) {
 // --- El menú de la portada ----------------------------------------------------
 
 /* Lo que menu.js necesita de la vista de ahora: dónde va cada cosa. */
-const vistaMenu = () => ({ ...vistaGaleria(), lupa: estado.lupa });
+const vistaMenu = () => ({ ...vistaGaleria(), lupa: estado.lupa, tactil: estado.tactil });
 const marcoActual = () => (estado.lupa ? marcoMenuLupa() : marcoMenu());
 const opcionesMenu = () => ({ columnas: estado.lupa ? 1 : 2, eligeJugadores: eligeJugadores(), lupa: estado.lupa, teclado: !estado.tactil });
 
@@ -1439,11 +1449,16 @@ const ESCENAS = {
       const grupo = cajasGrupos(vistaMenu()).find((caja) => dentro(p, caja));
       // Los récords, solo con el panel de la portada a la vista (sin menú y en una carrera suelta).
       const records = !estado.menu && estado.modo !== 'campeonato' && conRecords()
-        && dentro(p, estado.lupa ? cajaRecordsPortadaLupa() : cajaRecordsPortada(estado.circuito));
+        && dentro(p, estado.lupa ? cajaRecordsPortadaLupa() : cajaRecordsPortada(estado.circuito, estado.tactil));
+      // Tocando en la mesa, se corre con uno de los dos botones: un toque perdido no arranca nada.
+      const jugar = juegaTactil() && !estado.menu && cajasJugar(estado.circuito).find((caja) => dentro(p, caja));
       if (grupo) pulsarGrupo(grupo.id);
       else if (estado.menu) pulsarMenu(p);
       else if (records) abrirRecords();
-      else arrancar();
+      else if (jugar) {
+        estado.jugadoresTactil = jugar.jugadores;
+        arrancar();
+      } else if (!juegaTactil()) arrancar();
       // El toque que arranca no debe tomar ya un carril.
       punteros.clear();
     }
@@ -1452,6 +1467,14 @@ const ESCENAS = {
   carrera: {
     actualizar(dt) {
       const { carrera } = estado;
+      // La salida espera, con la parrilla quieta, a que cada jugador apoye el dedo.
+      if (estado.espera) {
+        if (listos().some((listo, i) => estado.humanos[i] && !listo)) {
+          sonido(false);
+          return;
+        }
+        estado.espera = false;
+      }
       avanzarMundo(mandos(), dt);
       grabarCuadro(estado.repeticion, carrera, dt, estado.humanos);
       for (const evento of carrera.eventos) {
@@ -1492,7 +1515,7 @@ const ESCENAS = {
         if (conAcelerador()) dibujarAcelerador(estado.carrera.coches[0], punteros.size > 0);
         return;
       }
-      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCarrera(), sumaDelMarcador());
+      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCarrera(), sumaDelMarcador(), estado.espera ? listos() : null);
       dibujarAvisos(estado.avisos);
     },
     teclear(codigo) {

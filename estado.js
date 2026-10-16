@@ -268,6 +268,8 @@ export const estado = {
   colores: [],         // el color de cada coche (COLORES_COCHE), distintos
   modo: 'suelta',      // 'suelta' | 'campeonato' (MODOS): lo que arranca la portada
   jugadores: ['humano', 'cpu'], // con teclado, quién lleva cada carril
+  jugadoresTactil: 1,  // tocando en la mesa, cuántos juegan: 1 (toda la pantalla) o 2 (una mitad cada uno)
+  espera: false,       // tocando en la mesa, la salida espera a que cada jugador apoye el dedo
   menu: null,          // el grupo abierto en la portada (menu.js): 'carrera' | 'coche' | 'ajustes' | null
   tactil: false,       // se activa con el primer toque
   lupa: false,         // el móvil en vertical: la vista que sigue al J1 (lupa.js)
