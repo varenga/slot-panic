@@ -26,7 +26,7 @@
  */
 
 import { GRABA_REPETICION, LENTA_ANCHO, LENTA_RAMPA, LENTA_REPETICION, NUMERO_MOMENTOS, PASO_REPETICION, VELOCIDAD_SLOT } from '../config.js';
-import { enCruce } from './circuito.js';
+import { enCruce, indiceEn } from './circuito.js';
 import { normalizarAngulo } from './geometria.js';
 
 const SALIDA_FUERTE = 0.75 * VELOCIDAD_SLOT;  // px/s a partir de los que salirse es un momento
@@ -76,20 +76,22 @@ export function grabarCuadro(rep, carrera, dt, humanos = []) {
   if (rep.t >= GRABA_REPETICION) return;
   rep.t += dt;
   // Los baches no se graban: son muchos y la pose ya lleva el bote (`altura`).
-  const eventos = carrera.eventos.filter((e) => e.tipo !== 'bache');
+  let eventos = 0;
+  for (const e of carrera.eventos) if (e.tipo !== 'bache') eventos++;
   const ultimo = rep.cuadros.at(-1);
-  if (!ultimo || rep.t - ultimo[0] >= PASO_REPETICION - 1e-9 || eventos.length) {
+  if (!ultimo || rep.t - ultimo[0] >= PASO_REPETICION - 1e-9 || eventos) {
     const cuadro = [rep.t];
-    carrera.coches.forEach((slot, i) => {
+    for (let i = 0; i < carrera.coches.length; i++) {
+      const slot = carrera.coches[i];
       const { coche } = slot;
       // El ángulo, desenrollado: el trompo de una salida da vueltas enteras.
       const angulo = ultimo ? ultimo[1 + i * CAMPOS + 2] + normalizarAngulo(coche.angulo - ultimo[1 + i * CAMPOS + 2]) : coche.angulo;
       cuadro.push(coche.x, coche.y, angulo, slot.altura, ESTADOS.indexOf(slot.estado), slot.derrape, Math.hypot(coche.vx, coche.vy), coche.frenando ? 1 : 0);
-    });
+    }
     rep.cuadros.push(cuadro);
   }
-  for (const e of eventos) {
-    if (e.tipo === 'cuenta' || e.tipo === 'salida') continue;
+  for (const e of carrera.eventos) {
+    if (e.tipo === 'bache' || e.tipo === 'cuenta' || e.tipo === 'salida') continue;
     const coche = e.coche === undefined ? null : carrera.coches[e.coche].coche;
     rep.eventos.push({
       t: rep.t, tipo: e.tipo, coche: e.coche ?? null, fuerza: e.fuerza,
@@ -105,7 +107,7 @@ function proponer(rep, tipo, datos) {
 
 /** El efecto de la pieza en la `s` del eje, o su tipo si es una X. */
 function piezaEn(circuito, s) {
-  const p = circuito.eje[circuito.puntoEn(s).indice];
+  const p = circuito.eje[indiceEn(circuito, s)];
   return p.tipo === 'x' ? 'x' : p.efecto;
 }
 
@@ -117,10 +119,16 @@ export function lugarChoque(circuito, s0, s1) {
 
 const estrecha = (pieza) => pieza === 'estrecha' || pieza === 'deslizante' || pieza === 'desvio';
 
+/*
+ * Se busca en cada fotograma: los que han chocado en él van en un conjunto que
+ * se vacía, no en uno nuevo cada vez.
+ */
+const enChoque = new Set();
+
 function buscarMomentos(rep, carrera, humanos) {
   const { circuito, coches } = carrera;
   const humano = (i) => !!humanos[i];
-  const enChoque = new Set();
+  enChoque.clear();
 
   for (const e of carrera.eventos) {
     if (e.tipo === 'choque') {
@@ -147,21 +155,26 @@ function buscarMomentos(rep, carrera, humanos) {
   }
 
   // La salvada: el pico de un derrape que se recupera en el carril.
-  coches.forEach((slot, i) => {
+  for (let i = 0; i < coches.length; i++) {
+    const slot = coches[i];
     const d = rep.derrapes[i];
     if (slot.estado !== 'carril' || enChoque.has(i)) {
       d.pico = 0;
-      return;
+      continue;
     }
-    if (slot.derrape > d.pico) Object.assign(d, { pico: slot.derrape, t: rep.t, lugar: piezaEn(circuito, slot.s), humano: humano(i) });
-    else if (d.pico >= SALVADA && slot.derrape < RECUPERADA) {
+    if (slot.derrape > d.pico) {
+      d.pico = slot.derrape;
+      d.t = rep.t;
+      d.lugar = piezaEn(circuito, slot.s);
+      d.humano = !!humanos[i];
+    } else if (d.pico >= SALVADA && slot.derrape < RECUPERADA) {
       rep.candidatos.push({
         tipo: 'salvada', t: d.t, coches: [i], humano: d.humano, lugar: d.lugar,
         puntos: TIPOS_MOMENTO.salvada.puntos + 3 * (d.pico - SALVADA) / (1 - SALVADA) + (d.lugar === 'deslizante' ? 1 : 0)
       });
       d.pico = 0;
     } else if (slot.derrape === 0) d.pico = 0;
-  });
+  }
 
   // El adelantamiento: entre cada pareja, cambia quién va delante y aguanta FIRME s.
   if (carrera.fase !== 'carrera') return;

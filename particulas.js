@@ -114,15 +114,30 @@ export function actualizarParticulas(lista, dt) {
   lista.length = j;
 }
 
+/*
+ * El color del humo llega a medias ('rgba(r, g, b, ', del escenario): opaco,
+ * y la transparencia con `globalAlpha`, que es lo mismo. Así no se compone
+ * una cadena por bocanada y fotograma.
+ */
+const opacos = new Map();
+function opaco(color) {
+  let entero = opacos.get(color);
+  if (entero === undefined) opacos.set(color, entero = color + '1)');
+  return entero;
+}
+
 /** El humo va debajo del coche; las chispas, encima. */
 export function dibujarHumo(lista) {
+  const alfa = ctx.globalAlpha;
   for (const p of lista) {
     if (p.tipo !== 'humo') continue;
-    ctx.fillStyle = p.color + (Math.min(1, p.vida) * p.alfa).toFixed(3) + ')';
+    ctx.globalAlpha = alfa * Math.min(1, p.vida) * p.alfa;
+    ctx.fillStyle = opaco(p.color);
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.globalAlpha = alfa;
 }
 
 export function dibujarChispas(lista) {

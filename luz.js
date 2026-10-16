@@ -119,7 +119,8 @@ const FLASHES_PASO = 9;      // …y con un coche pasando cerca
 const FLASH_CERCA = 150;     // px del centro de la grada que cuentan como «cerca»
 
 let base = null;             // la oscuridad con lo fijo ya recortado
-let claveBase = '';
+let circuitoBase = null;     // el circuito y el decorado con que se horneó
+let decoradoBase = null;
 let trabajo = null;          // la capa de cada fotograma
 let torres = [];
 let foco = null;             // sprite: un degradado redondo, blanco a nada
@@ -298,7 +299,7 @@ function porElTablero(circuito, coche) {
 function pintarConos(coches) {
   const l = LARGO_COCHE / 2;
   for (const coche of coches) {
-    for (const lado of [-1, 1]) {
+    for (let lado = -1; lado <= 1; lado += 2) {
       ctx.save();
       ctx.translate(coche.x, coche.y);
       ctx.rotate(coche.angulo);
@@ -319,12 +320,13 @@ function pintarPilotos(coches, fuerza) {
   for (const coche of coches) {
     const l = (COCHES[coche.modelo]?.largo ?? LARGO_COCHE) / 2;
     const cos = Math.cos(coche.angulo), sin = Math.sin(coche.angulo);
-    const en = (u, v) => [coche.x + u * cos - v * sin, coche.y + u * sin + v * cos];
     const frena = coche.frenando;
     ctx.globalAlpha = (frena ? 0.3 : 0.14) * fuerza;
-    estampar(rojo, ...en(-l - 6, 0), PILOTO_ESTELA);
-    for (const lado of [-1, 1]) {
-      const [x, y] = en(-l + 1, lado * PILOTO_LADO);
+    estampar(rojo, coche.x + (-l - 6) * cos, coche.y + (-l - 6) * sin, PILOTO_ESTELA);
+    for (let lado = -1; lado <= 1; lado += 2) {
+      // La esquina de la cola: (-l + 1) a lo largo y PILOTO_LADO de lado.
+      const u = -l + 1, v = lado * PILOTO_LADO;
+      const x = coche.x + u * cos - v * sin, y = coche.y + u * sin + v * cos;
       ctx.globalAlpha = (frena ? 0.85 : 0.5) * fuerza;
       estampar(rojo, x, y, frena ? PILOTO_FRENA : PILOTO_BRILLO);
       ctx.globalAlpha = fuerza;
@@ -359,8 +361,7 @@ function pintarNoche(fuerza, circuito, decorado, coches) {
     trabajo = crearCapa(ANCHO, ALTO); abajo = crearCapa(ANCHO, ALTO);
   }
 
-  const clave = circuito.clave + '/' + decorado.nombre;
-  if (clave !== claveBase) {
+  if (circuito !== circuitoBase || decorado !== decoradoBase) {
     torres = decorado.torres;
     // Las balizas de una curva que pasa bajo un puente las tapa el tablero.
     balizas = balizasDe(circuito).filter((b) => !bajoTablero(circuito, b.x, b.y));
@@ -376,15 +377,13 @@ function pintarNoche(fuerza, circuito, decorado, coches) {
         ctx.globalCompositeOperation = 'source-over';
       });
     }
-    claveBase = clave;
+    circuitoBase = circuito;
+    decoradoBase = decorado;
   }
-  // Sin puente, nada lo tapa.
-  const tapados = tablero ? coches.filter((c) => !porElTablero(circuito, c)) : [];
-  const encima = coches.filter((c) => !tapados.includes(c));
-  const recortar = (lista) => {
-    pintarConos(lista);
-    for (const coche of lista) estampar(foco, coche.x, coche.y, HALO);
-  };
+  // Sin puente, nada lo tapa. Las dos listas se reutilizan: es cada fotograma.
+  tapados.length = 0;
+  encima.length = 0;
+  for (const c of coches) (tablero && !porElTablero(circuito, c) ? tapados : encima).push(c);
 
   dibujarEn(trabajo, () => {
     ctx.globalCompositeOperation = 'copy';
@@ -442,6 +441,15 @@ function pintarNoche(fuerza, circuito, decorado, coches) {
   ctx.restore();
 }
 
+const tapados = [];   // los coches cuya luz tapa el tablero de un puente
+const encima = [];    // y los demás
+
+/** Lo que recorta la oscuridad cada coche: los haces de sus faros y un halo alrededor. */
+function recortar(lista) {
+  pintarConos(lista);
+  for (const coche of lista) estampar(foco, coche.x, coche.y, HALO);
+}
+
 /*
  * Las balizas: luces ámbar pequeñas pegadas al borde de fuera del piano de las
  * curvas cerradas (las de la barrera de neumáticos). Son de adorno: no chocan.
@@ -488,7 +496,8 @@ function pintarFlashes(gradas, coches, fuerza) {
   const dt = Math.min(0.1, Math.max(0, ahora - antes));
   antes = ahora;
   for (const g of gradas) {
-    const cerca = coches.some((c) => Math.hypot(c.x - g.x, c.y - g.y) < FLASH_CERCA);
+    let cerca = false;
+    for (const c of coches) cerca ||= Math.hypot(c.x - g.x, c.y - g.y) < FLASH_CERCA;
     if (Math.random() < (cerca ? FLASHES_PASO : FLASHES_CALMA) * dt) {
       const u = (Math.random() - 0.5) * g.largo, v = (Math.random() - 0.5) * g.fondo;
       const cos = Math.cos(g.angulo), sin = Math.sin(g.angulo);
@@ -501,7 +510,10 @@ function pintarFlashes(gradas, coches, fuerza) {
     estampar(foco, f.x, f.y, 2.5);
     f.vida -= dt;
   }
-  flashes = flashes.filter((f) => f.vida > 0);
+  // Se filtra en el sitio: no una lista nueva en cada fotograma.
+  let j = 0;
+  for (const f of flashes) if (f.vida > 0) flashes[j++] = f;
+  flashes.length = j;
 }
 
 /*

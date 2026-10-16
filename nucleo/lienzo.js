@@ -68,9 +68,26 @@ export function poligono(puntos) {
   ctx.fill();
 }
 
+/*
+ * La cadena de `ctx.font` de cada peso y tamaño, hecha una vez: los textos del
+ * marcador se pintan en cada fotograma. Si un tamaño calculado deja demasiados,
+ * se empieza de nuevo.
+ */
+const fuentes = new Map();   // peso → (tam → la cadena)
+function fuente(peso, tam) {
+  let porTam = fuentes.get(peso);
+  if (!porTam) fuentes.set(peso, porTam = new Map());
+  let cadena = porTam.get(tam);
+  if (cadena === undefined) {
+    if (porTam.size > 64) porTam.clear();
+    porTam.set(tam, cadena = `${peso} ${tam}px ${FUENTE}`);
+  }
+  return cadena;
+}
+
 /** Texto en la fuente del juego. `tam` en px lógicos. */
 export function texto(cadena, x, y, { tam = 18, color = '#fff', alinear = 'center', peso = 600, base = 'middle' } = {}) {
-  ctx.font = `${peso} ${tam}px ${FUENTE}`;
+  ctx.font = fuente(peso, tam);
   ctx.fillStyle = color;
   ctx.textAlign = alinear;
   ctx.textBaseline = base;

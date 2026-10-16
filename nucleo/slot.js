@@ -31,6 +31,7 @@ import {
   FRENO_BACHES, FRENO_DERRAPE_SLOT, FRENO_MESA, FUERA_MAXIMO, GIRO_TROMPO, GOLPE_SALE, INERCIA_MOTOR, INERCIA_SOLTAR, LIMITE_SLOT, PALANCA_MORRO, PASO_BACHES, PASO_FISICA,
   PENETRA, REBOTE_COCHES, RECUPERA_DERRAPE, ROCE, ROZA, SUBE_POTENCIA, TOQUE, VELOCIDAD_BACHES, VELOCIDAD_SLOT, VUELTAS_SLOT
 } from '../config.js';
+import { indiceEn, sEnVuelta } from './circuito.js';
 import { normalizarAngulo } from './geometria.js';
 import { cerrar, cocheDe, crearGrabacion, grabar } from './fantasma.js';
 
@@ -79,7 +80,7 @@ function desplazamiento(punto, propio) {
 
 /** El desplazamiento del carril en la coordenada `s` de un coche que salió por `lateral`. */
 export function lateralEn(circuito, lateral, s) {
-  return desplazamiento(circuito.eje[buscar(circuito, s).indice], lateral * signoVuelta(circuito, s));
+  return desplazamiento(circuito.eje[indiceEn(circuito, s)], lateral * signoVuelta(circuito, s));
 }
 
 /** Radio del carril en un punto del eje, con su desplazamiento ahí: por dentro de la curva, más cerrado. */
@@ -143,30 +144,25 @@ function factorCarril(circuito, i, propio) {
   return Math.hypot(1, cambio / p.largo);
 }
 
-/** Índice del punto del eje en que cae `s` y la fracción hasta el siguiente. */
-function buscar(circuito, s) {
-  const { eje, largo } = circuito;
-  const buscada = ((s % largo) + largo) % largo;
-  let bajo = 0, alto = eje.length - 1;
-  while (bajo < alto) {
-    const medio = (bajo + alto + 1) >> 1;
-    if (eje[medio].s <= buscada) bajo = medio; else alto = medio - 1;
-  }
-  const a = eje[bajo];
-  return { indice: bajo, t: a.largo > 0 ? (buscada - a.s) / a.largo : 0 };
-}
-
-/** Posición y rumbo sobre el carril en la coordenada `s` del eje. */
-export function poseEnCarril(circuito, s, lateral) {
+/*
+ * Posición y rumbo sobre el carril en la coordenada `s` del eje. En `pose`, si
+ * se le da: la física coloca cada coche en cada paso, y así no crea nada.
+ */
+export function poseEnCarril(circuito, s, lateral, pose = {}) {
   const propio = lateral * signoVuelta(circuito, s);
   const trazado = trazadoCarril(circuito, propio);
-  const { indice, t } = buscar(circuito, s);
+  const indice = indiceEn(circuito, s);
+  const punto = circuito.eje[indice];
+  const t = punto.largo > 0 ? (sEnVuelta(circuito, s) - punto.s) / punto.largo : 0;
   // El último tramo de la vuelta acaba en el primer punto de la siguiente.
   const b = indice + 1 < trazado.length
     ? trazado[indice + 1]
     : trazadoCarril(circuito, propio * (circuito.cambiosCarril % 2 ? -1 : 1))[0];
   const a = trazado[indice];
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, angulo: Math.atan2(b.y - a.y, b.x - a.x) };
+  pose.x = a.x + (b.x - a.x) * t;
+  pose.y = a.y + (b.y - a.y) * t;
+  pose.angulo = Math.atan2(b.y - a.y, b.x - a.x);
+  return pose;
 }
 
 // --- La carrera ----------------------------------------------------------------
@@ -272,7 +268,8 @@ function pasoCarreraSlot(carrera, mandos, dt) {
     carrera.tiempo += dt;
     carrera.tiempoSalida += dt;
   }
-  carrera.coches.forEach((slot, i) => {
+  for (let i = 0; i < carrera.coches.length; i++) {
+    const slot = carrera.coches[i];
     // Acabada la carrera, nadie acelera: los coches frenan hasta pararse.
     const acelerar = carrera.fase === 'carrera' && slot.terminado === null && !!mandos[i]?.acelerar;
     const evento = pasoSlot(slot, carrera.circuito, acelerar, dt);
@@ -282,9 +279,11 @@ function pasoCarreraSlot(carrera, mandos, dt) {
       grabar(slot.grabacion, slot.coche, carrera.tiempo - slot.inicioVuelta);
     }
     if (carrera.fase === 'carrera') contarVueltas(carrera, slot, i);
-  });
+  }
   comprobarChoques(carrera);
 }
+
+const posados = [];   // lo que la mano ha posado en este paso: cada paso, la misma lista
 
 /*
  * Cada pareja de coches, por si se tocan. Lo que la mano acaba de posar vale
@@ -292,11 +291,20 @@ function pasoCarreraSlot(carrera, mandos, dt) {
  */
 function comprobarChoques(carrera) {
   const { coches } = carrera;
-  const posados = coches.map((slot) => slot.posado);
-  for (const slot of coches) slot.posado = false;
+  for (let i = 0; i < coches.length; i++) {
+    posados[i] = coches[i].posado;
+    coches[i].posado = false;
+  }
   for (let i = 0; i < coches.length; i++) {
     for (let j = i + 1; j < coches.length; j++) comprobarChoque(carrera, i, j, posados[i] || posados[j]);
   }
+}
+
+/** La clave de cada pareja en `carrera.toques`, 'i-j': hecha una vez, no en cada paso. */
+const CLAVES_TOQUE = [];
+function claveToque(i, j) {
+  const fila = CLAVES_TOQUE[i] ??= [];
+  return fila[j] ??= i + '-' + j;
 }
 
 /*
@@ -309,12 +317,19 @@ function comprobarChoques(carrera) {
  */
 export const RADIO_COCHE = ANCHO_COCHE / 2;
 
-/** La cápsula de un coche: los extremos de su segmento, de la cola al morro. */
-export function capsula(slot) {
+/** Medio segmento de la cápsula: del centro del coche al de su morro. */
+const medioCapsula = (slot) => Math.max(0, slot.ficha.largo / 2 - RADIO_COCHE);
+
+/** La cápsula de un coche: los extremos de su segmento, de la cola al morro. En `c`, si se le da. */
+export function capsula(slot, c = {}) {
   const { coche } = slot;
-  const medio = Math.max(0, slot.ficha.largo / 2 - RADIO_COCHE);
+  const medio = medioCapsula(slot);
   const ux = Math.cos(coche.angulo) * medio, uy = Math.sin(coche.angulo) * medio;
-  return { ax: coche.x - ux, ay: coche.y - uy, bx: coche.x + ux, by: coche.y + uy };
+  c.ax = coche.x - ux;
+  c.ay = coche.y - uy;
+  c.bx = coche.x + ux;
+  c.by = coche.y + uy;
+  return c;
 }
 
 /*
@@ -322,40 +337,54 @@ export function capsula(slot) {
  * en el morro). Si van paralelos, el medio de lo que se solapan: así ninguno
  * de los dos lleva siempre el golpe en la cola.
  */
+const acotar = (v) => Math.max(0, Math.min(1, v));
 function masCercanos(p, q) {
   const d1x = p.bx - p.ax, d1y = p.by - p.ay, d2x = q.bx - q.ax, d2y = q.by - q.ay;
   const rx = p.ax - q.ax, ry = p.ay - q.ay;
   const a = d1x * d1x + d1y * d1y, e = d2x * d2x + d2y * d2y, f = d2x * rx + d2y * ry;
-  const acotar = (v) => Math.max(0, Math.min(1, v));
   const c = d1x * rx + d1y * ry, b = d1x * d2x + d1y * d2y;
   if (a < 1e-9 || e < 1e-9) {
     // Un coche tan corto que es un círculo.
     const s = a < 1e-9 ? 0 : acotar(-c / a);
-    return { s, t: e < 1e-9 ? 0 : acotar((b * s + f) / e) };
+    return fijarCercanos(s, e < 1e-9 ? 0 : acotar((b * s + f) / e));
   }
   const denom = a * e - b * b;
   if (denom < 1e-6 * a * e) {
     // Paralelos: lo que q se solapa con p, y su medio.
     const t0 = -c / a, t1 = (b - c) / a;
     const s = (acotar(Math.min(t0, t1)) + acotar(Math.max(t0, t1))) / 2;
-    return { s, t: acotar((b * s + f) / e) };
+    return fijarCercanos(s, acotar((b * s + f) / e));
   }
   let s = acotar((b * f - c * e) / denom);
   let t = (b * s + f) / e;
   if (t < 0) { t = 0; s = acotar(-c / a); } else if (t > 1) { t = 1; s = acotar((b - c) / a); }
-  return { s, t };
+  return fijarCercanos(s, t);
 }
+
+/** Lo que devuelve `masCercanos`: siempre el mismo objeto, que se lee antes de volver a llamarla. */
+const cercanos = { s: 0, t: 0 };
+function fijarCercanos(s, t) {
+  cercanos.s = s;
+  cercanos.t = t;
+  return cercanos;
+}
+
+const capsulaA = {}, capsulaB = {};   // las de la pareja que se mira
 
 /*
  * Cómo se tocan dos coches: la distancia entre sus cápsulas, la normal (de a
  * hacia b), el punto de cada uno y dónde le da a cada uno, de -1 (la cola) a
- * 1 (el morro).
+ * 1 (el morro). En `c`, si se le da: la física lo mira en cada paso y en cada
+ * pareja, y así no crea nada.
  */
-export function contacto(a, b) {
-  const p = capsula(a), q = capsula(b);
+export function contacto(a, b, c = { pa: {}, pb: {} }) {
+  const p = capsula(a, capsulaA), q = capsula(b, capsulaB);
   const { s, t } = masCercanos(p, q);
-  const pa = { x: p.ax + (p.bx - p.ax) * s, y: p.ay + (p.by - p.ay) * s };
-  const pb = { x: q.ax + (q.bx - q.ax) * t, y: q.ay + (q.by - q.ay) * t };
+  const { pa, pb } = c;
+  pa.x = p.ax + (p.bx - p.ax) * s;
+  pa.y = p.ay + (p.by - p.ay) * s;
+  pb.x = q.ax + (q.bx - q.ax) * t;
+  pb.y = q.ay + (q.by - q.ay) * t;
   let nx = pb.x - pa.x, ny = pb.y - pa.y;
   const distancia = Math.hypot(nx, ny);
   if (distancia > 1e-9) {
@@ -364,9 +393,15 @@ export function contacto(a, b) {
   } else {
     // Uno encima del otro: de centro a centro o, si coinciden, de lado.
     const cx = b.coche.x - a.coche.x, cy = b.coche.y - a.coche.y, l = Math.hypot(cx, cy);
-    [nx, ny] = l > 1e-9 ? [cx / l, cy / l] : [-Math.sin(a.coche.angulo), Math.cos(a.coche.angulo)];
+    nx = l > 1e-9 ? cx / l : -Math.sin(a.coche.angulo);
+    ny = l > 1e-9 ? cy / l : Math.cos(a.coche.angulo);
   }
-  return { distancia, nx, ny, pa, pb, ua: 2 * s - 1, ub: 2 * t - 1 };
+  c.distancia = distancia;
+  c.nx = nx;
+  c.ny = ny;
+  c.ua = 2 * s - 1;
+  c.ub = 2 * t - 1;
+  return c;
 }
 
 /** Lo que cuenta un golpe según dónde: en la cola, 1; en el morro, donde la guía lo sujeta, PALANCA_MORRO. */
@@ -377,12 +412,13 @@ const alturaEn = (p) => p.elevacion * ELEVA_COCHE;
 
 /** A qué altura va un coche: en el carril, la del puente (0 fuera de él); fuera, en la mesa. */
 function elevacionDe(slot, circuito) {
-  return slot.estado === 'carril' ? circuito.eje[buscar(circuito, slot.s).indice].elevacion : 0;
+  return slot.estado === 'carril' ? circuito.eje[indiceEn(circuito, slot.s)].elevacion : 0;
 }
 
+const contactoPareja = { pa: {}, pb: {} };   // el contacto de la pareja que se mira
 function comprobarChoque(carrera, ia, ib, posado) {
   const a = carrera.coches[ia], b = carrera.coches[ib];
-  const clave = ia + '-' + ib;
+  const clave = claveToque(ia, ib);
   const toques = carrera.toques;
   // Con la mano en el aire no toca a nadie; dos fuera ruedan cada uno a lo suyo,
   // y uno en el puente pasa por encima del de abajo.
@@ -391,7 +427,14 @@ function comprobarChoque(carrera, ia, ib, posado) {
     delete toques[clave];
     return;
   }
-  const c = contacto(a, b);
+  // Lejos, ni hace falta mirar las cápsulas: entre ellas hay al menos lo que
+  // hay entre los centros menos los dos medios segmentos.
+  const entreCentros = Math.hypot(b.coche.x - a.coche.x, b.coche.y - a.coche.y);
+  if (entreCentros - medioCapsula(a) - medioCapsula(b) - 2 * RADIO_COCHE >= HOLGURA_CHOQUE) {
+    delete toques[clave];
+    return;
+  }
+  const c = contacto(a, b, contactoPareja);
   const toca = 2 * RADIO_COCHE - c.distancia;   // px metidos uno en el otro
   /*
    * Dejan de tocarse al separarse algo más de lo que hace falta para tocarse:
@@ -555,7 +598,7 @@ function pasoSlot(slot, circuito, acelerar, dt) {
   slot.v += (pide - slot.v) * dt / (pide > slot.v ? INERCIA_MOTOR / ficha.acelera : INERCIA_SOLTAR);
   slot.coche.frenando = pide < slot.v - 40;
 
-  const { indice } = buscar(circuito, slot.s);
+  const indice = indiceEn(circuito, slot.s);
   const p = circuito.eje[indice];
   // En la rampa del puente, la gravedad: frena al subir y empuja al bajar.
   if (p.pendiente) slot.v = Math.max(0, slot.v - GRAVEDAD * p.pendiente * dt);
@@ -602,9 +645,11 @@ function pasoSlot(slot, circuito, acelerar, dt) {
   return bache ? 'bache' : null;
 }
 
+const poseCarril = {};   // la de cada paso: colocarEnCarril y la mano la leen al momento
+
 /** La pose sale del carril, con la cola fuera que diga el coleteo. */
 function colocarEnCarril(slot, circuito) {
-  const pose = poseEnCarril(circuito, slot.s, slot.lateral);
+  const pose = poseEnCarril(circuito, slot.s, slot.lateral, poseCarril);
   slot.coche.x = pose.x;
   slot.coche.y = pose.y;
   slot.coche.angulo = pose.angulo + slot.coleteo;
@@ -674,7 +719,7 @@ function pasoMano(slot, circuito, dt) {
   slot.tMano += dt;
   const f = Math.min(1, slot.tMano / DURACION_MANO);
   const suave = f * f * (3 - 2 * f);
-  const destino = poseEnCarril(circuito, slot.s, slot.lateral);
+  const destino = poseEnCarril(circuito, slot.s, slot.lateral, poseCarril);
   const { coche, desde } = slot;
   coche.x = desde.x + (destino.x - desde.x) * suave;
   coche.y = desde.y + (destino.y - desde.y) * suave;
@@ -682,7 +727,7 @@ function pasoMano(slot, circuito, dt) {
   slot.altura = Math.sin(Math.PI * f);
   if (f < 1) return null;
   slot.estado = 'carril';
-  slot.altura = alturaEn(circuito.eje[buscar(circuito, slot.s).indice]);
+  slot.altura = alturaEn(circuito.eje[indiceEn(circuito, slot.s)]);
   slot.posado = true;
   colocarEnCarril(slot, circuito);
   return 'clac';

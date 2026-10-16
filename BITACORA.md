@@ -1960,3 +1960,64 @@ arrancaba la carrera, no se sabía cómo jugar uno o dos ni qué coche era el tu
   la CPU», que ya no es verdad.
 - Probado en el navegador simulando el táctil (un toque fuera no arranca; la espera,
   a uno y a dos) y en el móvil por la wifi. Arnés: 2331/2331.
+
+## Sin basura en cada fotograma (16/10/2026, rama `56-sin-basura`)
+
+- Medido con el perfil de asignaciones de Chrome (`HeapProfiler` por muestreo, cada
+  256 B, contando lo que ya recogió el recolector), en Chrome sin ventana, 8-10 s de
+  carrera con las CPU. Bytes asignados por fotograma, antes y después:
+
+  | Caso | Antes | Después |
+  |---|---|---|
+  | *El ocho largo*, de noche, cuatro coches | 39,8 KB | 10,6 KB |
+  | La lupa (vertical), *El ocho* de noche | 29,1 KB | 11,6 KB |
+  | *La horquilla*, de día | 12,2 KB | 6,3 KB |
+  | *La judía* al atardecer, en mangas | 21,0 KB | 8,7 KB |
+  | La portada (la exhibición), *La diagonal* de día | 18,5 KB | 12,1 KB |
+
+- Lo que se creaba en cada fotograma (o en cada paso de física, 120 por segundo) y
+  ya no:
+  - **La física** (`slot.js`): buscar el punto del eje en una `s` devolvía un objeto;
+    ahora `indiceEn` (`circuito.js`) da solo el índice. La pose del carril, la
+    cápsula, los puntos más cercanos y el contacto de cada pareja se escriben en
+    objetos fijos (las funciones exportadas siguen devolviendo uno nuevo si no se les
+    da). Dos coches lejos ni miran sus cápsulas: entre ellas hay al menos lo que hay
+    entre los centros menos los dos medios segmentos (exacto: deja los mismos toques).
+    La clave de cada pareja, `'i-j'`, se hace una vez.
+  - **La CPU** (`piloto.js`): mira la pista por delante en pasos de `PASO_EJE` y cada
+    uno era un `puntoEn` (5 KB por fotograma con cuatro); ahora `indiceEn`. Y
+    devuelve uno de dos mandos fijos, congelados.
+  - **Los coches** (`coches.js`): cada modelo se graba una vez como una lista de
+    `Path2D` con su color, con una grabadora en lugar de `ctx` (`dibujarEn`), y cada
+    fotograma solo se rellenan. La chapa, el techo y los pilotos van con una marca y
+    se ponen al pintar; el techo de cada color se recuerda.
+  - **La noche** (`luz.js`): los pilotos y los conos sin arrays por coche, las listas
+    de coches tapados por el puente reutilizadas, los flashes filtrados en el sitio y
+    la base comparada por referencia, no por una clave de texto.
+  - **El mundo** (`dibujo.js`): las capas recuerdan el circuito y el decorado con los
+    que se pintaron (antes, tres claves de texto por fotograma); las sombras del
+    decorado y la de las torres se trazan en un `Path2D` una vez por decorado y luz
+    (eran cientos de llamadas por fotograma; en la carrera que anochece se retrazan,
+    como antes); las torres, en un camino por color; `bajoPuente`, con bucles.
+  - **El mapa de la lupa**: el eje como `Path2D`, una vez por circuito (17 KB por
+    fotograma: lo más gordo de la lupa).
+  - **El bucle** (`juego.js`): los mandos, los coches ordenados, las velocidades del
+    zumbido y los avisos, en listas que se reutilizan; el fantasma, en un objeto fijo.
+  - **Los textos**: la cadena de `ctx.font` de cada peso y tamaño se hace una vez
+    (`lienzo.js`); la vuelta y la mejor de cada coche se recuerdan hasta que cambian
+    (o el idioma: `codigoIdioma()`). El humo, opaco y con `globalAlpha`, sin componer
+    un color por bocanada. Los momentos (`momentos.js`), sin filtrar los eventos ni
+    un conjunto nuevo por fotograma.
+- Lo que queda está repartido y no es estructural: las funciones del dibujo que el
+  JIT aún no ha optimizado del todo empaquetan cada número que pasan al lienzo. Medido
+  aparte, una función ya optimizada que hace `save`, `translate`, `fillRect`… asigna
+  ~1 B por llamada. Bajar más es hacer menos llamadas.
+- Se ve igual. Comparado píxel a píxel con `master` en 64 escenas fijas (13 coches,
+  la mitad frenando, uno levantado, el fantasma, humo, torres y puentes; cuatro
+  circuitos, tres escenarios, cinco luces y ampliado ×3 a ×6): solo cambia el
+  antialiasing de algún borde (las torres, porque Skia cubre distinto un `fillRect` y
+  un camino; los coches, ≤ 4/255 en 68 píxeles). Ampliado ×8, uno junto al otro, no se
+  distinguen. Carreras enteras sin errores, también la repetición, la lupa, las mangas
+  y la que anochece. Arnés: 2331/2331.
+- Con esto, el punto de la fase 5 que queda antes que nada es medir en el Android
+  modesto: si va justo, ya no será por el recolector.

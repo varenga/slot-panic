@@ -298,6 +298,7 @@ function correrSiguiente() {
  */
 function rotuloCarrera() {
   const { campeonato, serie } = estado;
+  if (!campeonato && !serie) return null;
   const partes = [];
   if (campeonato) partes.push(t('campeonato.carrera', { n: campeonato.carreras.length + 1, total: campeonato.circuitos.length }));
   if (serie) partes.push(t('manga.n', { n: serie.mangas.length + 1, total: serie.total }));
@@ -983,7 +984,23 @@ function datosCarrera() {
 // --- Entrada --------------------------------------------------------------
 
 function pulsada(codigos) {
-  return codigos.some((codigo) => teclas[codigo]);
+  for (const codigo of codigos) if (teclas[codigo]) return true;
+  return false;
+}
+
+/*
+ * Se piden en cada fotograma: la lista es siempre la misma, y los mandos de
+ * una persona, uno de estos dos. Nadie los cambia.
+ */
+const listaMandos = [];
+const SIN_MANDOS = Object.freeze([]);   // acabada la carrera, nadie conduce
+const APRETADO = Object.freeze({ acelerar: true, frenar: false, giro: 0 });
+const SUELTO = Object.freeze({ acelerar: false, frenar: false, giro: 0 });
+
+/** ¿Tiene algún dedo puesto en ese lado ('izq' o 'der')? */
+function tocando(lado) {
+  for (const l of punteros.values()) if (l === lado) return true;
+  return false;
 }
 
 /*
@@ -992,22 +1009,33 @@ function pulsada(codigos) {
  * dos son siempre de la CPU. Solo en la lupa se toma un carril tocando.
  */
 function mandos() {
-  const lados = new Set(punteros.values());
   const { carrera } = estado;
-  return carrera.coches.map((slot, i) => {
-    // En la lupa se juega solo: los otros carriles son siempre de la CPU.
-    if (i > 1 || (estado.lupa && i > 0)) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
-    const pulsado = pulsada(CONTROLES_SLOT[i]) || lados.has(i === 0 ? 'izq' : 'der');
-    // Con teclado y tocando en la mesa, el carril de la CPU no se toma pulsando.
-    if ((eligeJugadores() || juegaTactil()) && !estado.humanos[i]) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
-    if (pulsado && !estado.humanos[i]) {
-      estado.humanos[i] = true;
-      slot.humanoDesde = carrera.fase === 'carrera' ? carrera.tiempo : 0;
-    }
-    return estado.humanos[i]
-      ? { acelerar: pulsado, frenar: false, giro: 0 }
-      : decidirSlot(estado.pilotos[i], slot, carrera.circuito);
-  });
+  listaMandos.length = carrera.coches.length;
+  for (let i = 0; i < carrera.coches.length; i++) listaMandos[i] = mandoDe(carrera, i);
+  return listaMandos;
+}
+
+function mandoDe(carrera, i) {
+  const slot = carrera.coches[i];
+  // En la lupa se juega solo: los otros carriles son siempre de la CPU.
+  if (i > 1 || (estado.lupa && i > 0)) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
+  const pulsado = pulsada(CONTROLES_SLOT[i]) || tocando(i === 0 ? 'izq' : 'der');
+  // Con teclado y tocando en la mesa, el carril de la CPU no se toma pulsando.
+  if ((eligeJugadores() || juegaTactil()) && !estado.humanos[i]) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
+  if (pulsado && !estado.humanos[i]) {
+    estado.humanos[i] = true;
+    slot.humanoDesde = carrera.fase === 'carrera' ? carrera.tiempo : 0;
+  }
+  if (!estado.humanos[i]) return decidirSlot(estado.pilotos[i], slot, carrera.circuito);
+  return pulsado ? APRETADO : SUELTO;
+}
+
+/** Los mandos de la exhibición de la portada: todos de la CPU. */
+function mandosExhibicion() {
+  const { carrera } = estado;
+  listaMandos.length = carrera.coches.length;
+  for (let i = 0; i < carrera.coches.length; i++) listaMandos[i] = decidirSlot(estado.pilotos[i], carrera.coches[i], carrera.circuito);
+  return listaMandos;
 }
 
 const empezar = (codigo) => codigo === 'Enter' || codigo === 'Space' || codigo === 'NumpadEnter';
@@ -1178,6 +1206,8 @@ function dibujarMundo() {
   pintarMundo();
 }
 
+const cocheDelFantasma = { color: '', modelo: '' };   // cada fotograma, el mismo
+
 /*
  * El fantasma del J1, con el reloj de su vuelta: debajo de los coches y
  * translúcido, con la forma del coche con que se hizo y el color del J1. En
@@ -1192,13 +1222,22 @@ function pintarFantasma(debajo) {
   const slot = carrera.coches[0];
   const pose = posar(fantasma, carrera.tiempo - slot.inicioVuelta);
   // Debajo del puente o encima, según por dónde vaya.
-  if (pose && bajoPuente(estado.circuito, pose) === debajo) dibujarFantasma(pose, { ...slot.coche, modelo: fantasma.coche });
+  if (!pose || bajoPuente(estado.circuito, pose) !== debajo) return;
+  cocheDelFantasma.color = slot.coche.color;
+  cocheDelFantasma.modelo = fantasma.coche;
+  dibujarFantasma(pose, cocheDelFantasma);
 }
+
+const ordenados = [];   // los coches, del más bajo al más alto: cada fotograma, la misma lista
+const conLuz = [];      // y sus poses, para los faros
+const porAltura = (a, b) => a.altura - b.altura;
+const vaDebajo = (slot) => bajoPuente(estado.circuito, slot.coche, slot.estado);
 
 /*
  * El mundo con los coches de la carrera o, en la repetición, con los de lo
  * grabado y sus partículas (y sin fantasma).
  */
+
 function pintarMundo(cochesCarrera = estado.carrera.coches, particulas = estado.particulas, repeticion = false) {
   const luz = luzAhora();
   dibujarFondo(estado.circuito, estado.decorado, luz);
@@ -1206,14 +1245,17 @@ function pintarMundo(cochesCarrera = estado.carrera.coches, particulas = estado.
   dibujarTorres(estado.decorado, luz);
   dibujarHumo(particulas);
   // El que va por el aire, encima; y el puente, sobre los que pasan por debajo.
-  const coches = [...cochesCarrera].sort((a, b) => a.altura - b.altura);
-  const debajo = (slot) => bajoPuente(estado.circuito, slot.coche, slot.estado);
+  ordenados.length = 0;
+  for (const slot of cochesCarrera) ordenados.push(slot);
+  ordenados.sort(porAltura);
   if (!repeticion) pintarFantasma(true);
-  coches.filter(debajo).forEach(dibujarCocheSlot);
+  for (const slot of ordenados) if (vaDebajo(slot)) dibujarCocheSlot(slot);
   dibujarPuentes(estado.circuito, estado.decorado);
   if (!repeticion) pintarFantasma(false);
-  coches.filter((slot) => !debajo(slot)).forEach(dibujarCocheSlot);
-  pintarHora(luz, estado.circuito, estado.decorado, coches.map((slot) => slot.coche));
+  for (const slot of ordenados) if (!vaDebajo(slot)) dibujarCocheSlot(slot);
+  conLuz.length = 0;
+  for (const slot of ordenados) conLuz.push(slot.coche);
+  pintarHora(luz, estado.circuito, estado.decorado, conLuz);
   dibujarChispas(particulas);
 }
 
@@ -1224,7 +1266,8 @@ function pintarMundo(cochesCarrera = estado.carrera.coches, particulas = estado.
 function luzAhora() {
   const { carrera } = estado;
   if (!carrera.anochece) return ORDEN_HORAS.indexOf(estado.hora);
-  const corrido = Math.max(...carrera.coches.map((slot) => slot.progreso));
+  let corrido = -Infinity;
+  for (const slot of carrera.coches) corrido = Math.max(corrido, slot.progreso);
   const fraccion = Math.min(1, Math.max(0, corrido / (carrera.vueltas * carrera.circuito.largo)));
   return luzDeCarrera(fraccion);
 }
@@ -1232,14 +1275,19 @@ function luzAhora() {
 /** Cuánto chirría el coche más al límite de los que conduce alguien, en [0, 1]. */
 function intensidadChirrido() {
   let mayor = 0;
-  estado.carrera.coches.forEach((slot, i) => {
+  const { coches } = estado.carrera;
+  for (let i = 0; i < coches.length; i++) {
+    const slot = coches[i];
     if (estado.humanos[i]) mayor = Math.max(mayor, 0.6 * (slot.exigencia - COLETEO_DESDE) / (1 - COLETEO_DESDE), slot.derrape);
-  });
+  }
   return Math.max(0, Math.min(1, mayor));
 }
 
+const velocidades = [];   // la de cada coche, para su zumbido: cada fotograma, la misma lista
 function sonido(activo) {
-  const velocidades = estado.carrera.coches.map((slot) => (slot.estado === 'carril' ? slot.v : 0));
+  const { coches } = estado.carrera;
+  velocidades.length = coches.length;
+  for (let i = 0; i < coches.length; i++) velocidades[i] = coches[i].estado === 'carril' ? coches[i].v : 0;
   actualizarZumbidos(velocidades, VELOCIDAD_SLOT, activo);
   actualizarChirrido(activo ? intensidadChirrido() : 0, activo);
 }
@@ -1415,7 +1463,7 @@ const ESCENAS = {
   portada: {
     actualizar(dt) {
       const { carrera } = estado;
-      avanzarMundo(carrera.coches.map((slot, i) => decidirSlot(estado.pilotos[i], slot, carrera.circuito)), dt);
+      avanzarMundo(mandosExhibicion(), dt);
       if (carrera.fase === 'fin') irAPortada();
       sonido(false);
     },
@@ -1502,8 +1550,10 @@ const ESCENAS = {
           }
         } else if (evento.tipo === 'fin') terminarCarrera();
       }
-      for (const a of estado.avisos) a.vida -= dt;
-      estado.avisos = estado.avisos.filter((a) => a.vida > 0);
+      // Se filtran en el sitio: no una lista nueva en cada fotograma.
+      let quedan = 0;
+      for (const a of estado.avisos) if ((a.vida -= dt) > 0) estado.avisos[quedan++] = a;
+      estado.avisos.length = quedan;
       sonido(carrera.fase === 'carrera');
     },
     dibujar() {
@@ -1531,7 +1581,7 @@ const ESCENAS = {
   fin: {
     actualizar(dt) {
       // Los coches frenan hasta pararse, detrás del cartel.
-      avanzarMundo([], dt);
+      avanzarMundo(SIN_MANDOS, dt);
       if (estado.trasMeta > 0) {
         // Aún sin cartel: se graba lo que pasa justo tras la meta.
         grabarCuadro(estado.repeticion, estado.carrera, dt, estado.humanos);

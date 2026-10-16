@@ -20,7 +20,7 @@ import {
   ALTO, ALTO_LUPA, ALTO_LUPA_MAXIMO, ANCHO, ANCHO_LUPA, COLOR, LUPA_ADELANTO, LUPA_GIRO, LUPA_MIRA, LUPA_ZOOM,
   MAPA_CRECE
 } from './config.js';
-import { circulo, ctx, polilinea, rectanguloRedondo, texto } from './nucleo/lienzo.js';
+import { circulo, ctx, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { serieAcabada } from './nucleo/mangas.js';
 import {
@@ -213,6 +213,23 @@ function encajeMapa(circuito) {
   return encaje;
 }
 
+/*
+ * El eje del circuito como camino (Path2D), trazado una vez por circuito: el
+ * mapa lo pinta dos veces por fotograma y, punto a punto, eran cientos de
+ * llamadas cada vez.
+ */
+const ejes = new WeakMap();
+function caminoEje(circuito) {
+  let camino = ejes.get(circuito);
+  if (!camino) {
+    camino = new Path2D();
+    circuito.eje.forEach((p, i) => (i ? camino.lineTo(p.x, p.y) : camino.moveTo(p.x, p.y)));
+    camino.closePath();
+    ejes.set(circuito, camino);
+  }
+  return camino;
+}
+
 /** El circuito entero, la meta y los coches; el J1, con un aro. */
 export function dibujarMapa(circuito, coches) {
   const { escala, x, y } = encajeMapa(circuito);
@@ -224,10 +241,10 @@ export function dibujarMapa(circuito, coches) {
   ctx.lineJoin = 'round';
   ctx.strokeStyle = COLOR.borde;
   ctx.lineWidth = circuito.ancho + 8;
-  polilinea(circuito.eje);
+  ctx.stroke(caminoEje(circuito));
   ctx.strokeStyle = COLOR.calzada;
   ctx.lineWidth = circuito.ancho;
-  polilinea(circuito.eje);
+  ctx.stroke(caminoEje(circuito));
   // La meta, de lado a lado.
   const meta = circuito.puntoEn(0);
   const nx = -Math.sin(meta.angulo) * circuito.ancho / 2, ny = Math.cos(meta.angulo) * circuito.ancho / 2;

@@ -21,7 +21,7 @@
  */
 
 import { COCHES, COLOR } from './config.js';
-import { ctx } from './nucleo/lienzo.js';
+import { ctx, dibujarEn } from './nucleo/lienzo.js';
 
 /*
  * Los modelos se dibujan de cola a morro en 22 unidades (la caja de Race
@@ -37,7 +37,7 @@ const CRISTAL = COLOR.cocheCabina;
 const FARO = '#fff3c4';
 const PILOTO = '#7a2a30';
 const PILOTO_FRENO = '#ff2a1c';   // frenando, encendidos
-let piloto = PILOTO;             // el de este coche: lo pone pintarModelo()
+let piloto = PILOTO;             // al grabar un modelo, la marca de los pilotos (trazarModelo)
 const LONA = '#2e2a26';
 const CROMO = 'rgba(232, 234, 238, 0.8)';
 const CONTORNO = 'rgba(0, 0, 0, 0.35)';
@@ -95,6 +95,14 @@ function aclarar(color, t) {
   const n = parseInt(color.slice(1), 16);
   const canal = (c) => Math.round(c + (255 - c) * t);
   return `rgb(${canal(n >> 16)}, ${canal((n >> 8) & 255)}, ${canal(n & 255)})`;
+}
+
+/** El techo de cada color: hay pocos, y así no se rehace la cadena en cada fotograma. */
+const techos = new Map();
+function techoDe(color) {
+  let techo = techos.get(color);
+  if (techo === undefined) techos.set(color, techo = aclarar(color, 0.22));
+  return techo;
 }
 
 /**
@@ -593,15 +601,41 @@ export function siguienteModelo(id) {
   return MODELOS[(i + 1) % MODELOS.length].id;
 }
 
-/**
- * Dibuja el coche en sus coordenadas (el origen en el centro, el morro a +x),
- * con la sombra ya puesta por quien llama: ruedas, chapa, contorno y detalles.
- * Frenando, los pilotos se encienden.
+/*
+ * Cada modelo se graba una vez, en unidades de dibujo, como una lista de
+ * caminos (Path2D) con su color, y en cada fotograma solo se rellenan: trazar
+ * la silueta y los detalles de cada coche en cada fotograma creaba arrays (los
+ * puntos de `simetrico`, las rayas) y cadenas que el recolector tenía que
+ * barrer. Se graba con `ctx` apuntando a una grabadora que guarda los mismos
+ * caminos con los mismos colores; los que dependen del coche (la chapa, el
+ * techo, los pilotos y la sombra) llevan una marca y se ponen al pintarlo.
  */
-export function pintarModelo(m, color, frenando = false) {
-  piloto = frenando ? PILOTO_FRENO : PILOTO;
-  ctx.save();
-  ctx.scale(escala(m), escala(m));
+const CHAPA = '<chapa>', TECHO = '<techo>', PILOTOS = '<pilotos>';
+const METODOS_CAMINO = ['moveTo', 'lineTo', 'quadraticCurveTo', 'bezierCurveTo', 'arc', 'ellipse', 'rect', 'roundRect', 'closePath'];
+
+function grabar(dibujar) {
+  const pasos = [];
+  let camino = new Path2D();
+  const grabadora = {
+    fillStyle: '#000', strokeStyle: '#000', lineWidth: 1,
+    beginPath() { camino = new Path2D(); },
+    // Una copia: lo que se añada al camino después no cambia lo ya pintado.
+    fill() { pasos.push({ camino: new Path2D(camino), relleno: grabadora.fillStyle }); },
+    stroke() { pasos.push({ camino: new Path2D(camino), trazo: grabadora.strokeStyle, ancho: grabadora.lineWidth }); },
+    fillRect(x, y, ancho, alto) {
+      const r = new Path2D();
+      r.rect(x, y, ancho, alto);
+      pasos.push({ camino: r, relleno: grabadora.fillStyle });
+    }
+  };
+  for (const metodo of METODOS_CAMINO) grabadora[metodo] = (...args) => camino[metodo](...args);
+  dibujarEn({ getContext: () => grabadora }, dibujar);
+  return pasos;
+}
+
+/** Ruedas, chapa, contorno y detalles, con las marcas en lo que es de cada coche. */
+function trazarModelo(m) {
+  piloto = PILOTOS;
   const via = m.via ?? A - 0.5;
   rellenar('#0d0f14', () => {
     for (const u of m.ejes) {
@@ -616,9 +650,45 @@ export function pintarModelo(m, color, frenando = false) {
   ctx.strokeStyle = CONTORNO;
   ctx.lineWidth = 1;
   ctx.stroke();
-  ctx.fillStyle = color;
+  ctx.fillStyle = CHAPA;
   ctx.fill();
-  m.detalles(aclarar(color, 0.22));
+  m.detalles(TECHO);
+}
+
+const grabados = new Map();
+function grabado(m) {
+  let g = grabados.get(m);
+  if (!g) {
+    g = { coche: grabar(() => trazarModelo(m)), sombra: grabar(() => rellenar(CHAPA, () => m.silueta())) };
+    grabados.set(m, g);
+  }
+  return g;
+}
+
+/** Rellena (o perfila) lo grabado, cambiando cada marca por lo de este coche. */
+function reproducir(pasos, chapa, techo = null, pilotos = null) {
+  for (const paso of pasos) {
+    if (paso.trazo) {
+      ctx.strokeStyle = paso.trazo;
+      ctx.lineWidth = paso.ancho;
+      ctx.stroke(paso.camino);
+      continue;
+    }
+    const { relleno } = paso;
+    ctx.fillStyle = relleno === CHAPA ? chapa : relleno === TECHO ? techo : relleno === PILOTOS ? pilotos : relleno;
+    ctx.fill(paso.camino);
+  }
+}
+
+/**
+ * Dibuja el coche en sus coordenadas (el origen en el centro, el morro a +x),
+ * con la sombra ya puesta por quien llama: ruedas, chapa, contorno y detalles.
+ * Frenando, los pilotos se encienden.
+ */
+export function pintarModelo(m, color, frenando = false) {
+  ctx.save();
+  ctx.scale(escala(m), escala(m));
+  reproducir(grabado(m).coche, color, techoDe(color), frenando ? PILOTO_FRENO : PILOTO);
   ctx.restore();
 }
 
@@ -626,6 +696,6 @@ export function pintarModelo(m, color, frenando = false) {
 export function sombraModelo(m, color) {
   ctx.save();
   ctx.scale(escala(m), escala(m));
-  rellenar(color, () => m.silueta());
+  reproducir(grabado(m).sombra, color);
   ctx.restore();
 }

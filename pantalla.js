@@ -23,7 +23,7 @@ import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { clasificacion } from './nucleo/campeonato.js';
 import { mangasDe, serieAcabada, sumaSerie } from './nucleo/mangas.js';
 import { CIRCUITOS, CIRCUITOS_CUATRO } from './circuitos/indice.js';
-import { nombreCompuesto, t } from './i18n.js';
+import { codigoIdioma, nombreCompuesto, t } from './i18n.js';
 
 /** Los circuitos del campeonato: los oficiales o, en la pista de cuatro, los suyos. */
 const circuitosCampeonato = (circuito) => (circuito.carriles.length > 2 ? CIRCUITOS_CUATRO : CIRCUITOS).length;
@@ -273,15 +273,44 @@ function marcadorCoche(carrera, slot, i, humanos, alto, suma) {
   rectanguloRedondo(izquierda ? borde : borde - 22, y - 11, 22, 22, 5);
   texto(nombreSlot(i, humanos), borde + lado * 32, y, { tam: 22, color: COLOR.hud, peso: 800, alinear });
   // Con cuatro y la suma, la vuelta sin rótulo: si no, no cabe.
-  const vuelta = apretado && suma ? `${vueltaSlot(carrera, slot)}/${carrera.vueltas}` : t('hud.vuelta', { n: vueltaSlot(carrera, slot), total: carrera.vueltas });
-  texto(vuelta, borde + lado * 100, y, { tam: apretado ? 18 : 22, color: COLOR.hud, peso: 700, alinear });
+  texto(textoVuelta(i, vueltaSlot(carrera, slot), carrera.vueltas, apretado && suma), borde + lado * 100, y, { tam: apretado ? 18 : 22, color: COLOR.hud, peso: 700, alinear });
   if (suma) {
     const primero = suma.orden[0] === i;
     texto(diferenciaSuma(suma, i), borde + lado * (apretado ? 150 : 280), y, { tam: 16, color: primero ? COLOR.ambar : COLOR.texto, peso: 700, alinear });
   }
   const mejor = mejorVueltaSlot(slot);
-  if (mejor !== null && !apretado && !suma) texto(t('hud.mejor', { tiempo: formatearTiempo(mejor) }), borde + lado * 280, y, { tam: 16, color: COLOR.texto, alinear });
+  if (mejor !== null && !apretado && !suma) texto(textoMejor(i, mejor), borde + lado * 280, y, { tam: 16, color: COLOR.texto, alinear });
   barraPotencia(slot, izquierda ? borde : borde - barra, alto - 11, barra);
+}
+
+/*
+ * La vuelta y la mejor de cada coche cambian una vez por vuelta, pero el
+ * marcador se pinta en cada fotograma: se recuerda el último texto de cada
+ * coche y solo se rehace si cambia lo que dice (o el idioma).
+ */
+const vueltas = [], mejores = [];
+function recuerdo(lista, i) {
+  return lista[i] ??= { a: NaN, b: NaN, idioma: '', texto: '' };
+}
+function vigente(r, a, b) {
+  if (r.a === a && r.b === b && r.idioma === codigoIdioma()) return true;
+  r.a = a;
+  r.b = b;
+  r.idioma = codigoIdioma();
+  return false;
+}
+
+function textoVuelta(i, n, total, corto) {
+  const r = recuerdo(vueltas, i);
+  // Corto, «3/10»: el signo distingue los dos textos con los mismos números.
+  if (!vigente(r, corto ? -n : n, total)) r.texto = corto ? `${n}/${total}` : t('hud.vuelta', { n, total });
+  return r.texto;
+}
+
+function textoMejor(i, mejor) {
+  const r = recuerdo(mejores, i);
+  if (!vigente(r, mejor, 0)) r.texto = t('hud.mejor', { tiempo: formatearTiempo(mejor) });
+  return r.texto;
 }
 
 /** «Σ +1.23»: lo que lleva un coche sobre el primero de la suma; el primero, «Σ −0.85» sobre el segundo. */
