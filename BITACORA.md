@@ -2022,7 +2022,7 @@ arrancaba la carrera, no se sabía cómo jugar uno o dos ni qué coche era el tu
 - Con esto, el punto de la fase 5 que queda antes que nada es medir en el Android
   modesto: si va justo, ya no será por el recolector.
 
-## Un fichero por idioma (16/10/2026, rama `57-idiomas-por-fichero`)
+## Slot Panic 1.17.1: un fichero por idioma (16/10/2026, rama `57-idiomas-por-fichero`)
 
 - `i18n.js` era el módulo más grande (118 KB, 21,6 KB en brotli) y se bajaban los
   siete catálogos para usar uno. Ahora cada idioma es su fichero (`idiomas/es.js`…,
