@@ -400,8 +400,11 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   una por carril, cada coche al carril de al lado en cada una (el `turno`); gana la
   menor suma, y en el campeonato cuenta la suma. Si los paneles de la cuenta atrás no
   caben donde siempre, el circuito dice dónde (`guia`).
-- **Un dedo por jugador**: la mitad izquierda es J1 y la derecha J2. Ninguna mecánica
-  nueva puede exigir un control que el móvil no tenga.
+- **Un dedo por jugador**: a dos, la mitad izquierda es J1 y la derecha J2; a uno, toda
+  la pantalla. Tocando en la mesa, cuántos juegan lo dicen los dos botones de la portada
+  (un toque fuera no arranca nada) y la salida espera a que cada uno apoye el dedo
+  (`estado.espera`); el carril de la CPU no se toma tocando (solo en la lupa). Ninguna
+  mecánica nueva puede exigir un control que el móvil no tenga.
 - **En vertical, la lupa** (`estado.lupa`): toda la pantalla es el J1 y el otro carril, la
   CPU. La vista nunca enseña fuera de la mesa (1280 × 720) y el lienzo tiene el alto de
   la pantalla: lo que dibuje la lupa no puede suponer 960 px de alto.

@@ -1930,3 +1930,33 @@ app en la consola de Play.
   (~4/255). En el ordenador la portada con uno y con otro casi no se distingue.
 - Probado en el móvil por la wifi, el viejo y el nuevo tras `?velo`: con el velo va
   fluido. No queda ningún otro modo de mezcla de esos en el juego.
+
+## Slot Panic 1.17.0: empezar a jugar en el móvil en horizontal (16/10/2026, rama `54-sin-pie-en-movil`)
+
+Del playtest en el móvil en horizontal (sin PWA): el menú no se veía, un toque perdido
+arrancaba la carrera, no se sabía cómo jugar uno o dos ni qué coche era el tuyo.
+
+- **El lienzo se salía de la pantalla.** Su ancho salía de `100vh`, que en el móvil es
+  el alto sin la barra del navegador: con ella a la vista, el lienzo era más alto que
+  lo visible y se cortaba arriba (el menú entero) y abajo. Ahora `100dvh`, con `100vh`
+  de respaldo.
+- **El pie flotante**, con los enlaces y «Cookies», caía encima del circuito y se
+  pulsaba en vez de acelerar. En táctil (`pointer: coarse`) y en pantallas de menos de
+  600 px de alto va al final de la página, bajo la prosa, como en la lupa.
+- **Tocando en la mesa** (con teclado y en la lupa, todo igual):
+  - La barra del menú ocupa la banda (48 px lógicos en vez de 36) y su letra, 22 en vez
+    de 17: un píxel lógico es poco más de medio real.
+  - La portada tiene dos botones, **1 JUGADOR** y **2 JUGADORES** (`cajasJugar`), y un
+    toque fuera ya no arranca nada. El circuito y el botón de récords, más grandes (20
+    y 40 px de alto).
+  - A uno, toda la pantalla acelera su coche; a dos, una mitad cada uno. El carril de
+    la CPU ya no se toma tocando (`juegaTactil`; en la lupa, sí).
+  - **La salida espera** (`estado.espera`): la parrilla quieta, el semáforo apagado y
+    sin número, un anillo que late alrededor del coche de cada jugador («TÚ» si juega
+    uno) y en su panel «MANTÉN EL DEDO PARA SALIR», que pasa a «¡LISTO!» en verde con el
+    dedo puesto. La cuenta atrás empieza cuando todos lo tienen. También al repetir, en
+    cada carrera del campeonato y en cada manga.
+- Siete textos nuevos en los siete idiomas; se va «el carril que nadie toque lo lleva
+  la CPU», que ya no es verdad.
+- Probado en el navegador simulando el táctil (un toque fuera no arranca; la espera,
+  a uno y a dos) y en el móvil por la wifi. Arnés: 2331/2331.

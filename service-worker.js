@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-faf5d160';
+const CACHE = 'slotpanic-aeaf7f86';
 
 const PRECACHE = [
   'index.html',
@@ -77,13 +77,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   'f5a0c360',
-  'en/index.html':                '5e573e3d',
-  'pt/index.html':                '31065b99',
-  'gl/index.html':                '7f335e10',
-  'ca/index.html':                'b67ef491',
-  'it/index.html':                'ed6b9a8c',
-  'fr/index.html':                '11267bb5',
+  'index.html':                   '69b74b0f',
+  'en/index.html':                '86cfbced',
+  'pt/index.html':                '7af417fd',
+  'gl/index.html':                '6baff641',
+  'ca/index.html':                '2350e900',
+  'it/index.html':                'fbc05e72',
+  'fr/index.html':                '20c5dc00',
   'analitica.js':                 'bccaef26',
   'audio.js':                     '936e65ae',
   'circuitos/banera.js':          '89b3bfc0',
@@ -101,14 +101,14 @@ const HUELLAS = {
   'constructor.js':               'a4944864',
   'dibujo.js':                    '8c93ccf8',
   'escenarios.js':                '448d173f',
-  'estado.js':                    '8cab6b3b',
+  'estado.js':                    '5be7a028',
   'galeria.js':                   '625d65a3',
-  'i18n.js':                      '43c3d747',
-  'juego.js':                     'be42a8a0',
+  'i18n.js':                      '315e4387',
+  'juego.js':                     '63b780b6',
   'lupa.js':                      'a7d78e09',
   'luz.js':                       '1eefbe21',
   'medida.js':                    '03f10cbb',
-  'menu.js':                      '4a4ea491',
+  'menu.js':                      '0625b4a3',
   'nucleo/campeonato.js':         '5fab5848',
   'nucleo/circuito.js':           '7c9b7eb5',
   'nucleo/cuadricula.js':         'ae7eca4d',
@@ -123,7 +123,7 @@ const HUELLAS = {
   'nucleo/slot.js':               '9424ad3b',
   'nucleo/trazo.js':              'baeee985',
   'nucleo/validar.js':            '4a20240f',
-  'pantalla.js':                  '70301316',
+  'pantalla.js':                  '394a8230',
   'particulas.js':                '2e764b4e',
   'publicar.js':                  'f1a47901',
   'publicos.js':                  '63cec294',
@@ -133,7 +133,7 @@ const HUELLAS = {
   'vendor/pnyk/red.js':           '73a46da0',
   'vendor/pnyk/pie.js':           'bc866a2f',
   'vendor/pnyk/consentimiento.js':'df9a1409',
-  'style.css':                    '6ae32270',
+  'style.css':                    'ef982470',
   'favicon.svg':                  '423ea574',
   'manifest.webmanifest':         'ddd3731a',
   'iconos/icon-192.png':          'cc0e9575',

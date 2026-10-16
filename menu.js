@@ -38,8 +38,9 @@ export function opcionesGrupo(grupo, eligeJugadores) {
 // --- La barra de los grupos ----------------------------------------------------------
 
 /*
- * En la mesa, los cuatro en la banda de arriba, iguales; en la lupa, abajo,
- * de dos en dos. Dibujo y pulsación.
+ * En la mesa, los cuatro en la banda de arriba, iguales (tocando, toda la
+ * banda: en un móvil en horizontal un píxel lógico es poco más de medio real);
+ * en la lupa, abajo, de dos en dos. Dibujo y pulsación.
  */
 export function cajasGrupos(vista) {
   if (vista.lupa) {
@@ -49,14 +50,14 @@ export function cajasGrupos(vista) {
       id, x: 16 + (i % 2) * (ancho + hueco), y: y0 + Math.floor(i / 2) * (alto + hueco), ancho, alto
     }));
   }
-  const alto = 36, hueco = 10, ancho = Math.floor((vista.ancho - 24 - hueco * (GRUPOS.length - 1)) / GRUPOS.length);
+  const alto = vista.tactil ? BANDA_TEXTO - 8 : 36, hueco = 10, ancho = Math.floor((vista.ancho - 24 - hueco * (GRUPOS.length - 1)) / GRUPOS.length);
   return GRUPOS.map((id, i) => ({ id, x: 12 + i * (ancho + hueco), y: (BANDA_TEXTO - alto) / 2, ancho, alto }));
 }
 
 export function dibujarGrupos(vista, abierto) {
   for (const caja of cajasGrupos(vista)) {
     const etiqueta = t(caja.id === 'circuitos' ? 'opcion.circuitos' : 'grupo.' + caja.id);
-    boton(caja, etiqueta + (caja.id === abierto ? '' : '  ›'), caja.id === abierto, vista.lupa ? 19 : 17);
+    boton(caja, etiqueta + (caja.id === abierto ? '' : '  ›'), caja.id === abierto, vista.lupa ? 19 : vista.tactil ? 22 : 17);
   }
 }
 

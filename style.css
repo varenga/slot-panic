@@ -125,9 +125,13 @@ kbd {
 
 /* Resolución lógica fija (1280x720) escalada por CSS hasta lo que quepa, pero
    nunca por encima de 960 px de ancho: como en Rail Panic, un píxel lógico
-   mide 0,75 px reales y todo se ve un 25 % más pequeño que sus números. */
+   mide 0,75 px reales y todo se ve un 25 % más pequeño que sus números. El
+   alto, el visible (100dvh): en el móvil, 100vh es el de sin barra del
+   navegador, y con ella a la vista el lienzo se salía por arriba y por abajo
+   (y con él, el menú). 100vh queda de respaldo. */
 #lienzo {
   width: min(100vw, calc(100vh * 16 / 9), 960px);
+  width: min(100vw, calc(100dvh * 16 / 9), 960px);
   height: auto;
   aspect-ratio: 16 / 9;
   background: var(--fondo-lienzo);
