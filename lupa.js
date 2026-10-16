@@ -29,6 +29,7 @@ import {
 } from './pantalla.js';
 import { dibujarConfeti } from './particulas.js';
 import { t } from './i18n.js';
+import { textoMedida } from './medida.js';
 
 const BARRA = 56;                  // px del marcador, arriba
 const ALTO_MAPA = 230;              // px del mapa con el lienzo en 9:16
@@ -418,8 +419,9 @@ function confeti(particulas) {
 }
 
 /** Solo sirviendo en local: lo mismo que `dibujarDepuracion`, abajo. */
-export function dibujarDepuracionLupa(fps, slot, zoom) {
+export function dibujarDepuracionLupa(medida, slot, zoom) {
   const { coche } = slot;
-  const datos = `${fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)} · zoom ${zoomEfectivo(zoom).toFixed(2)} · ${ANCHO_LUPA}×${altoLienzo}`;
+  const datos = `${medida.fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)} · zoom ${zoomEfectivo(zoom).toFixed(2)} · ${ANCHO_LUPA}×${altoLienzo}`;
+  texto(textoMedida(medida), ANCHO_LUPA - 10, altoLienzo - 28, { tam: 12, color: COLOR.texto, alinear: 'right', peso: 500 });
   texto(datos, ANCHO_LUPA - 10, altoLienzo - 12, { tam: 12, color: COLOR.texto, alinear: 'right', peso: 500 });
 }

@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-f3a166ca';
+const CACHE = 'slotpanic-4da598d6';
 
 const PRECACHE = [
   'index.html',
@@ -40,6 +40,7 @@ const PRECACHE = [
   'juego.js',
   'lupa.js',
   'luz.js',
+  'medida.js',
   'menu.js',
   'nucleo/campeonato.js',
   'nucleo/circuito.js',
@@ -76,13 +77,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   'dadb19f2',
-  'en/index.html':                '223688b1',
-  'pt/index.html':                'da1dd815',
-  'gl/index.html':                '3f7a7e7d',
-  'ca/index.html':                'a0c11551',
-  'it/index.html':                '22c9376f',
-  'fr/index.html':                'b38c9db4',
+  'index.html':                   '044bf365',
+  'en/index.html':                'f7626e1e',
+  'pt/index.html':                '8510c1af',
+  'gl/index.html':                '3944bbaa',
+  'ca/index.html':                '5077bb5c',
+  'it/index.html':                '5384de88',
+  'fr/index.html':                'eb65c248',
   'analitica.js':                 'bccaef26',
   'audio.js':                     '936e65ae',
   'circuitos/banera.js':          '89b3bfc0',
@@ -100,12 +101,13 @@ const HUELLAS = {
   'constructor.js':               'a4944864',
   'dibujo.js':                    '8cfcf72e',
   'escenarios.js':                '448d173f',
-  'estado.js':                    '5bef040f',
+  'estado.js':                    '8cab6b3b',
   'galeria.js':                   '625d65a3',
   'i18n.js':                      '43c3d747',
-  'juego.js':                     '9c36ec7d',
-  'lupa.js':                      '8915c703',
+  'juego.js':                     'be42a8a0',
+  'lupa.js':                      'a7d78e09',
   'luz.js':                       '57dee04d',
+  'medida.js':                    '03f10cbb',
   'menu.js':                      '4a4ea491',
   'nucleo/campeonato.js':         '5fab5848',
   'nucleo/circuito.js':           '7c9b7eb5',
@@ -121,7 +123,7 @@ const HUELLAS = {
   'nucleo/slot.js':               '9424ad3b',
   'nucleo/trazo.js':              'baeee985',
   'nucleo/validar.js':            '4a20240f',
-  'pantalla.js':                  '09986786',
+  'pantalla.js':                  '70301316',
   'particulas.js':                '2e764b4e',
   'publicar.js':                  'f1a47901',
   'publicos.js':                  '63cec294',

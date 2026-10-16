@@ -1884,3 +1884,19 @@ app en la consola de Play.
 - La primera actualización desde la 1.16.2 todavía lo baja todo: su caché no tiene
   índice. Los `modulepreload` no llevan huella en la dirección, así que cambiar un
   módulo no cambia las páginas: un cambio en un módulo baja ese módulo.
+
+## El tiempo de fotograma en la depuración (16/10/2026, rama `51-tiempo-de-fotograma`)
+
+- Los FPS no dicen si se va sobrado o al límite, y un tirón suelto se pierde en la
+  media. `medida.js` anota cada fotograma: el **trabajo** (actualizar y dibujar, con
+  `performance.now()`; lo que corre en el hilo principal, sin la composición del
+  navegador ni el propio panel) y el **cuadro** (el hueco entre dos
+  `requestAnimationFrame`: pasado de 16,7 ms se ha perdido uno). Cada segundo, la media
+  y el percentil 95 de cada uno: el peor 5 %. Sin asignaciones por fotograma (búferes
+  fijos, se ordenan al resumir). Solo con `DEPURACION`: publicado no mide nada.
+- Se pinta en una segunda línea del panel, pegada al borde de abajo (a media banda
+  pisaba el rótulo del J2); en la lupa, encima de la de siempre. `estado.fps` se va:
+  el resumen vive en `medida`.
+- En el portátil de desarrollo (pantalla de 144 Hz), *El ocho largo* de noche con
+  cuatro CPU: 144 FPS, trabajo 0,6 ms (p95 0,9) y cuadro 6,9 ms (p95 7,1). Sobra
+  más de diez veces: la decisión de la fase 5 la dará el Android modesto.

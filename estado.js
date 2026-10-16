@@ -291,6 +291,5 @@ export const estado = {
   repeticion: null,    // lo grabado de la carrera (nucleo/momentos.js)
   trasMeta: 0,         // s que quedan de grabar tras la meta antes de elegir los momentos
   momentos: null,      // los elegidos al acabar: { lista, mejor }
-  reproduccion: null,  // la repetición que se ve (repeticion.js)
-  fps: 0
+  reproduccion: null   // la repetición que se ve (repeticion.js)
 };

@@ -18,6 +18,7 @@
 import { ALTO, ANCHO, CARRERAS, COLOR, CUENTA_ATRAS, DURACION_SALIDA, FUENTE } from './config.js';
 import { circulo, ctx, rectanguloRedondo, texto } from './nucleo/lienzo.js';
 import { BANDA_TEXTO } from './nucleo/decorado.js';
+import { textoMedida } from './medida.js';
 import { formatearTiempo, mejorVueltaSlot, vueltaSlot } from './nucleo/slot.js';
 import { clasificacion } from './nucleo/campeonato.js';
 import { mangasDe, serieAcabada, sumaSerie } from './nucleo/mangas.js';
@@ -511,9 +512,14 @@ function pintarTabla(carrera, humanos, filas, totales, { x, y, mitad, tam, fila 
   });
 }
 
-/** Solo sirviendo en local. La «deriva» es la exigencia del J1 en %: 100 se sale. */
-export function dibujarDepuracion(fps, slot) {
+/**
+ * Solo sirviendo en local. La exigencia del J1 en %: 100 se sale. Encima, la
+ * medida del fotograma (medida.js).
+ */
+export function dibujarDepuracion(medida, slot) {
   const { coche } = slot;
-  const datos = `${fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)}`;
+  const datos = `${medida.fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)}`;
   texto(datos, ANCHO - 12, ALTO - BANDA_TEXTO / 2, { tam: 12, color: COLOR.texto, alinear: 'right', peso: 500 });
+  // Pegada al borde: a media banda, más larga, pisaría el rótulo del J2.
+  texto(textoMedida(medida), ANCHO - 12, ALTO - 9, { tam: 11, color: COLOR.texto, alinear: 'right', peso: 500 });
 }

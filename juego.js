@@ -61,6 +61,7 @@ import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from '
 import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js';
 import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
 import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, pintarHora } from './luz.js';
+import { anotarFotograma, crearMedida } from './medida.js';
 import {
   altoLienzoLupa, altoLupa, botonesFinTablaLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
   dibujarMarcadorLupa, dibujarAcelerador, dibujarPortadaLupa, empezarFotogramaLupa, marcoMenuLupa, prepararLupa, seguirCamara, zoomLupa
@@ -1599,9 +1600,11 @@ const ESCENAS = {
 // --- Bucle ----------------------------------------------------------------
 
 let tAnterior = 0;
-let fotogramas = 0, acumulado = 0;
+const medida = crearMedida();
 
 function bucle(tActual) {
+  const hueco = tAnterior === 0 ? 0 : tActual - tAnterior;
+  const inicio = DEPURACION ? performance.now() : 0;
   // El primer fotograma no tiene delta del que fiarse. Nunca negativo ni mayor
   // que DT_MAX: ni un reloj que retrocede ni una pestaña en segundo plano
   // pueden mover el mundo de golpe.
@@ -1616,15 +1619,12 @@ function bucle(tActual) {
   }
   ESCENAS[estado.fase].dibujar();
 
-  fotogramas++;
-  acumulado += dt;
-  if (acumulado >= 1) {
-    estado.fps = Math.round(fotogramas / acumulado);
-    fotogramas = 0;
-    acumulado = 0;
+  // El trabajo se mide sin el panel de depuración, que no estará publicado.
+  if (DEPURACION) {
+    anotarFotograma(medida, performance.now() - inicio, hueco, dt);
+    if (estado.lupa) dibujarDepuracionLupa(medida, estado.carrera.coches[0], ZOOM);
+    else dibujarDepuracion(medida, estado.carrera.coches[0]);
   }
-  if (DEPURACION && estado.lupa) dibujarDepuracionLupa(estado.fps, estado.carrera.coches[0], ZOOM);
-  else if (DEPURACION) dibujarDepuracion(estado.fps, estado.carrera.coches[0]);
 
   requestAnimationFrame(bucle);
 }
