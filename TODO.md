@@ -81,8 +81,5 @@ razón. Lo que sí, por orden:
       el panel de depuración ya da el trabajo y el cuadro (media y p95; sirviendo en la
       LAN no sale, solo en local: con `chrome://inspect` y reenvío de puertos al 8124),
       y una grabación de DevTools › Performance. Con eso se decide lo de abajo.
-- [ ] Partir `i18n.js` por idioma (el más grande: 25 KB comprimido, y se bajan siete
-      para usar uno; ahorra ~20 KB en la primera carga). Pide cargar el idioma antes de
-      arrancar y que cambiar de idioma sea asíncrono: `t()` hoy es síncrona.
 - [ ] Si la medida sale justa: bajar a 30 FPS con poca batería (o a elección en
       AJUSTES).

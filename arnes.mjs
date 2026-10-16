@@ -25,7 +25,7 @@ import {
   avanzarSlot, contacto, crearCarreraSlot, formatearTiempo, largoCarril, lateralEn, mejorVueltaSlot, radioAgarre, radioCarril, trazadoCarril
 } from './nucleo/slot.js';
 import { RADIO_COCHE } from './nucleo/slot.js';
-import { CATALOGOS } from './i18n.js';
+import { cambiarIdioma, codigoIdioma, IDIOMAS, t, todosLosCatalogos } from './i18n.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { azar, cabe, circulosDe, distanciaAPista, generarDecorado, instalacionCabe, torreCabe } from './nucleo/decorado.js';
 import { validarCircuito } from './nucleo/validar.js';
@@ -40,6 +40,9 @@ import {
   crearRepeticion, duracionMomento, elegirMomentos, eventosEntre, grabarCuadro, numerosGrabados, poseEn, TIPOS_MOMENTO
 } from './nucleo/momentos.js';
 import { claveRotulo } from './repeticion.js';
+
+// Los siete catálogos (el juego solo baja el suyo).
+const CATALOGOS = await todosLosCatalogos();
 
 const DT = 1 / 60;
 let aserciones = 0;
@@ -1609,9 +1612,16 @@ console.log('\nIdiomas');
     comprobar(!faltan.length && !sobran.length, `${codigo}: faltan [${faltan}] sobran [${sobran}]`);
   }
   console.log(`  ${Object.keys(CATALOGOS).length} idiomas, ${base.length} claves cada uno`);
+  // Cada idioma de IDIOMAS tiene su fichero, y cambiar de idioma da la vuelta
+  // a los siete y deja t() en el nuevo (es asíncrono: espera a bajarlo).
+  comprobar(IDIOMAS.every((l) => CATALOGOS[l.codigo]), `idiomas sin catálogo en idiomas/`);
+  const vistos = [];
+  for (const _ of IDIOMAS) { await cambiarIdioma(1); vistos.push(codigoIdioma()); }
+  comprobar(vistos.join() === [...IDIOMAS.slice(1), IDIOMAS[0]].map((l) => l.codigo).join()
+    && t('page.langTitle') === CATALOGOS.es['page.langTitle'], `cambiar de idioma da ${vistos.join(' ')}`);
   // Cada coche tiene nombre (el menú COCHE y la tabla de récords lo enseñan).
   const sinNombre = Object.keys(COCHES).filter((id) => !CATALOGOS.es['coche.' + id]);
-  comprobar(!sinNombre.length, `coches sin nombre en i18n.js: ${sinNombre.join(', ')}`);
+  comprobar(!sinNombre.length, `coches sin nombre en idiomas/es.js: ${sinNombre.join(', ')}`);
 
   /*
    * Los nombres de los circuitos públicos: en cada idioma, las mismas listas

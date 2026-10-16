@@ -2021,3 +2021,28 @@ arrancaba la carrera, no se sabía cómo jugar uno o dos ni qué coche era el tu
   y la que anochece. Arnés: 2331/2331.
 - Con esto, el punto de la fase 5 que queda antes que nada es medir en el Android
   modesto: si va justo, ya no será por el recolector.
+
+## Un fichero por idioma (16/10/2026, rama `57-idiomas-por-fichero`)
+
+- `i18n.js` era el módulo más grande (118 KB, 21,6 KB en brotli) y se bajaban los
+  siete catálogos para usar uno. Ahora cada idioma es su fichero (`idiomas/es.js`…,
+  `export default {…}`) e `i18n.js` se queda en el runtime: 2,1 KB en brotli, más
+  4,6-5,3 KB del idioma. **La primera carga, de 21,6 a ~7 KB** (-15 KB comprimidos).
+- `t()` sigue siendo síncrona: `i18n.js` baja el idioma con `import()` y un `await`
+  de primer nivel, así que todo lo que lo importa (el juego entero) espera a tenerlo.
+  Sin cambiar ninguno de los `t()` del juego.
+- Cambiar de idioma (tecla L, AJUSTES) es asíncrono: se sigue en el de antes hasta
+  que baja el nuevo, y dos pulsaciones seguidas acaban en el último. Si no baja (sin
+  red y sin service worker) se queda en el que estaba; si no baja el inicial, el
+  español.
+- Ya no se cae al español clave a clave (habría que bajarlo siempre): el arnés
+  garantiza que los siete tienen las mismas claves.
+- `modulos()` del generador no sigue los `import()`: los siete catálogos se añaden a
+  mano a PRECACHE (sin red se puede cambiar de idioma, y la app los lleva dentro), y
+  cada página lleva `modulepreload` solo del suyo. La raíz precarga el español aunque
+  quien la abra acabe en otro idioma (5 KB): es el caso común.
+- El arnés y el generador cargan los siete con `todosLosCatalogos()`; el arnés
+  comprueba además que cada idioma de `IDIOMAS` tenga fichero y que siete cambios
+  dan la vuelta y dejan `t()` en el nuevo. Probado en el navegador: en `/en/` baja
+  solo `en.js`; L dos veces seguidas, `pt.js` y `gl.js` y queda en gallego, lienzo y
+  pie; `?lang=fr` en la raíz, en francés. Arnés: 2333/2333.

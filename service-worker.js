@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-b79e4338';
+const CACHE = 'slotpanic-7528fd8d';
 
 const PRECACHE = [
   'index.html',
@@ -37,6 +37,13 @@ const PRECACHE = [
   'estado.js',
   'galeria.js',
   'i18n.js',
+  'idiomas/ca.js',
+  'idiomas/en.js',
+  'idiomas/es.js',
+  'idiomas/fr.js',
+  'idiomas/gl.js',
+  'idiomas/it.js',
+  'idiomas/pt.js',
   'juego.js',
   'lupa.js',
   'luz.js',
@@ -77,13 +84,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '69b74b0f',
-  'en/index.html':                '86cfbced',
-  'pt/index.html':                '7af417fd',
-  'gl/index.html':                '6baff641',
-  'ca/index.html':                '2350e900',
-  'it/index.html':                'fbc05e72',
-  'fr/index.html':                '20c5dc00',
+  'index.html':                   '6f59ee15',
+  'en/index.html':                '4fa04914',
+  'pt/index.html':                '91ca3ba0',
+  'gl/index.html':                'ed8ce56a',
+  'ca/index.html':                'dace35d1',
+  'it/index.html':                '5ac423f0',
+  'fr/index.html':                '693c29b4',
   'analitica.js':                 'bccaef26',
   'audio.js':                     '936e65ae',
   'circuitos/banera.js':          '89b3bfc0',
@@ -103,8 +110,15 @@ const HUELLAS = {
   'escenarios.js':                '448d173f',
   'estado.js':                    '5be7a028',
   'galeria.js':                   '625d65a3',
-  'i18n.js':                      '46f03fc0',
-  'juego.js':                     '8882d257',
+  'i18n.js':                      '1859ef57',
+  'idiomas/ca.js':                'ab4ec14b',
+  'idiomas/en.js':                'a472e542',
+  'idiomas/es.js':                'b3f9aa53',
+  'idiomas/fr.js':                '38352ca1',
+  'idiomas/gl.js':                '0345445a',
+  'idiomas/it.js':                '70f1a194',
+  'idiomas/pt.js':                '7ef5c990',
+  'juego.js':                     'e881d9f8',
   'lupa.js':                      '5f4421a7',
   'luz.js':                       'b94332bb',
   'medida.js':                    '03f10cbb',
