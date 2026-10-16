@@ -1900,3 +1900,16 @@ app en la consola de Play.
 - En el portátil de desarrollo (pantalla de 144 Hz), *El ocho largo* de noche con
   cuatro CPU: 144 FPS, trabajo 0,6 ms (p95 0,9) y cuadro 6,9 ms (p95 7,1). Sobra
   más de diez veces: la decisión de la fase 5 la dará el Android modesto.
+
+## La luz de freno, en un sprite (16/10/2026, rama `52-freno-en-capa`)
+
+- `pintarFreno` (`dibujo.js`) creaba dos degradados radiales por coche y fotograma
+  frenando: basura para el recolector. Ahora el degradado se pinta una vez, la primera
+  vez que alguien frena, en un sprite (`crearSpriteFreno`), y se estampa dos veces con
+  `drawImage`, sumando color como antes. El sprite va a ×8 (72 px para 9): con la lupa
+  y en pantallas densas se amplía y no se ve borroso.
+- Comparado ampliado ×8 con el de antes, uno junto al otro: no se distinguen. Medido en
+  el portátil con 20.000 coches seguidos, el freno con degradados añadía ~140 µs por
+  coche y con el sprite no se aprecia (está dentro del ruido). Es un banco de pruebas
+  tosco, que mide también lo que la GPU tarda en vaciar la cola; la cifra que manda es
+  la del Android.
