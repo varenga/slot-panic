@@ -48,7 +48,8 @@ lo que ha pasado el arnés; el trabajo se hace en ramas.
 `TODO.md` a `BITACORA.md` con lo que se haya medido: `TODO.md` no acumula tareas marcadas.
 
 Todo el proyecto está en español: comentarios, identificadores, mensajes de commit y
-documentación. Las cadenas visibles van en `i18n.js` (siete idiomas).
+documentación. Las cadenas visibles van en `idiomas/` (un fichero por idioma; la
+referencia, `idiomas/es.js`).
 
 ## Los hermanos son plantilla, no dependencia
 
@@ -230,7 +231,11 @@ config.js              constantes, paleta, controles, GAME_SLUG y SITE_ORIGIN (n
 escenarios.js          los cinco escenarios: colores del suelo y pesos del decorado;
                        el juguete (`juguete: true`) cambia también la pista
                        (datos, no importa nada)
-i18n.js                catálogos de 7 idiomas, t(), cambiarIdioma()
+i18n.js                los 7 idiomas, t() y cambiarIdioma() (asíncrona): baja con
+                       import() solo el catálogo que se usa, y el primero antes de
+                       arrancar (await de primer nivel), así t() es síncrona
+idiomas/es.js…fr.js    un catálogo por idioma (`export default {…}`); el generador
+                       los añade a PRECACHE, que no los encuentra siguiendo import
 estado.js              el objeto `estado` mutable y el escenario guardado
 audio.js               Web Audio: tone(), noiseBurst(), sfx*(), el zumbido de cada coche
                        y el chirrido continuos

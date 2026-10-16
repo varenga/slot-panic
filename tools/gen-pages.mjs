@@ -6,7 +6,7 @@
  * NO es un paso de compilación del juego: su salida (index.html, en/index.html,
  * pt/…, manifest.webmanifest, service-worker.js, sitemap.xml, robots.txt y
  * llms.txt) está versionada, y el juego se sirve igual sin ejecutar nada. Es lo
- * que impide que las siete páginas diverjan: el texto sale de `i18n.js`, los
+ * que impide que las siete páginas diverjan: el texto sale de `idiomas/`, los
  * circuitos de `circuitos/indice.js` y la versión de `pnyk.json`.
  *
  * Es el `tools/gen-pages.js` de Orbit Panic pasado a módulo ES, porque el
@@ -26,8 +26,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ALTO, ANCHO, GAME_SLUG, SITE_ORIGIN, VUELTAS_SLOT } from '../config.js';
-import { CATALOGOS, IDIOMAS } from '../i18n.js';
+import { IDIOMAS, todosLosCatalogos } from '../i18n.js';
 import { CIRCUITOS } from '../circuitos/indice.js';
+
+const CATALOGOS = await todosLosCatalogos();
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (f) => fs.readFileSync(path.join(RAIZ, f), 'utf8');
@@ -115,6 +117,11 @@ function modulos(entrada) {
 // caché del navegador: el load, de 2,4 a 2,0 s (BITACORA.md).
 const MODULOS = ['juego.js', ...modulos('juego.js').filter((f) => f !== 'juego.js')];
 
+// Los catálogos: i18n.js baja con import() solo el del idioma (no los sigue
+// modulos()). Precargados todos (sin red se cambia de idioma, y la app los
+// lleva dentro); cada página, con modulepreload, solo el suyo.
+const CATALOGOS_JS = IDIOMAS.map((l) => `idiomas/${l.codigo}.js`);
+
 // Los scripts clásicos que index.html carga antes del juego (vendor/pnyk/).
 const CLASICOS = ['vendor/pnyk/red.js', 'vendor/pnyk/pie.js', 'vendor/pnyk/consentimiento.js'];
 
@@ -176,7 +183,7 @@ function pagina(codigo) {
     `      <li><b>${esc(t('circuito.' + c.clave))}</b> — ${esc(t('page.circ.' + c.clave))}</li>`).join('\n');
 
   return `<!DOCTYPE html>
-<!-- Generado por tools/gen-pages.mjs a partir de i18n.js. No editar a mano. -->
+<!-- Generado por tools/gen-pages.mjs a partir de idiomas/. No editar a mano. -->
 <html lang="${codigo}" data-base="${base}"${idioma.dir ? ` data-idioma="${codigo}"` : ''}>
 <head>
   <meta charset="UTF-8">
@@ -212,7 +219,7 @@ ${ogAlternativas}
   <link rel="apple-touch-icon" href="${versionado('iconos/icon-192.png')}">
   <link rel="manifest" href="${base}manifest.webmanifest">
   <link rel="stylesheet" href="${versionado('style.css')}">
-${MODULOS.map((f) => `  <link rel="modulepreload" href="${base}${f}">`).join('\n')}
+${[...MODULOS, `idiomas/${codigo}.js`].map((f) => `  <link rel="modulepreload" href="${base}${f}">`).join('\n')}
 
   <script type="application/ld+json">
 ${jsonLd}
@@ -325,7 +332,7 @@ function manifest() {
  */
 const PRECACHE = [
   ...IDIOMAS.map((l) => l.dir + 'index.html'),
-  ...[...MODULOS].sort(),
+  ...[...MODULOS, ...CATALOGOS_JS].sort(),
   ...CLASICOS,
   'style.css',
   'favicon.svg',

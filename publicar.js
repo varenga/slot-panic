@@ -17,7 +17,7 @@ import { boton } from './pantalla.js';
 import { nombreCompuesto, t } from './i18n.js';
 
 export const LETRAS_ALIAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-const ADJETIVOS = 16, SUSTANTIVOS = 16;   // los de api.php (el arnés los compara con i18n.js)
+const ADJETIVOS = 16, SUSTANTIVOS = 16;   // los de api.php (el arnés los compara con idiomas/)
 const NORMAS = 4;
 const PANEL = { ancho: 680, alto: 420 };
 

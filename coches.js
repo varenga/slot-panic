@@ -11,7 +11,7 @@
  * lupa llegan a 75 px, y ahí cuentan el volumen (el techo, más claro, y un
  * contorno), unas ruedas que apenas asoman y luces pequeñas.
  *
- * Los nombres son apodos, nunca marcas (como «slot»): los pone i18n.js.
+ * Los nombres son apodos, nunca marcas (como «slot»): los pone idiomas/.
  *
  * Cada modelo da `silueta()`, el camino de la carrocería (sin rellenar: sirve
  * para la sombra y para la chapa), `ejes` y `via`, dónde van las ruedas (la

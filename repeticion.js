@@ -171,7 +171,7 @@ export function conCamaraRepeticion(rp, vista, dibujar) {
 
 // --- Lo de encima -------------------------------------------------------------------
 
-/** La clave del rótulo de un momento (i18n.js). */
+/** La clave del rótulo de un momento (idiomas/). */
 export function claveRotulo(m) {
   if (m.tipo === 'choque') return 'momento.choque.' + m.lugar;
   if (m.tipo === 'salvada') return m.lugar === 'deslizante' ? 'momento.salvadaDeslizante' : 'momento.salvada';

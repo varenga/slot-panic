@@ -1104,7 +1104,7 @@ function opcionPulsada(id) {
   else if (id === 'circuito') cambiarCircuito();
   else if (id === 'pista') cambiarPista();
   else if (id === 'sonido') alternarSilencio();
-  else if (id === 'idioma') { cambiarIdioma(1); textosDelDocumento(); }
+  else if (id === 'idioma') { cambiarIdioma(1).then(textosDelDocumento); }
   else if (id === 'escenario') cambiarEscenario();
   else if (id === 'hora') cambiarHora();
   else if (id === 'duracion') cambiarDuracion();
@@ -1481,7 +1481,7 @@ const ESCENAS = {
       else if (codigo === 'KeyT') cambiarModo();
       else if (codigo === 'Digit1' || codigo === 'Numpad1') cambiarJugador(0);
       else if (codigo === 'Digit2' || codigo === 'Numpad2') cambiarJugador(1);
-      else if (codigo === 'KeyL') { cambiarIdioma(1); textosDelDocumento(); }
+      else if (codigo === 'KeyL') { cambiarIdioma(1).then(textosDelDocumento); }
       else if (codigo === 'KeyE') cambiarEscenario();
       else if (codigo === 'KeyC') cambiarCircuito();
       else if (codigo === 'KeyP') cambiarPista();
