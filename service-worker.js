@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-6a7876dc';
+const CACHE = 'slotpanic-faf5d160';
 
 const PRECACHE = [
   'index.html',
@@ -77,13 +77,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '9ff05715',
-  'en/index.html':                '5d44185b',
-  'pt/index.html':                '68ccf3c9',
-  'gl/index.html':                '3c8b2cd7',
-  'ca/index.html':                '71bcf384',
-  'it/index.html':                '0acb9a78',
-  'fr/index.html':                'a9b0e899',
+  'index.html':                   'f5a0c360',
+  'en/index.html':                '5e573e3d',
+  'pt/index.html':                '31065b99',
+  'gl/index.html':                '7f335e10',
+  'ca/index.html':                'b67ef491',
+  'it/index.html':                'ed6b9a8c',
+  'fr/index.html':                '11267bb5',
   'analitica.js':                 'bccaef26',
   'audio.js':                     '936e65ae',
   'circuitos/banera.js':          '89b3bfc0',
@@ -133,7 +133,7 @@ const HUELLAS = {
   'vendor/pnyk/red.js':           '73a46da0',
   'vendor/pnyk/pie.js':           'bc866a2f',
   'vendor/pnyk/consentimiento.js':'df9a1409',
-  'style.css':                    '12f120b4',
+  'style.css':                    '6ae32270',
   'favicon.svg':                  '423ea574',
   'manifest.webmanifest':         'ddd3731a',
   'iconos/icon-192.png':          'cc0e9575',
