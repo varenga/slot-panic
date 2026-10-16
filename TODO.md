@@ -77,9 +77,10 @@ lo precarga) y a cambio traería un build, dos códigos (el arnés importa las f
 errores ilegibles en producción. Se reconsidera solo si un día hay build por otra
 razón. Lo que sí, por orden:
 
-- [ ] Medir el tiempo de fotograma, no solo los FPS: en la depuración, la media y el
-      peor 5 %. Y una grabación de DevTools › Performance en un Android modesto, en el
-      peor caso (de noche, cuatro coches, la lupa). Con eso se decide lo de abajo.
+- [ ] Medir en un Android modesto, en el peor caso (de noche, cuatro coches, la lupa):
+      el panel de depuración ya da el trabajo y el cuadro (media y p95; sirviendo en la
+      LAN no sale, solo en local: con `chrome://inspect` y reenvío de puertos al 8124),
+      y una grabación de DevTools › Performance. Con eso se decide lo de abajo.
 - [ ] Nada que genere basura en cada fotograma: la luz de freno crea dos degradados
       radiales por coche y fotograma (`dibujo.js`, `pintarFreno`); pre-pintada en una
       capa, como los halos de `luz.js`. Buscar más asignaciones por fotograma (arrays,
