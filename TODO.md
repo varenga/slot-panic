@@ -81,10 +81,9 @@ razón. Lo que sí, por orden:
       el panel de depuración ya da el trabajo y el cuadro (media y p95; sirviendo en la
       LAN no sale, solo en local: con `chrome://inspect` y reenvío de puertos al 8124),
       y una grabación de DevTools › Performance. Con eso se decide lo de abajo.
-- [ ] Nada que genere basura en cada fotograma: la luz de freno crea dos degradados
-      radiales por coche y fotograma (`dibujo.js`, `pintarFreno`); pre-pintada en una
-      capa, como los halos de `luz.js`. Buscar más asignaciones por fotograma (arrays,
-      objetos, cadenas de color) en el dibujo y en `slot.js`.
+- [ ] Nada que genere basura en cada fotograma (la luz de freno ya va en un sprite):
+      buscar más asignaciones por fotograma (arrays, objetos, cadenas de color) en el
+      dibujo y en `slot.js`.
 - [ ] Partir `i18n.js` por idioma (el más grande: 25 KB comprimido, y se bajan siete
       para usar uno; ahorra ~20 KB en la primera carga). Pide cargar el idioma antes de
       arrancar y que cambiar de idioma sea asíncrono: `t()` hoy es síncrona.

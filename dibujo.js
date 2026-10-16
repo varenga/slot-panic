@@ -1728,19 +1728,33 @@ export function dibujarCoche(coche) {
 /*
  * La luz de freno, a cualquier hora: un brillo rojo en cada esquina de la
  * cola, en las coordenadas del coche. De noche, luz.js suma el suyo encima.
+ * El degradado se pinta una vez en un sprite (la primera vez que se frena) y
+ * se estampa: crear dos degradados por coche y fotograma era basura para el
+ * recolector. El sprite va a `FRENO_RESOLUCION` px por px: con la lupa y en
+ * pantallas densas se amplía, y así no se ve borroso.
  */
 const FRENO_LADO = ANCHO_COCHE / 2 - 2.5;   // px del eje a cada piloto, como en luz.js
 const FRENO_BRILLO = 4.5;                    // px del brillo
-function pintarFreno(l) {
-  ctx.globalCompositeOperation = 'lighter';
-  for (const lado of [-1, 1]) {
-    const y = lado * FRENO_LADO;
-    const g = ctx.createRadialGradient(-l + 0.5, y, 0, -l + 0.5, y, FRENO_BRILLO);
+const FRENO_RESOLUCION = 8;
+let spriteFreno = null;
+function crearSpriteFreno() {
+  const r = FRENO_BRILLO * FRENO_RESOLUCION;
+  const capa = crearCapa(r * 2, r * 2);
+  dibujarEn(capa, () => {
+    const g = ctx.createRadialGradient(r, r, 0, r, r, r);
     g.addColorStop(0, 'rgba(255, 60, 40, 0.9)');
     g.addColorStop(0.4, 'rgba(255, 30, 20, 0.45)');
     g.addColorStop(1, 'rgba(255, 30, 20, 0)');
     ctx.fillStyle = g;
-    ctx.fillRect(-l + 0.5 - FRENO_BRILLO, y - FRENO_BRILLO, FRENO_BRILLO * 2, FRENO_BRILLO * 2);
-  }
+    ctx.fillRect(0, 0, r * 2, r * 2);
+  });
+  return capa;
+}
+function pintarFreno(l) {
+  spriteFreno ??= crearSpriteFreno();
+  ctx.globalCompositeOperation = 'lighter';
+  const x = -l + 0.5 - FRENO_BRILLO, lado = FRENO_BRILLO * 2;
+  ctx.drawImage(spriteFreno, x, -FRENO_LADO - FRENO_BRILLO, lado, lado);
+  ctx.drawImage(spriteFreno, x, FRENO_LADO - FRENO_BRILLO, lado, lado);
   ctx.globalCompositeOperation = 'source-over';
 }
