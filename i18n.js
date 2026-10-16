@@ -2263,6 +2263,9 @@ export function nombreCompuesto(adjetivo, sustantivo) {
   return t('nombre.formato', { s: palabra, a: genero === 'f' ? femenino : masculino });
 }
 
+/** El código del idioma de ahora ('es', 'en'…), sin buscarlo en IDIOMAS. */
+export const codigoIdioma = () => idioma;
+
 export function idiomaActual() {
   return IDIOMAS.find((l) => l.codigo === idioma);
 }

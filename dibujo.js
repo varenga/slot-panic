@@ -13,6 +13,7 @@ import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR, LARGO_COCHE, PASO_BACH
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
+import { indiceEn } from './nucleo/circuito.js';
 import { azar } from './nucleo/decorado.js';
 import { trazadoCarril } from './nucleo/slot.js';
 import { modelo, pintarModelo, sombraModelo } from './coches.js';
@@ -25,13 +26,35 @@ const MOTAS = 2200;
 const ANCHO_FRANJA = 48; // césped segado
 const PUBLICO = ['#e05a63', '#f2cd68', '#88aede', '#4fbf7a', '#e6e8ee', '#c08a9c', '#ff9f5a'];
 
+/*
+ * Cada capa recuerda con qué se pintó (el circuito, el decorado, si es de
+ * juguete) y se repinta cuando cambia: se compara cada fotograma, así que sin
+ * componer claves de texto.
+ */
 let capaSuelo = null;       // suelo, escapatoria, neumáticos y pista
 let capaDecorado = null;    // gradas y piezas, sin sombra: transparente
-let claveCapa = '';
+let circuitoCapa = null, decoradoCapa = null;
 let capaCarriles = null;
-let claveCarriles = '';
-let capaPuentes = null;
-let clavePuentes = '';
+let circuitoCarriles = null, jugueteCarriles = null;
+let capaPuentes = null;     // o null, si el circuito no tiene puentes
+let circuitoPuentes = null, juguetePuentes = null;
+
+/*
+ * Un negro translúcido que se pinta cada fotograma con el alfa de la luz de
+ * ahora: la cadena solo se rehace si el alfa cambia (en la carrera que
+ * anochece), no en cada fotograma.
+ */
+function negroMemorizado() {
+  let alfa = NaN, color = '';
+  return (nuevo) => {
+    if (nuevo !== alfa) {
+      alfa = nuevo;
+      color = `rgba(0, 0, 0, ${nuevo})`;
+    }
+    return color;
+  };
+}
+const negroGradas = negroMemorizado(), negroPiezas = negroMemorizado(), negroTorres = negroMemorizado();
 const JUNTA = 96;        // px de eje entre dos juntas de las piezas
 
 /*
@@ -41,8 +64,7 @@ const JUNTA = 96;        // px de eje entre dos juntas de las piezas
  * Las torres, aparte (dibujarTorres): son lo más alto.
  */
 export function dibujarFondo(circuito, decorado, luz = 0) {
-  const clave = circuito.clave + '/' + decorado.nombre;
-  if (clave !== claveCapa) {
+  if (circuito !== circuitoCapa || decorado !== decoradoCapa) {
     const juguete = decorado.escenario.juguete;
     capaSuelo = crearCapa(ANCHO, ALTO);
     dibujarEn(capaSuelo, () => {
@@ -67,7 +89,8 @@ export function dibujarFondo(circuito, decorado, luz = 0) {
       const color = decorado.escenario.color;
       decorado.piezas.filter((p) => !esPlana(p)).forEach((p) => PINTAR[p.tipo](p, color));
     });
-    claveCapa = clave;
+    circuitoCapa = circuito;
+    decoradoCapa = decorado;
   }
   ctx.drawImage(capaSuelo, 0, 0);
   pintarSombras(decorado, luz);
@@ -616,28 +639,78 @@ const ALTO_GRADA = 7;
  * en un solo trazado y un relleno por tipo, para que lo semitransparente no se
  * acumule donde se pisan.
  */
-function rectanguloGirado(x, y, w, h, giro) {
+const ESQUINAS = [-1, -1, 1, -1, 1, 1, -1, 1];   // (i, j) de cada esquina, en orden
+function rectanguloGirado(camino, x, y, w, h, giro) {
   const cos = Math.cos(giro), sin = Math.sin(giro);
-  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([i, j], n) => {
-    const a = i * w / 2, b = j * h / 2;
-    if (n === 0) ctx.moveTo(x + a * cos - b * sin, y + a * sin + b * cos);
-    else ctx.lineTo(x + a * cos - b * sin, y + a * sin + b * cos);
-  });
-  ctx.closePath();
+  for (let n = 0; n < 4; n++) {
+    const a = ESQUINAS[2 * n] * w / 2, b = ESQUINAS[2 * n + 1] * h / 2;
+    if (n === 0) camino.moveTo(x + a * cos - b * sin, y + a * sin + b * cos);
+    else camino.lineTo(x + a * cos - b * sin, y + a * sin + b * cos);
+  }
+  camino.closePath();
 }
+
+/*
+ * Lo que da sombra en un decorado, medido una vez: las gradas y las
+ * instalaciones con algo de alto (rectángulos) y las piezas con alto, con su
+ * caja o su radio. Las sombras se trazan en cada fotograma (el sol se mueve en
+ * la carrera que anochece), pero esto no cambia.
+ */
+const sombreados = new WeakMap();
+function quienesDanSombra(decorado) {
+  let lista = sombreados.get(decorado);
+  if (!lista) {
+    const piezas = [];
+    for (const p of decorado.piezas) {
+      const alto = ALTO_PIEZA[p.tipo] * p.r;
+      if (!alto) continue;
+      // Lo alargado (un lápiz, una pieza de construcción, un dado) barre su
+      // rectángulo; lo demás, su círculo.
+      const caja = CAJA_SOMBRA[p.tipo]?.(p) ?? null;
+      const radio = p.r * (RADIO_SOMBRA[p.tipo] ?? 0.9);
+      piezas.push({ p, alto, caja, radio, paso: (caja ? Math.min(...caja) : radio) * 0.5 });
+    }
+    lista = {
+      rectangulos: [
+        ...decorado.gradas.map((g) => ({ ...g, alto: ALTO_GRADA })),
+        ...decorado.instalaciones.filter((r) => r.alto > 0)
+      ],
+      piezas
+    };
+    sombreados.set(decorado, lista);
+  }
+  return lista;
+}
+
+/*
+ * Los dos caminos de las sombras (las gradas y las piezas) se trazan una vez
+ * por decorado y luz, y cada fotograma solo se rellenan: eran cientos de
+ * llamadas por fotograma para lo mismo. En la carrera que anochece la luz
+ * cambia y se vuelven a trazar, como antes.
+ */
+let sombras = null;
+let decoradoSombras = null, luzSombras = NaN;
 
 function pintarSombras(decorado, luz) {
   const sol = sombraSol(luz, 1);   // la de 1 px de alto: se escala
   if (sol.fuerza <= 0.005) return;
-  const dx = sol.x, dy = sol.y;
+  if (decorado !== decoradoSombras || luz !== luzSombras) {
+    sombras = trazarSombras(decorado, sol);
+    decoradoSombras = decorado;
+    luzSombras = luz;
+  }
+  ctx.fillStyle = negroGradas(0.25 * sol.fuerza);
+  ctx.fill(sombras.gradas, 'nonzero');
+  ctx.fillStyle = negroPiezas(0.22 * sol.fuerza);
+  ctx.fill(sombras.piezas, 'nonzero');
+}
 
-  ctx.fillStyle = `rgba(0, 0, 0, ${0.25 * sol.fuerza})`;
-  ctx.beginPath();
+function trazarSombras(decorado, sol) {
+  const dx = sol.x, dy = sol.y;
+  const { rectangulos, piezas } = quienesDanSombra(decorado);
+  const gradas = new Path2D(), dePiezas = new Path2D();
+
   // Las gradas y las instalaciones con algo de alto: rectángulos barridos.
-  const rectangulos = [
-    ...decorado.gradas.map((g) => ({ ...g, alto: ALTO_GRADA })),
-    ...decorado.instalaciones.filter((r) => r.alto > 0)
-  ];
   for (const g of rectangulos) {
     // El sol, en los ejes del rectángulo.
     const cos = Math.cos(g.angulo), sin = Math.sin(g.angulo);
@@ -645,39 +718,30 @@ function pintarSombras(decorado, luz) {
     const pasos = Math.max(1, Math.ceil(Math.hypot(u, v) / 3));
     for (let k = 1; k <= pasos; k++) {
       const f = k / pasos;
-      [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([i, j], n) => {
-        const a = i * g.largo / 2 + u * f, b = j * g.fondo / 2 + v * f;
+      for (let n = 0; n < 4; n++) {
+        const a = ESQUINAS[2 * n] * g.largo / 2 + u * f, b = ESQUINAS[2 * n + 1] * g.fondo / 2 + v * f;
         const x = g.x + a * cos - b * sin, y = g.y + a * sin + b * cos;
-        if (n === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.closePath();
+        if (n === 0) gradas.moveTo(x, y);
+        else gradas.lineTo(x, y);
+      }
+      gradas.closePath();
     }
   }
-  ctx.fill('nonzero');
 
-  ctx.fillStyle = `rgba(0, 0, 0, ${0.22 * sol.fuerza})`;
-  ctx.beginPath();
-  for (const p of decorado.piezas) {
-    const alto = ALTO_PIEZA[p.tipo] * p.r;
-    if (!alto) continue;
+  for (const { p, alto, caja, radio, paso } of piezas) {
     const largo = Math.min(sol.largo * alto, 6 * p.r);
-    // Lo alargado (un lápiz, una pieza de construcción, un dado) barre su
-    // rectángulo; lo demás, su círculo.
-    const caja = CAJA_SOMBRA[p.tipo]?.(p);
-    const radio = p.r * (RADIO_SOMBRA[p.tipo] ?? 0.9);
-    const pasos = Math.max(1, Math.ceil(largo / ((caja ? Math.min(...caja) : radio) * 0.5)));
+    const pasos = Math.max(1, Math.ceil(largo / paso));
     for (let k = 0; k <= pasos; k++) {
       const d = 0.1 * p.r + (largo - 0.1 * p.r) * k / pasos;
       const x = p.x + dx / sol.largo * d, y = p.y + dy / sol.largo * d;
-      if (caja) rectanguloGirado(x, y, caja[0], caja[1], p.giro);
+      if (caja) rectanguloGirado(dePiezas, x, y, caja[0], caja[1], p.giro);
       else {
-        ctx.moveTo(x + radio, y);
-        ctx.arc(x, y, radio, 0, Math.PI * 2);
+        dePiezas.moveTo(x + radio, y);
+        dePiezas.arc(x, y, radio, 0, Math.PI * 2);
       }
     }
   }
-  ctx.fill('nonzero');
+  return { gradas, piezas: dePiezas };
 }
 
 const PINTAR = {
@@ -1246,37 +1310,67 @@ function pintarNeumatico(n, i) {
 export function dibujarTorres(decorado, luz) {
   const sombra = sombraTorre(luz);
   if (sombra.alfa > 0.005 && sombra.largo > 0.5) {
+    if (decorado !== decoradoSombraTorres || luz !== luzSombraTorres) {
+      sombraTorres = new Path2D();
+      for (const t of decorado.torres) {
+        sombraTorres.moveTo(t.x, t.y);
+        sombraTorres.lineTo(t.x + sombra.x, t.y + sombra.y);
+      }
+      decoradoSombraTorres = decorado;
+      luzSombraTorres = luz;
+    }
     ctx.save();
-    ctx.strokeStyle = `rgba(0, 0, 0, ${sombra.alfa})`;
+    ctx.strokeStyle = negroTorres(sombra.alfa);
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
-    ctx.beginPath();
-    for (const t of decorado.torres) {
-      ctx.moveTo(t.x, t.y);
-      ctx.lineTo(t.x + sombra.x, t.y + sombra.y);
-    }
-    ctx.stroke();
+    ctx.stroke(sombraTorres);
     ctx.restore();
   }
-  decorado.torres.forEach((t) => pintarTorre(t, decorado.escenario.juguete));
+  const { base, cabeza, focos } = caminosTorres(decorado);
+  const juguete = decorado.escenario.juguete;
+  ctx.fillStyle = juguete ? '#ecebe6' : '#3a3e48';   // en la mesa, una farola de plástico
+  ctx.fill(base);
+  ctx.fillStyle = juguete ? '#e0262f' : '#20232b';
+  ctx.fill(cabeza);
+  ctx.fillStyle = '#c9ccd6';
+  ctx.fill(focos);
 }
 
+// La sombra de las torres, trazada una vez por decorado y luz (como la del decorado).
+let sombraTorres = null;
+let decoradoSombraTorres = null, luzSombraTorres = NaN;
+
+const FOCOS_TORRE = [-4.5, -1, 2.5];   // dónde va cada foco en la cabeza de la torre
+
 /*
- * Una torre de iluminación vista desde arriba: la base y la cabeza de focos,
- * atravesada y mirando a la pista. De día son postes; de noche, `luz.js`
- * enciende los focos.
+ * Las torres de iluminación vistas desde arriba: la base y la cabeza de
+ * focos, atravesada y mirando a la pista. De día son postes; de noche,
+ * `luz.js` enciende los focos. Se trazan una vez por decorado, en un camino
+ * por color (las torres no se pisan: hay 80 px entre dos), y cada fotograma
+ * solo se rellenan: una a una eran ocho llamadas por torre.
  */
-function pintarTorre(t, juguete) {
-  ctx.save();
-  ctx.translate(t.x, t.y);
-  ctx.fillStyle = juguete ? '#ecebe6' : '#3a3e48';   // en la mesa, una farola de plástico
-  ctx.fillRect(-2.5, -2.5, 5, 5);
-  ctx.rotate(t.angulo);
-  ctx.fillStyle = juguete ? '#e0262f' : '#20232b';
-  ctx.fillRect(1, -6, 3, 12);
-  ctx.fillStyle = '#c9ccd6';
-  for (const v of [-4.5, -1, 2.5]) ctx.fillRect(3.2, v, 1.3, 2);
-  ctx.restore();
+const torresTrazadas = new WeakMap();
+function caminosTorres(decorado) {
+  let caminos = torresTrazadas.get(decorado);
+  if (!caminos) {
+    caminos = { base: new Path2D(), cabeza: new Path2D(), focos: new Path2D() };
+    for (const t of decorado.torres) {
+      caminos.base.rect(t.x - 2.5, t.y - 2.5, 5, 5);
+      // La cabeza y los focos, en los ejes de la torre: x hacia la pista.
+      const cos = Math.cos(t.angulo), sin = Math.sin(t.angulo);
+      const enEjes = (camino, x, y, ancho, alto) => {
+        camino.moveTo(t.x + x * cos - y * sin, t.y + x * sin + y * cos);
+        camino.lineTo(t.x + (x + ancho) * cos - y * sin, t.y + (x + ancho) * sin + y * cos);
+        camino.lineTo(t.x + (x + ancho) * cos - (y + alto) * sin, t.y + (x + ancho) * sin + (y + alto) * cos);
+        camino.lineTo(t.x + x * cos - (y + alto) * sin, t.y + x * sin + (y + alto) * cos);
+        camino.closePath();
+      };
+      enEjes(caminos.cabeza, 1, -6, 3, 12);
+      for (const v of FOCOS_TORRE) enEjes(caminos.focos, 3.2, v, 1.3, 2);
+    }
+    torresTrazadas.set(decorado, caminos);
+  }
+  return caminos;
 }
 
 /** Una grada vista desde arriba: escalones y público, de colores. */
@@ -1453,8 +1547,7 @@ function pintarAparcamiento(r, semilla) {
  */
 export function dibujarCarriles(circuito, decorado) {
   const juguete = decorado.escenario.juguete;
-  const clave = circuito.clave + (juguete ? '/juguete' : '');
-  if (claveCarriles !== clave) {
+  if (circuito !== circuitoCarriles || juguete !== jugueteCarriles) {
     capaCarriles = crearCapa(ANCHO, ALTO);
     dibujarEn(capaCarriles, () => {
       if (juguete) pintarJuntasJuguete(circuito);
@@ -1486,7 +1579,8 @@ export function dibujarCarriles(circuito, decorado) {
       }
       ctx.setLineDash([]);
     });
-    claveCarriles = clave;
+    circuitoCarriles = circuito;
+    jugueteCarriles = juguete;
   }
   ctx.drawImage(capaCarriles, 0, 0);
 }
@@ -1507,16 +1601,17 @@ const PASO_RAMPA = 12;                   // px entre las estrías de la rampa
  * barandillas en lo alto) y sus carriles.
  */
 export function dibujarPuentes(circuito, decorado) {
-  const { eje } = circuito;
-  if (!eje.some((p) => p.elevacion > 0)) return;
   const juguete = decorado.escenario.juguete;
-  const clave = circuito.clave + (juguete ? '/juguete' : '');
-  if (clavePuentes !== clave) {
-    capaPuentes = crearCapa(ANCHO, ALTO);
-    dibujarEn(capaPuentes, () => pintarPuentes(circuito, juguete));
-    clavePuentes = clave;
+  if (circuito !== circuitoPuentes || juguete !== juguetePuentes) {
+    capaPuentes = null;
+    if (circuito.eje.some((p) => p.elevacion > 0)) {
+      capaPuentes = crearCapa(ANCHO, ALTO);
+      dibujarEn(capaPuentes, () => pintarPuentes(circuito, juguete));
+    }
+    circuitoPuentes = circuito;
+    juguetePuentes = juguete;
   }
-  ctx.drawImage(capaPuentes, 0, 0);
+  if (capaPuentes) ctx.drawImage(capaPuentes, 0, 0);
 }
 
 /*
@@ -1613,12 +1708,19 @@ const CERCA_PUENTE = 90;   // px del cruce en que un coche puede estar debajo de
  */
 export function bajoPuente(circuito, pose, estado = 'carril') {
   if (estado === 'mano') return false;
-  return circuito.puentes.some(({ x, y, s }) => {
-    if (Math.hypot(pose.x - x, pose.y - y) > CERCA_PUENTE) return false;
+  // Se pregunta por cada coche en cada fotograma: con bucles, sin crear nada.
+  for (const { x, y, s } of circuito.puentes) {
+    if (Math.hypot(pose.x - x, pose.y - y) > CERCA_PUENTE) continue;
     if (estado === 'fuera') return true;
-    const arriba = s.map((si) => circuito.eje[circuito.puntoEn(si).indice]).find((p) => p.elevacion > 0.5);
-    return Math.abs(Math.cos(pose.angulo - arriba.angulo)) < 0.9;
-  });
+    // El rumbo del tramo de arriba: el de los dos del cruce que va por el tablero.
+    for (const si of s) {
+      const p = circuito.eje[indiceEn(circuito, si)];
+      if (p.elevacion <= 0.5) continue;
+      if (Math.abs(Math.cos(pose.angulo - p.angulo)) < 0.9) return true;
+      break;
+    }
+  }
+  return false;
 }
 
 /*
@@ -1692,6 +1794,8 @@ export function dibujarCocheSlot(slot) {
   ctx.restore();
 }
 
+const cocheFantasma = { x: 0, y: 0, angulo: 0, vx: 0, vy: 0, color: '', modelo: '', frenando: false, atras: false };
+
 /*
  * El fantasma de una vuelta (nucleo/fantasma.js): el mismo coche que el J1, en
  * su pose y translúcido (0,3, como en Race Panic: al 0,5 parecía otro coche).
@@ -1699,7 +1803,13 @@ export function dibujarCocheSlot(slot) {
 export function dibujarFantasma(pose, coche) {
   ctx.save();
   ctx.globalAlpha = 0.3;
-  dibujarCoche({ ...coche, x: pose.x, y: pose.y, angulo: pose.angulo, vx: 0, vy: 0, frenando: false, atras: false });
+  // Siempre el mismo objeto: se pinta en cada fotograma.
+  cocheFantasma.x = pose.x;
+  cocheFantasma.y = pose.y;
+  cocheFantasma.angulo = pose.angulo;
+  cocheFantasma.color = coche.color;
+  cocheFantasma.modelo = coche.modelo;
+  dibujarCoche(cocheFantasma);
   ctx.restore();
 }
 

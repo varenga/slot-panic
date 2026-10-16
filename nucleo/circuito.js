@@ -92,7 +92,7 @@ export function completarCircuito(eje, datos) {
   circuito.ventanaCruce = VENTANA_CRUCE + Math.max(0, circuito.ancho - ANCHO_PISTA);
   // Donde uno de los dos tramos va por arriba, no es un cruce: es un puente.
   const cortes = buscarCruces(circuito);
-  const elevacion = (s) => circuito.eje[puntoEn(circuito, s).indice].elevacion;
+  const elevacion = (s) => circuito.eje[indiceEn(circuito, s)].elevacion;
   const alto = ({ s: [a, b] }) => Math.abs(elevacion(a) - elevacion(b)) > 0.5;
   circuito.cruces = cortes.filter((c) => !alto(c));
   circuito.puentes = cortes.filter(alto);
@@ -175,19 +175,36 @@ export function proyectar(circuito, p, indicePrevio = null) {
   return mejor;
 }
 
-/** El punto del eje en la coordenada `s` (que puede dar la vuelta). */
-export function puntoEn(circuito, s) {
-  const { eje, largo } = circuito;
-  const buscada = ((s % largo) + largo) % largo;
+/** La coordenada `s` dentro de la vuelta, en [0, largo). */
+export function sEnVuelta(circuito, s) {
+  const { largo } = circuito;
+  return ((s % largo) + largo) % largo;
+}
+
+/*
+ * El índice del punto del eje en que cae la coordenada `s` (que puede dar la
+ * vuelta). Sin crear nada: la física y la CPU lo piden muchas veces por
+ * fotograma.
+ */
+export function indiceEn(circuito, s) {
+  const { eje } = circuito;
+  const buscada = sEnVuelta(circuito, s);
   // Búsqueda binaria: el eje está ordenado por s.
   let bajo = 0, alto = eje.length - 1;
   while (bajo < alto) {
     const medio = (bajo + alto + 1) >> 1;
     if (eje[medio].s <= buscada) bajo = medio; else alto = medio - 1;
   }
-  const a = eje[bajo], b = eje[(bajo + 1) % eje.length];
-  const t = a.largo > 0 ? (buscada - a.s) / a.largo : 0;
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, angulo: a.angulo, radio: a.radio, curva: a.curva, indice: bajo };
+  return bajo;
+}
+
+/** El punto del eje en la coordenada `s` (que puede dar la vuelta). */
+export function puntoEn(circuito, s) {
+  const { eje } = circuito;
+  const indice = indiceEn(circuito, s);
+  const a = eje[indice], b = eje[(indice + 1) % eje.length];
+  const t = a.largo > 0 ? (sEnVuelta(circuito, s) - a.s) / a.largo : 0;
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, angulo: a.angulo, radio: a.radio, curva: a.curva, indice };
 }
 
 /*
