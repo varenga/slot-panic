@@ -4,7 +4,7 @@
 // Red de proyectos PNYK: la usa comun/pie.js (también en vendor/pnyk/ de cada proyecto).
 
 const PNYK_RED = {
-  "version": "1.2.2",
+  "version": "1.2.3",
   "origin": "https://pnyk.es/",
   "proyectos": [
     {
@@ -104,6 +104,24 @@ const PNYK_RED = {
       "type": "VideoGame",
       "category": "saga",
       "sagaOrder": 6,
+      "family": "panic",
+      "langs": [
+        "es",
+        "en",
+        "pt",
+        "gl",
+        "ca",
+        "it",
+        "fr"
+      ]
+    },
+    {
+      "slug": "traffic-panic",
+      "name": "Traffic Panic",
+      "url": "https://traffic.pnyk.es/",
+      "type": "VideoGame",
+      "category": "saga",
+      "sagaOrder": 7,
       "family": "panic",
       "langs": [
         "es",
