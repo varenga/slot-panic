@@ -2,7 +2,7 @@
   "slug": "slot-panic",
   "version": "1.17.1",
   "etapa": "publicado",
-  "comun": "1.2.2",
+  "comun": "1.2.3",
   "langs": ["es", "en", "pt", "gl", "ca", "it", "fr"],
   "plataformas": { "web": true, "pwa": true, "android": false, "ios": false },
   "generador": "node tools/gen-pages.mjs"
