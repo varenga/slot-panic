@@ -40,6 +40,7 @@ import {
   crearRepeticion, duracionMomento, elegirMomentos, eventosEntre, grabarCuadro, numerosGrabados, poseEn, TIPOS_MOMENTO
 } from './nucleo/momentos.js';
 import { claveRotulo } from './repeticion.js';
+import { ajuste, autoBajada, cambiarAjuste, elegido, OPCIONES, ponerAjustes, reiniciarAjustes, vigilar } from './ajustes.js';
 
 // Los siete catálogos (el juego solo baja el suyo).
 const CATALOGOS = await todosLosCatalogos();
@@ -1640,6 +1641,56 @@ console.log('\nIdiomas');
     comprobar(/\{a\}/.test(catalogo['nombre.formato']) && /\{s\}/.test(catalogo['nombre.formato']), `${codigo}: el formato del nombre no lleva {a} y {s}`);
   }
   console.log(`  ${constante('ADJETIVOS')} × ${constante('SUSTANTIVOS')} nombres de circuito en cada idioma`);
+}
+
+// --- 9. Los ajustes de rendimiento ----------------------------------------------
+
+console.log('\nLos ajustes');
+{
+  // De serie: Auto, y todo lo de verdad (lo elegido es el primer valor de cada fila).
+  reiniciarAjustes();
+  comprobar(OPCIONES.every((o) => ajuste(o.id) === o.valores[0]) && elegido('calidad') === 'auto', 'los de serie no son el primer valor de cada fila');
+  // Cada fila da la vuelta a sus valores y vuelve al de serie.
+  for (const o of OPCIONES) {
+    const vistos = [];
+    for (let i = 0; i < o.valores.length; i++) vistos.push(cambiarAjuste(o.id)[o.id]);
+    comprobar(vistos.at(-1) === o.valores[0] && new Set(vistos).size === o.valores.length, `${o.id}: las vueltas dan ${vistos.join(' ')}`);
+  }
+  // Lo guardado que no vale (otra fila, otro valor, otra cosa) no cambia nada.
+  ponerAjustes({ calidad: 'ultra', luces: 'apagadas', sombras: 'no', inventada: true });
+  ponerAjustes('basura');
+  ponerAjustes(null);
+  comprobar(OPCIONES.every((o) => ajuste(o.id) === o.valores[0]), 'lo guardado que no vale ha cambiado algo');
+  // Baja: lo gráfico al mínimo y lo demás como esté, sin tocar lo elegido; Alta: lo elegido.
+  const graficas = OPCIONES.filter((o) => o.grafica);
+  ponerAjustes({ calidad: 'baja', vibracion: false, fps: true });
+  comprobar(graficas.every((o) => ajuste(o.id) === o.valores.at(-1)), 'con Baja algo gráfico no está al mínimo');
+  comprobar(ajuste('vibracion') === false && ajuste('fps') === true, 'Baja ha tocado lo que no es gráfico');
+  comprobar(graficas.every((o) => elegido(o.id) === o.valores[0]), 'Baja ha cambiado lo elegido');
+  ponerAjustes({ calidad: 'alta', luces: 'simples' });
+  comprobar(ajuste('luces') === 'simples' && ajuste('sombras') === true && ajuste('resolucion') === 'nitida', 'con Alta no vale lo elegido');
+  // Auto: unos lentos sueltos no bajan; 2 s seguidos sí, una vez; y en Alta, nunca.
+  reiniciarAjustes();
+  const dt = 1 / 60;
+  let bajo = false;
+  for (let i = 0; i < 600; i++) bajo ||= vigilar(i % 3 === 0 ? 40 : 16.7, dt);
+  comprobar(!bajo && !autoBajada(), 'Auto ha bajado con un lento de cada tres');
+  let cuando = -1, veces = 0;
+  for (let i = 0; i < 300; i++) if (vigilar(30, dt)) { veces++; cuando = i; }
+  comprobar(veces === 1 && autoBajada() && ajuste('luces') === 'simples' && elegido('luces') === 'completas',
+    `Auto: ${veces} bajadas`);
+  comprobar(cuando * dt > 1.9 && cuando * dt < 2.2, `Auto baja a los ${(cuando * dt).toFixed(2)} s de ir lento`);
+  reiniciarAjustes();
+  ponerAjustes({ calidad: 'alta' });
+  let enAlta = false;
+  for (let i = 0; i < 300; i++) enAlta ||= vigilar(30, dt);
+  comprobar(!enAlta && ajuste('luces') === 'completas', 'Alta ha bajado sola');
+  // Cada fila y cada valor tienen su texto (que los siete tengan las mismas claves lo mira la sección 4).
+  const sinTexto = OPCIONES.flatMap((o) => ['opcion.' + o.id, ...o.valores.map((v) => 'ajustes.' + (typeof v === 'boolean' ? (v ? 'si' : 'no') : v))])
+    .filter((k) => !CATALOGOS.es[k]);
+  comprobar(!sinTexto.length && CATALOGOS.es['grupo.rendimiento'], `ajustes sin texto: ${sinTexto.join(', ')}`);
+  reiniciarAjustes();
+  console.log(`  ${OPCIONES.length} filas; Auto baja tras ${(cuando * dt).toFixed(2)} s lento`);
 }
 
 console.log(`\n${aserciones - fallos}/${aserciones} aserciones en verde`);

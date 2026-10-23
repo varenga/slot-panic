@@ -11,6 +11,7 @@
  */
 
 import { GAME_SLUG } from './config.js';
+import { ajuste } from './ajustes.js';
 
 const VOLUMEN = 0.35;
 const CLAVE_SILENCIO = GAME_SLUG + '.silencio';
@@ -43,13 +44,14 @@ export function silenciado() {
 /*
  * Un toque de vibración en el móvil al chocar: corto, más largo cuanto más
  * fuerte (`fuerza` en px/s normales, como sfxGolpe). El silencio la calla
- * también, y nunca más de una cada VIBRACION_MINIMA segundos.
+ * también, como el ajuste de la vibración (ajustes.js), y nunca más de una
+ * cada VIBRACION_MINIMA segundos.
  */
 const VIBRACION_MINIMA = 0.15;
 let ultimaVibracion = 0;
 
 export function vibrar(fuerza) {
-  if (silencio || typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
+  if (silencio || !ajuste('vibracion') || typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
   const ahora = performance.now() / 1000;
   if (ahora - ultimaVibracion < VIBRACION_MINIMA) return;
   ultimaVibracion = ahora;

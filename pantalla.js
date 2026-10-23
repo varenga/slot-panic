@@ -590,6 +590,11 @@ function pintarTabla(carrera, humanos, filas, totales, { x, y, mitad, tam, fila 
  * Solo sirviendo en local. La exigencia del J1 en %: 100 se sale. Encima, la
  * medida del fotograma (medida.js).
  */
+/** Los FPS del ajuste (ajustes.js), abajo a la izquierda, pegados al borde: en la mesa y en la lupa. */
+export function dibujarFps(medida, y) {
+  texto(`${medida.fps} FPS`, 12, y, { tam: 12, color: COLOR.texto, alinear: 'left', peso: 600 });
+}
+
 export function dibujarDepuracion(medida, slot) {
   const { coche } = slot;
   const datos = `${medida.fps} FPS · v ${Math.hypot(coche.vx, coche.vy).toFixed(0)} · exigencia ${(slot.exigencia * 100).toFixed(0)}`;

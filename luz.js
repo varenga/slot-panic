@@ -18,11 +18,17 @@
  * La luz es un número: 0 de día, 1 al atardecer y 2 de noche. Entre medias se
  * funden: en una carrera de resistencia cae la tarde mientras se corre
  * (`luzDeCarrera`).
+ *
+ * Con las luces simples (ajustes.js) no hay capa de cada fotograma: la
+ * oscuridad horneada se estampa tal cual, debajo de los coches (`oscurecer`),
+ * y encima solo se suman los haces, los pilotos y los focos. Es la capa que
+ * se recompone entera en cada fotograma lo que cuesta en un móvil justo.
  */
 
 import { ALTO, ANCHO, ANCHO_COCHE, COCHES, GAME_SLUG, LARGO_COCHE } from './config.js';
 import { crearCapa, ctx, dibujarEn } from './nucleo/lienzo.js';
 import { RADIO_CURVA_NEUMATICOS } from './nucleo/decorado.js';
+import { ajuste } from './ajustes.js';
 
 export const ORDEN_HORAS = ['dia', 'atardecer', 'noche'];
 
@@ -351,16 +357,56 @@ export function pintarHora(luz, circuito, decorado, coches) {
   if (luz <= 0) return;
   // Hasta el atardecer, su velo crece; anocheciendo, se va bajo la noche.
   if (luz < 2) pintarAtardecer(luz <= 1 ? luz : 2 - luz);
-  if (luz > 1) pintarNoche(luz - 1, circuito, decorado, coches);
+  if (luz > 1) (ajuste('luces') === 'simples' ? sumarLuces : pintarNoche)(luz - 1, circuito, decorado, coches);
 }
 
-/** La noche, con su fuerza: `fuerza` 1 es la noche cerrada. */
-function pintarNoche(fuerza, circuito, decorado, coches) {
+/*
+ * Con las luces simples, la oscuridad: la base horneada, sin recortes, antes
+ * de los coches de encima del puente (los de abajo y el tablero quedan a
+ * oscuras). Así se ven enteros, como con el halo que les recorta la noche.
+ * Con las completas no hace nada: la oscuridad va en `pintarHora`.
+ */
+export function oscurecer(luz, circuito, decorado) {
+  if (luz <= 1 || ajuste('luces') !== 'simples') return;
+  prepararNoche(circuito, decorado);
+  ctx.save();
+  ctx.globalAlpha = luz - 1;
+  ctx.drawImage(base, 0, 0);
+  ctx.restore();
+}
+
+/*
+ * Lo que brilla con las luces simples, sumando color: los haces (que aquí no
+ * recortan la oscuridad, así que suman algo más que el brillo de las
+ * completas), los pilotos y un foco por torre. Sin balizas ni flashes, y los
+ * que pasan bajo un puente, sin luz: es lo que necesitaba otra capa.
+ */
+const HACES_SIMPLES = 0.22;
+function sumarLuces(fuerza, circuito, decorado, coches) {
+  prepararNoche(circuito, decorado);
+  repartir(circuito, coches);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = HACES_SIMPLES * fuerza;
+  pintarConos(encima);
+  pintarPilotos(encima, fuerza);
+  ctx.globalAlpha = 0.9 * fuerza;
+  for (const t of torres) estampar(foco, t.x + Math.cos(t.angulo) * 4, t.y + Math.sin(t.angulo) * 4, 9);
+  ctx.restore();
+}
+
+/** Los coches cuya luz tapa el tablero de un puente y los demás. Las dos listas se reutilizan: es cada fotograma. */
+function repartir(circuito, coches) {
+  tapados.length = 0;
+  encima.length = 0;
+  for (const c of coches) (tablero && !porElTablero(circuito, c) ? tapados : encima).push(c);
+}
+
+/** Los sprites, una vez, y lo fijo de la noche, una vez por circuito y decorado. */
+function prepararNoche(circuito, decorado) {
   if (!foco) {
     foco = crearFoco(); ambar = crearFoco('255, 160, 30'); rojo = crearFoco('255, 30, 20'); cono = crearCono();
-    trabajo = crearCapa(ANCHO, ALTO); abajo = crearCapa(ANCHO, ALTO);
   }
-
   if (circuito !== circuitoBase || decorado !== decoradoBase) {
     torres = decorado.torres;
     // Las balizas de una curva que pasa bajo un puente las tapa el tablero.
@@ -380,10 +426,17 @@ function pintarNoche(fuerza, circuito, decorado, coches) {
     circuitoBase = circuito;
     decoradoBase = decorado;
   }
-  // Sin puente, nada lo tapa. Las dos listas se reutilizan: es cada fotograma.
-  tapados.length = 0;
-  encima.length = 0;
-  for (const c of coches) (tablero && !porElTablero(circuito, c) ? tapados : encima).push(c);
+}
+
+/** La noche, con su fuerza: `fuerza` 1 es la noche cerrada. */
+function pintarNoche(fuerza, circuito, decorado, coches) {
+  prepararNoche(circuito, decorado);
+  if (!trabajo) {
+    trabajo = crearCapa(ANCHO, ALTO);
+    abajo = crearCapa(ANCHO, ALTO);
+  }
+  // Sin puente, nada lo tapa.
+  repartir(circuito, coches);
 
   dibujarEn(trabajo, () => {
     ctx.globalCompositeOperation = 'copy';

@@ -247,6 +247,15 @@ export function guardarTipoFantasma(tipo) {
   try { localStorage.setItem(`${GAME_SLUG}.tipoFantasma`, tipo); } catch (error) { /* modo privado */ }
 }
 
+/** Los ajustes de rendimiento (ajustes.js): lo elegido en cada fila. Lo que no valga, lo descarta ponerAjustes. */
+export function leerAjustes() {
+  try { return JSON.parse(localStorage.getItem(`${GAME_SLUG}.ajustes`) || 'null'); } catch (error) { return null; }
+}
+
+export function guardarAjustes(ajustes) {
+  try { localStorage.setItem(`${GAME_SLUG}.ajustes`, JSON.stringify(ajustes)); } catch (error) { /* modo privado */ }
+}
+
 /** Las normas de publicar se aceptan una vez. */
 export function normasAceptadas() {
   try { return localStorage.getItem(`${GAME_SLUG}.normas`) === '1'; } catch (error) { return false; }

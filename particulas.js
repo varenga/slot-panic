@@ -4,10 +4,12 @@
  *
  * Son presentación pura: no juegan y el arnés no los ejecuta, así que aquí sí
  * se usa `Math.random()`. Viven en `estado.particulas` con un tope, para que un
- * roce largo no llene la memoria.
+ * roce largo no llene la memoria. Sin el ajuste de los efectos (ajustes.js) no
+ * salen chispas ni humo; el confeti sí: dice quién ha ganado.
  */
 
 import { ANCHO } from './config.js';
+import { ajuste } from './ajustes.js';
 import { ctx } from './nucleo/lienzo.js';
 
 const MAXIMO = 500;
@@ -26,6 +28,7 @@ export function chispasChoque(fuerza = 1) {
  * con lo que lleva el coche, nunca hacia dentro del muro.
  */
 export function emitirChispas(lista, contacto, vx, vy, cantidad) {
+  if (!ajuste('efectos')) return;
   for (let i = 0; i < cantidad; i++) {
     const dispersion = 0.6 + Math.random() * 0.6;
     const lateral = (Math.random() - 0.5) * 160;
@@ -54,6 +57,7 @@ const HUMOS = {
 
 /** Una bocanada de humo (o polvo, o nieve: el color lo pone el escenario). */
 export function emitirHumo(lista, x, y, color, clase = 'humo') {
+  if (!ajuste('efectos')) return;
   const { alfa, crece } = HUMOS[clase];
   lista.push({
     tipo: 'humo',
