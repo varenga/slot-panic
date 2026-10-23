@@ -43,6 +43,18 @@ export const LUPA_ADELANTO = 70;        // px de pista por delante del coche de 
 export const LUPA_MIRA = 160;           // px que la vista se adelanta al coche en esa dirección
 
 export const DT_MAX = 0.05;       // s. Acota el salto tras cambiar de pestaña
+
+/*
+ * Los ajustes de rendimiento (`ajustes.js`). En Auto, la calidad baja si el
+ * hueco entre fotogramas pasa de `ms` durante `segundos` (a 60 Hz son 16,7:
+ * 22 es perder uno de cada tres); un hueco de más de `tope` no es ir lento
+ * sino una pausa (una ventana sin foco, que el navegador estrangula) y no
+ * cuenta. Con la resolución ligera, la mesa pinta a
+ * ESCALA_LIGERA (960 × 540: lo que mide el lienzo en un ordenador, donde el
+ * CSS lo deja en 960 px) y la lupa, a densidad 1.
+ */
+export const AUTO_CALIDAD = { ms: 22, segundos: 2, tope: 250 };
+export const ESCALA_LIGERA = 0.75;
 export const PASO_FISICA = 1 / 120; // s. El fotograma se trocea en pasos de esto como mucho
 
 /*

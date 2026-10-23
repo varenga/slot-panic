@@ -6,7 +6,8 @@
  *
  * Lo que no se mueve —suelo, decorado y pista— se pinta una sola vez en una
  * capa y cada fotograma se copia: con cien piezas y dos mil motas, pintarlo
- * fotograma a fotograma sería tirar el tiempo.
+ * fotograma a fotograma sería tirar el tiempo. Sin sombras (ajustes.js), todo
+ * lo de debajo de los coches va en una sola capa.
  */
 
 import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR, LARGO_COCHE, PASO_BACHES } from './config.js';
@@ -18,6 +19,7 @@ import { azar } from './nucleo/decorado.js';
 import { trazadoCarril } from './nucleo/slot.js';
 import { modelo, pintarModelo, sombraModelo } from './coches.js';
 import { sombraSol, sombraTorre } from './luz.js';
+import { ajuste } from './ajustes.js';
 
 const PASO_PIANO = 2;    // puntos del eje por franja de piano
 const CASILLA_META = 8;
@@ -36,6 +38,8 @@ let capaDecorado = null;    // gradas y piezas, sin sombra: transparente
 let circuitoCapa = null, decoradoCapa = null;
 let capaCarriles = null;
 let circuitoCarriles = null, jugueteCarriles = null;
+let capaLisa = null;        // sin sombras: suelo, decorado y carriles juntos
+let circuitoLisa = null, decoradoLisa = null;
 let capaPuentes = null;     // o null, si el circuito no tiene puentes
 let circuitoPuentes = null, juguetePuentes = null;
 
@@ -62,8 +66,35 @@ const JUNTA = 96;        // px de eje entre dos juntas de las piezas
  * si cambian. Entre una y otra, en cada fotograma, las sombras de las gradas
  * y las piezas, que van con el sol de la luz de ahora (`luz`, 0 día … 2 noche).
  * Las torres, aparte (dibujarTorres): son lo más alto.
+ *
+ * Sin sombras no hay nada que pintar entre las capas, y los carriles van justo
+ * encima: las tres se juntan en una (`capaLisa`) y cada fotograma se copia una
+ * vez la pantalla entera en vez de tres. En un móvil justo lo que cuesta es
+ * eso, rellenar píxeles (BITACORA.md, la medida en un Android).
  */
 export function dibujarFondo(circuito, decorado, luz = 0) {
+  hornearFondo(circuito, decorado);
+  if (!ajuste('sombras')) {
+    if (circuito !== circuitoLisa || decorado !== decoradoLisa) {
+      hornearCarriles(circuito, decorado.escenario.juguete);
+      capaLisa = crearCapa(ANCHO, ALTO);
+      dibujarEn(capaLisa, () => {
+        ctx.drawImage(capaSuelo, 0, 0);
+        ctx.drawImage(capaDecorado, 0, 0);
+        ctx.drawImage(capaCarriles, 0, 0);
+      });
+      circuitoLisa = circuito;
+      decoradoLisa = decorado;
+    }
+    ctx.drawImage(capaLisa, 0, 0);
+    return;
+  }
+  ctx.drawImage(capaSuelo, 0, 0);
+  pintarSombras(decorado, luz);
+  ctx.drawImage(capaDecorado, 0, 0);
+}
+
+function hornearFondo(circuito, decorado) {
   if (circuito !== circuitoCapa || decorado !== decoradoCapa) {
     const juguete = decorado.escenario.juguete;
     capaSuelo = crearCapa(ANCHO, ALTO);
@@ -92,9 +123,6 @@ export function dibujarFondo(circuito, decorado, luz = 0) {
     circuitoCapa = circuito;
     decoradoCapa = decorado;
   }
-  ctx.drawImage(capaSuelo, 0, 0);
-  pintarSombras(decorado, luz);
-  ctx.drawImage(capaDecorado, 0, 0);
 }
 
 // --- Suelo ---------------------------------------------------------------------
@@ -1309,7 +1337,7 @@ function pintarNeumatico(n, i) {
  */
 export function dibujarTorres(decorado, luz) {
   const sombra = sombraTorre(luz);
-  if (sombra.alfa > 0.005 && sombra.largo > 0.5) {
+  if (ajuste('sombras') && sombra.alfa > 0.005 && sombra.largo > 0.5) {
     if (decorado !== decoradoSombraTorres || luz !== luzSombraTorres) {
       sombraTorres = new Path2D();
       for (const t of decorado.torres) {
@@ -1546,7 +1574,13 @@ function pintarAparcamiento(r, semilla) {
  * propia capa: es un prototipo, todavía sin estética de juguete.
  */
 export function dibujarCarriles(circuito, decorado) {
-  const juguete = decorado.escenario.juguete;
+  // Sin sombras ya van en la capa del fondo.
+  if (!ajuste('sombras')) return;
+  hornearCarriles(circuito, decorado.escenario.juguete);
+  ctx.drawImage(capaCarriles, 0, 0);
+}
+
+function hornearCarriles(circuito, juguete) {
   if (circuito !== circuitoCarriles || juguete !== jugueteCarriles) {
     capaCarriles = crearCapa(ANCHO, ALTO);
     dibujarEn(capaCarriles, () => {
@@ -1582,7 +1616,6 @@ export function dibujarCarriles(circuito, decorado) {
     circuitoCarriles = circuito;
     jugueteCarriles = juguete;
   }
-  ctx.drawImage(capaCarriles, 0, 0);
 }
 
 /** Cómo se pinta un carril: en el juguete, la trencilla; si no, el metal con su ranura. */
@@ -1824,11 +1857,13 @@ export function dibujarCoche(coche) {
 
   // La sombra cae siempre abajo a la derecha, como la del decorado: se
   // desplaza en el mundo antes de girar, no con el coche.
-  ctx.translate(coche.x + SOMBRA_COCHE.x, coche.y + SOMBRA_COCHE.y);
-  ctx.rotate(coche.angulo);
-  sombraModelo(m, 'rgba(0, 0, 0, 0.3)');
-  ctx.rotate(-coche.angulo);
-  ctx.translate(-SOMBRA_COCHE.x, -SOMBRA_COCHE.y);
+  if (ajuste('sombras')) {
+    ctx.translate(coche.x + SOMBRA_COCHE.x, coche.y + SOMBRA_COCHE.y);
+    ctx.rotate(coche.angulo);
+    sombraModelo(m, 'rgba(0, 0, 0, 0.3)');
+    ctx.rotate(-coche.angulo);
+    ctx.translate(-SOMBRA_COCHE.x, -SOMBRA_COCHE.y);
+  } else ctx.translate(coche.x, coche.y);
   ctx.rotate(coche.angulo);
   pintarModelo(m, coche.color, coche.frenando);
   if (coche.frenando) pintarFreno((COCHES[coche.modelo]?.largo ?? LARGO_COCHE) / 2);

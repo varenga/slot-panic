@@ -5,8 +5,9 @@
  * 9-11 px. Ahora la barra lleva cuatro botones: CARRERA (modo, circuito,
  * vueltas, CPU y, con teclado, quién juega), COCHE (modelo, color y lo que
  * tiene cada uno: su largo y su carácter), COMUNIDAD (la galería y el constructor, en su escena) y AJUSTES
- * (escenario, hora, sonido, idioma). Cada uno abre un panel sobre la pista;
- * con teclado siguen las teclas directas de cada opción, sin abrir nada.
+ * (escenario, hora, sonido, idioma y RENDIMIENTO, un panel dentro de este con
+ * las filas de `ajustes.js`). Cada uno abre un panel sobre la pista; con
+ * teclado siguen las teclas directas de cada opción, sin abrir nada.
  *
  * Es presentación, como `pantalla.js`, y sirve a la mesa y a la lupa: cada
  * una da su `marco` (dónde cabe el panel) y su `vista`. Lo pulsable se define
@@ -20,6 +21,7 @@ import { modelo, pintarModelo } from './coches.js';
 import { boton, nombreCircuito, vueltasDe } from './pantalla.js';
 import { idiomaActual, t } from './i18n.js';
 import { silenciado } from './audio.js';
+import { ajuste, autoBajada, elegido, mandaLaCalidad, OPCIONES } from './ajustes.js';
 
 export const GRUPOS = ['carrera', 'coche', 'circuitos', 'ajustes'];
 
@@ -31,7 +33,8 @@ export const TECLA_OPCION = {
 /** Las filas de un grupo. Quién juega solo se elige con teclado: tocando, se entra tocando. */
 export function opcionesGrupo(grupo, eligeJugadores) {
   if (grupo === 'carrera') return ['modo', 'pista', 'circuito', 'duracion', 'nivel', ...(eligeJugadores ? ['j1', 'j2'] : [])];
-  if (grupo === 'ajustes') return ['escenario', 'hora', 'sonido', 'idioma'];
+  if (grupo === 'ajustes') return ['escenario', 'hora', 'sonido', 'idioma', 'rendimiento'];
+  if (grupo === 'rendimiento') return OPCIONES.map((o) => o.id);
   return [];
 }
 
@@ -57,7 +60,9 @@ export function cajasGrupos(vista) {
 export function dibujarGrupos(vista, abierto) {
   for (const caja of cajasGrupos(vista)) {
     const etiqueta = t(caja.id === 'circuitos' ? 'opcion.circuitos' : 'grupo.' + caja.id);
-    boton(caja, etiqueta + (caja.id === abierto ? '' : '  ›'), caja.id === abierto, vista.lupa ? 19 : vista.tactil ? 22 : 17);
+    // RENDIMIENTO se abre desde AJUSTES: con él abierto, AJUSTES sigue encendido.
+    const encendido = caja.id === abierto || (caja.id === 'ajustes' && abierto === 'rendimiento');
+    boton(caja, etiqueta + (encendido ? '' : '  ›'), encendido, vista.lupa ? 19 : vista.tactil ? 22 : 17);
   }
 }
 
@@ -129,12 +134,22 @@ export function etiquetaOpcion(id, e, teclado) {
   else if (id === 'hora') v = t('hora.' + e.hora);
   else if (id === 'sonido') v = t(silenciado() ? 'sonido.no' : 'sonido.si');
   else if (id === 'idioma') v = idiomaActual().nombre.toUpperCase();
+  else if (id === 'calidad') v = t('ajustes.' + elegido('calidad')) + (autoBajada() ? ` (${t('ajustes.baja')})` : '');
+  else if (id === 'rendimiento') v = null;
+  else if (OPCIONES.some((o) => o.id === id)) v = valorAjuste(id);
   let etiqueta;
-  if (id === 'j1' || id === 'j2') {
+  if (id === 'rendimiento') etiqueta = t('grupo.rendimiento') + '  ›';
+  else if (id === 'j1' || id === 'j2') {
     const n = id === 'j1' ? 1 : 2;
     etiqueta = t('opcion.jugador', { j: t('slot.jugador', { n }), v: t(e.jugadores[n - 1] === 'humano' ? 'jugador.humano' : 'slot.cpu') });
   } else etiqueta = t('opcion.' + id, { v });
-  return (teclado ? TECLA_OPCION[id] + '  ·  ' : '') + etiqueta;
+  return (teclado && TECLA_OPCION[id] ? TECLA_OPCION[id] + '  ·  ' : '') + etiqueta;
+}
+
+/* El valor de una fila de RENDIMIENTO: el que vale de verdad (con la calidad baja, el más barato). */
+function valorAjuste(id) {
+  const v = ajuste(id);
+  return t(typeof v === 'boolean' ? (v ? 'ajustes.si' : 'ajustes.no') : 'ajustes.' + v);
 }
 
 /*
@@ -150,7 +165,12 @@ export function dibujarMenu(marco, grupo, e, { columnas = 2, eligeJugadores = fa
   texto(t(grupo === 'circuitos' ? 'opcion.circuitos' : 'grupo.' + grupo), cx, marco.y + 32, { tam: lupa ? 30 : 26, color: COLOR.hud, peso: 800 });
   const tam = lupa ? 18 : 15;
   for (const caja of cajas) {
-    if (caja.id === 'opcion') boton(caja, etiquetaOpcion(caja.opcion, e, teclado), false, tam);
+    if (caja.id === 'opcion') {
+      // Con la calidad baja, las filas gráficas las manda ella: apagadas (se tocan igual, y vale al volver a Alta).
+      ctx.globalAlpha = mandaLaCalidad(caja.opcion) ? 0.45 : 1;
+      boton(caja, etiquetaOpcion(caja.opcion, e, teclado), false, tam);
+      ctx.globalAlpha = 1;
+    }
     else if (caja.id === 'listo') boton(caja, t('menu.listo'), true, tam);
     else if (caja.id === 'vista') vistaCoche(caja, e.modelos[caja.i], e.colores[caja.i], e, lupa);
     else if (caja.id === 'modelo') boton(caja, caja.paso < 0 ? '‹' : '›', false, tam + 8);

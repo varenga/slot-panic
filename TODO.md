@@ -81,6 +81,6 @@ razón. Lo que sí, por orden:
       va sobrado en frío y solo pierde cuadros en la lupa con el SoC caliente:
       `BITACORA.md`). El mismo procedimiento: `adb reverse`, DevTools por
       `adb forward` y la lupa de noche en *El ocho largo*, en frío y tras un rato.
-- [ ] Solo si esa medida sale justa: la primera palanca es la GPU en la lupa (pinta a
-      densidad 2: 2,3 veces los píxeles de la mesa), no el JavaScript; bajar a 30 FPS
-      con poca batería, después.
+- [ ] Con ese móvil, medir lo que dan los ajustes de rendimiento (1.18.0: la lupa a
+      densidad 1, las luces de noche simples, sin sombras) y si Auto baja cuando toca y
+      no antes (22 ms durante 2 s). Si aun en Baja va justo: bajar a 30 FPS.

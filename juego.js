@@ -6,14 +6,14 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COCHE_REFERENCIA, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESPERA_REINICIO, NIVELES_CPU,
-  SITE_ORIGIN, TECLAS_BLOQUEADAS, TRAS_META, VELOCIDAD_SLOT
+  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COCHE_REFERENCIA, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESCALA_LIGERA,
+  ESPERA_REINICIO, NIVELES_CPU, SITE_ORIGIN, TECLAS_BLOQUEADAS, TRAS_META, VELOCIDAD_SLOT
 } from './config.js';
 import {
-  aceptarNormas, estado, guardarAlias, guardarColores, guardarDuracion, guardarJugadores, guardarModo, guardarNivel, guardarMejorVuelta,
+  aceptarNormas, estado, guardarAjustes, guardarAlias, guardarColores, guardarDuracion, guardarJugadores, guardarModo, guardarNivel, guardarMejorVuelta,
   guardarTipoFantasma, leerColores, leerFantasmaPropio, leerJugadores, leerMejorVuelta, leerModo, leerTipoFantasma, MODOS, TIPOS_FANTASMA,
   guardarCircuito, guardarEscenario, guardarMisCircuitos, guardarModelos, guardarPublicados, leerAlias, leerCircuito, leerDuracion, leerNivel,
-  leerEscenario, leerLlave, leerMisCircuitos, leerModelos, leerPublicados, normasAceptadas
+  leerAjustes, leerEscenario, leerLlave, leerMisCircuitos, leerModelos, leerPublicados, normasAceptadas
 } from './estado.js';
 import { ORDEN_ESCENARIOS } from './escenarios.js';
 import { CIRCUITOS, CIRCUITOS_CUATRO } from './circuitos/indice.js';
@@ -46,7 +46,7 @@ import {
   actualizarParticulas, chispasChoque, dibujarChispas, dibujarConfeti, dibujarHumo, emitirChispas, emitirConfeti, emitirHumo
 } from './particulas.js';
 import {
-  botonesFin, cajaRecordsPortada, cajasJugar, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
+  botonesFin, cajaRecordsPortada, cajasJugar, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarFps, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
   marcoMenu, nombreCircuito
 } from './pantalla.js';
 import {
@@ -60,7 +60,8 @@ import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra
 import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from './galeria.js';
 import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js';
 import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
-import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, pintarHora } from './luz.js';
+import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, oscurecer, pintarHora } from './luz.js';
+import { ajuste, cambiarAjuste, OPCIONES, ponerAjustes, vigilar } from './ajustes.js';
 import { anotarFotograma, crearMedida } from './medida.js';
 import {
   altoLienzoLupa, altoLupa, botonesFinTablaLupa, cajaRecordsPortadaLupa, botonesFinLupa, conCamara, crearCamara, dibujarAvisosLupa, dibujarDepuracionLupa, dibujarFinLupa, dibujarMapa,
@@ -1109,6 +1110,12 @@ function opcionPulsada(id) {
   else if (id === 'hora') cambiarHora();
   else if (id === 'duracion') cambiarDuracion();
   else if (id === 'nivel') cambiarNivel();
+  else if (id === 'rendimiento') estado.menu = 'rendimiento';
+  else if (OPCIONES.some((o) => o.id === id)) {
+    guardarAjustes(cambiarAjuste(id));
+    // La resolución cambia el lienzo (también la calidad, que la manda).
+    if (id === 'resolucion' || id === 'calidad') aplicarVista();
+  }
 }
 
 // --- El menú de la portada ----------------------------------------------------
@@ -1138,7 +1145,8 @@ function pulsarMenu(p) {
     const fondo = { x: marco.x + marco.ancho / 2 - ancho / 2, y: marco.y, ancho, alto };
     if (!dentro(p, fondo)) estado.menu = null;
   } else if (caja.id === 'opcion') opcionPulsada(caja.opcion);
-  else if (caja.id === 'listo') estado.menu = null;
+  // RENDIMIENTO está dentro de AJUSTES: LISTO vuelve a él.
+  else if (caja.id === 'listo') estado.menu = estado.menu === 'rendimiento' ? 'ajustes' : null;
   else if (caja.id === 'vista') cambiarModelo(caja.i, 1);
   else if (caja.id === 'modelo') cambiarModelo(caja.i, caja.paso);
   else if (caja.id === 'color') cambiarColor(caja.i, COLORES_COCHE[caja.c]);
@@ -1251,6 +1259,8 @@ function pintarMundo(cochesCarrera = estado.carrera.coches, particulas = estado.
   if (!repeticion) pintarFantasma(true);
   for (const slot of ordenados) if (vaDebajo(slot)) dibujarCocheSlot(slot);
   dibujarPuentes(estado.circuito, estado.decorado);
+  // Con las luces simples, la noche va aquí: debajo de los coches, que se ven enteros.
+  oscurecer(luz, estado.circuito, estado.decorado);
   if (!repeticion) pintarFantasma(false);
   for (const slot of ordenados) if (!vaDebajo(slot)) dibujarCocheSlot(slot);
   conLuz.length = 0;
@@ -1677,7 +1687,8 @@ const medida = crearMedida();
 
 function bucle(tActual) {
   const hueco = tAnterior === 0 ? 0 : tActual - tAnterior;
-  const inicio = DEPURACION ? performance.now() : 0;
+  const mide = DEPURACION || ajuste('fps');
+  const inicio = mide ? performance.now() : 0;
   // El primer fotograma no tiene delta del que fiarse. Nunca negativo ni mayor
   // que DT_MAX: ni un reloj que retrocede ni una pestaña en segundo plano
   // pueden mover el mundo de golpe.
@@ -1693,11 +1704,14 @@ function bucle(tActual) {
   ESCENAS[estado.fase].dibujar();
 
   // El trabajo se mide sin el panel de depuración, que no estará publicado.
+  if (mide) anotarFotograma(medida, performance.now() - inicio, hueco, dt);
   if (DEPURACION) {
-    anotarFotograma(medida, performance.now() - inicio, hueco, dt);
     if (estado.lupa) dibujarDepuracionLupa(medida, estado.carrera.coches[0], ZOOM);
     else dibujarDepuracion(medida, estado.carrera.coches[0]);
-  }
+  } else if (ajuste('fps')) dibujarFps(medida, estado.lupa ? altoLienzoLupa() - 12 : ALTO - 9);
+
+  // En Auto, si va lento se baja la calidad (una vez): la resolución cambia el lienzo.
+  if (vigilar(hueco, dt)) aplicarVista();
 
   requestAnimationFrame(bucle);
 }
@@ -1729,7 +1743,9 @@ function quitarLoDeLaWeb() {
 /*
  * Entra o sale de la lupa según la orientación. La carrera sigue igual: solo
  * cambia cómo se ve. El lienzo de la lupa tiene la densidad de la pantalla
- * (hasta 2): ampliado, el mundo se veía borroso.
+ * (hasta 2): ampliado, el mundo se veía borroso. Con la resolución ligera
+ * (ajustes.js), la lupa va a densidad 1 y la mesa pinta a ESCALA_LIGERA: los
+ * mismos píxeles lógicos en un lienzo más pequeño, que el CSS estira.
  */
 let densidadLupa = 1;
 
@@ -1745,18 +1761,27 @@ function aplicarVista() {
     const ancho = escena.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
     alto = altoLupa(ancho, escena.clientHeight - parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom));
   }
-  const vista = lupa ? 'lupa-' + alto : 'mesa';
+  const ligera = ajuste('resolucion') === 'ligera';
+  const vista = (lupa ? 'lupa-' + alto : 'mesa') + (ligera ? '-ligera' : '');
   if (vista === lienzo.dataset.vista) return;
+  // Solo la resolución no mueve nada: un dedo puesto sigue acelerando.
+  const otraVista = lupa !== estado.lupa || !lienzo.dataset.vista;
   estado.lupa = lupa;
   lienzo.dataset.vista = vista;
   document.documentElement.classList.toggle('lupa', lupa);
   lienzo.style.setProperty('--alto-lupa', alto || '');
-  densidadLupa = lupa ? Math.min(2, Math.max(1, Math.round(window.devicePixelRatio || 1))) : 1;
+  densidadLupa = lupa && !ligera ? Math.min(2, Math.max(1, Math.round(window.devicePixelRatio || 1))) : 1;
   if (lupa) prepararLupa(densidadLupa, alto);
-  lienzo.width = (lupa ? ANCHO_LUPA : ANCHO) * densidadLupa;
-  lienzo.height = (lupa ? alto : ALTO) * densidadLupa;
-  camara.lista = false;
-  punteros.clear();
+  const escala = lupa ? densidadLupa : ligera ? ESCALA_LIGERA : 1;
+  lienzo.width = Math.round((lupa ? ANCHO_LUPA : ANCHO) * escala);
+  lienzo.height = Math.round((lupa ? alto : ALTO) * escala);
+  // Al cambiar el tamaño, el lienzo olvida la transformación: la lupa la pone en
+  // cada fotograma, la mesa solo aquí.
+  if (!lupa) lienzo.getContext('2d').setTransform(escala, 0, 0, escala, 0, 0);
+  if (otraVista) {
+    camara.lista = false;
+    punteros.clear();
+  }
 }
 
 estado.tactil = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
@@ -1769,6 +1794,7 @@ estado.colores = leerColores(COLORES_COCHE);
 estado.modo = leerModo();
 estado.jugadores = leerJugadores();
 estado.tipoFantasma = leerTipoFantasma();
+ponerAjustes(leerAjustes());
 const elegibles = [...CIRCUITOS, ...MIOS, ...CIRCUITOS_CUATRO];
 const elegido = leerCircuito(elegibles.map((c) => c.clave));
 estado.circuito = DIBUJADO || elegibles.find((c) => c.clave === elegido);

@@ -19,7 +19,7 @@ comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en 
 lupa: la pista ampliada alrededor del coche y el mapa arriba, contra la CPU. Cinco escenarios (uno, *juguete*:
 una mesa de madera con la pista de plástico) de día, al
 atardecer o de noche, siete idiomas (una página por idioma, con SEO), sonido, teclado y
-táctil; instalable como PWA y sin red. La app de Android (Capacitor, `es.pnyk.slot`) está
+táctil, y ajustes de rendimiento para los equipos justos (AJUSTES › RENDIMIENTO, `ajustes.js`); instalable como PWA y sin red. La app de Android (Capacitor, `es.pnyk.slot`) está
 en `/app`, con el bundle firmado listo para Play: el camino, en `APP.md`. Publicado en https://slot.pnyk.es. Lo
 siguiente, en `TODO.md`.
 
@@ -203,6 +203,9 @@ demás, en `BITACORA.md`). Mide y comprueba:
    al otro); los demás (salvada,
    adelantamiento, también entre dos de cuatro, llegada, salida, vuelta rápida) se prueban
    con carreras de mentira.
+9. **Los ajustes de rendimiento** (`ajustes.js`): los de serie, las vueltas de cada fila,
+   lo guardado que no vale, Baja (lo gráfico al mínimo sin tocar lo elegido) y Alta, Auto
+   (no baja con lentos sueltos; con 2 s lento, una vez) y que cada fila tiene su texto.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).
@@ -240,6 +243,9 @@ estado.js              el objeto `estado` mutable y el escenario guardado
 audio.js               Web Audio: tone(), noiseBurst(), sfx*(), el zumbido de cada coche
                        y el chirrido continuos
 analitica.js           GA4 tras consentimiento y evento(), que nunca rompe el juego
+ajustes.js             los ajustes de rendimiento (sin DOM): calidad Auto/Alta/Baja,
+                       resolución, luces de noche, sombras, efectos, vibración y FPS;
+                       ajuste(id) da lo que vale de verdad y vigilar() baja Auto
 juego.js               bucle, escenas (portada/carrera/fin), teclado y punteros
                        (táctil). Único módulo que toca el DOM
 
@@ -390,6 +396,11 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   el service worker no cambia y quien tiene la PWA se queda con lo viejo.
 - **La depuración solo sale sirviendo en local** (`DEPURACION` en `config.js`), y nunca
   en la app, cuyo origen es `https://localhost`.
+- **Los ajustes de rendimiento no tocan la carrera**: cada uno es un `if` donde ya se
+  pintaba (`ajuste(id)`), y el núcleo no los ve. La calidad manda sobre lo gráfico: Baja
+  lo deja todo al mínimo y Auto pasa a Baja, una vez por sesión, si va lento 2 s
+  (`AUTO_CALIDAD`). Lo que cuesta en un móvil justo es la GPU (rellenar píxeles), así
+  que lo que se recorta son pantallas enteras: la densidad, las capas y la de la noche.
 - **Lo que precarga el service worker es lo que empaqueta la app**: `PRECACHE` (generado)
   es la única lista. Un fichero que el juego cargue sin `import` desde `juego.js` (como los
   de `vendor/pnyk/`) hay que añadirlo a mano en `tools/gen-pages.mjs`.

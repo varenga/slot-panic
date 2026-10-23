@@ -2075,3 +2075,47 @@ arrancaba la carrera, no se sabía cómo jugar uno o dos ni qué coche era el tu
   medir si alivia en caliente, porque el SoC no volvió a calentarse.
 - **Se decide**: en este móvil no hace falta nada, y menos bajar a 30 FPS. Queda
   medir en uno de gama baja; si va justo, la palanca es la GPU en la lupa.
+
+## Slot Panic 1.18.0: los ajustes de rendimiento (23/10/2026, rama `60-ajustes-de-rendimiento`)
+
+Lo mismo que Traffic Panic 1.14.0, adaptado a lo que cuesta aquí. La medida en el
+Android (arriba) dijo que el JavaScript sobra y que lo que se nota es la GPU: rellenar
+píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
+
+- **`ajustes.js`**, sin DOM: las filas (`OPCIONES`, el primer valor de cada una, el de
+  serie) y lo que vale de verdad (`ajuste(id)`). La calidad manda sobre lo gráfico: en
+  Alta, lo elegido en cada fila; en Baja, lo más barato (las filas salen apagadas); en
+  Auto, de serie, lo elegido hasta que va lento: más de 22 ms entre fotogramas durante
+  2 s (`AUTO_CALIDAD`, `vigilar`, con el `dt` acotado; lo rápido descuenta), y entonces
+  Baja, una vez en la sesión («AUTO (BAJA)»). Un hueco de más de 250 ms no cuenta: es una
+  pausa (Chrome espacia los fotogramas de una ventana sin foco: en la prueba salían de
+  600 ms), no lentitud. Lo guarda `estado.js` (`slotpanic.ajustes`).
+- **Cada opción, un `if` donde ya se pintaba**; el núcleo no cambia:
+  - **Resolución ligera**: la lupa a densidad 1 (en vez de 2: la mitad de píxeles por
+    lado) y la mesa a ¾, 960 × 540 (`ESCALA_LIGERA`), con la transformación puesta al
+    redimensionar. En un ordenador el CSS deja el lienzo en 960 px: no se nota. Cambiarla
+    a media carrera no suelta el dedo puesto (solo cambiar de vista lo hace).
+  - **Luces de noche simples**: sin la capa de cada fotograma (copiar la oscuridad,
+    recortarle haces y halos, estamparla). La oscuridad horneada se estampa tal cual
+    antes de los coches de encima del puente (`oscurecer`), así que se ven enteros, como
+    con su halo; encima solo suman los haces (0,22), los pilotos y un foco por torre. Sin
+    balizas, flashes ni la capa del brillo bajo los puentes. De noche se lee igual.
+  - **Sin sombras**: ni las del decorado, ni las de las torres, ni la de los coches (la
+    del coche levantado por la mano sí: dice algo). Y sin nada que pintar entre ellas,
+    suelo, decorado y carriles van en una sola capa (`capaLisa`): una pantalla entera
+    por fotograma en vez de tres.
+  - **Sin efectos**: ni chispas ni humo ni polvo (`particulas.js`); el confeti sí.
+  - **Vibración**, en `vibrar`; **FPS**, abajo a la izquierda (en local ya está la
+    depuración, que mide siempre: ahora también con los FPS a la vista).
+- **El panel RENDIMIENTO**, dentro de AJUSTES (una fila más, «RENDIMIENTO ›»): siete
+  filas que se tocan para pasar al siguiente valor; LISTO vuelve a AJUSTES, con AJUSTES
+  encendido en la barra. Sin teclas directas: con teclado hay ratón. El sonido sigue
+  en AJUSTES.
+- **Idiomas**: `grupo.rendimiento`, `opcion.*` y `ajustes.*` en los siete.
+- **Arnés**, sección 9: los de serie, las vueltas de cada fila, lo guardado que no vale,
+  Baja y Alta, y Auto, que baja una vez, a los ~2 s, y solo con lentitud sostenida.
+  Arnés: 2351/2351.
+- Probado en Chrome: el panel desde AJUSTES, las luces simples de noche en la portada,
+  Baja (la mesa a 960 × 540 con la escala 0,75 y la lupa a 540 × 960 de densidad 1) y una
+  carrera en la lupa. Sin errores en la consola. Sin medir en un móvil justo: es lo que
+  queda (`TODO.md`).
