@@ -67,20 +67,3 @@ la portada, con cuatro coches siempre, las mangas y *La judía* y *La ele*
 - [ ] Playtest de *La judía* y *La ele*: ¿se entiende que el carril de fuera va casi a
       fondo y el de dentro hay que soltar?, ¿el carril de dentro de *La ele* (radio 25)
       se ve demasiado cerrado?
-
-# Fase 5 — Rendimiento
-
-Medido el 13-10-2026: 48 módulos JS y un CSS, 644 KB en bruto y ~200 KB en gzip, y
-el servidor ya sirve brotli (`juego.js` 70 → 18 KB, `dibujo.js` 70 → 18, `i18n.js`
-118 → 25). **Minificar no entra**: con brotli quitaría 50-70 KB una sola vez (la PWA
-lo precarga) y a cambio traería un build, dos códigos (el arnés importa las fuentes) y
-errores ilegibles en producción. Se reconsidera solo si un día hay build por otra
-razón. Lo que sí, por orden:
-
-- [ ] Medir en un Android de gama baja de verdad (el Redmi Note 14 Pro, de gama media,
-      va sobrado en frío y solo pierde cuadros en la lupa con el SoC caliente:
-      `BITACORA.md`). El mismo procedimiento: `adb reverse`, DevTools por
-      `adb forward` y la lupa de noche en *El ocho largo*, en frío y tras un rato.
-- [ ] Con ese móvil, medir lo que dan los ajustes de rendimiento (1.18.0: la lupa a
-      densidad 1, las luces de noche simples, sin sombras) y si Auto baja cuando toca y
-      no antes (22 ms durante 2 s). Si aun en Baja va justo: bajar a 30 FPS.

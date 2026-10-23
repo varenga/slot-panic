@@ -2119,3 +2119,22 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   Baja (la mesa a 960 × 540 con la escala 0,75 y la lupa a 540 × 960 de densidad 1) y una
   carrera en la lupa. Sin errores en la consola. Sin medir en un móvil justo: es lo que
   queda (`TODO.md`).
+
+## Los ajustes en un Android antiguo: la fase 5, cerrada (23/10/2026)
+
+- **El móvil**: un Android antiguo, el «modesto» que pedía la fase 5 (el Redmi Note 14
+  Pro era de gama media). Medido con los FPS del ajuste, jugando: la pista de cuatro
+  carriles, de noche y con los cuatro coches.
+- **En Alta, ~32 FPS; en Baja, ~54** (~31 → ~18,5 ms por cuadro: un 40 % menos). Lo que
+  cuesta en ese móvil es pintar, y es lo que recortan los ajustes.
+- **Auto acertó**: bajó solo («AUTO (BAJA)») y con él se jugó bien, sin notarlo
+  ralentizado. A 54 se pierde un cuadro de cada diez, pero la física va a pasos fijos
+  (`PASO_FISICA`): la carrera va igual de rápida y los tiempos valen lo mismo.
+- **Se decide**: no hace falta bajar a 30 FPS (era el último recurso si aun en Baja iba
+  justo). La fase 5 se cierra.
+- **Minificar no entra** (decidido el 13-10-2026 y apuntado hasta ahora en `TODO.md`):
+  48 módulos JS y un CSS, 644 KB en bruto y ~200 KB en gzip, y el servidor ya sirve
+  brotli (`juego.js` 70 → 18 KB, `dibujo.js` 70 → 18). Minificar quitaría 50-70 KB una
+  sola vez (la PWA lo precarga) y a cambio traería un build, dos códigos (el arnés
+  importa las fuentes) y errores ilegibles en producción. Se reconsidera solo si un día
+  hay build por otra razón.
