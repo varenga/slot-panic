@@ -4,7 +4,7 @@
 // Red de proyectos PNYK: la usa comun/pie.js (también en vendor/pnyk/ de cada proyecto).
 
 const PNYK_RED = {
-  "version": "1.2.3",
+  "version": "1.2.4",
   "origin": "https://pnyk.es/",
   "proyectos": [
     {
@@ -122,6 +122,24 @@ const PNYK_RED = {
       "type": "VideoGame",
       "category": "saga",
       "sagaOrder": 7,
+      "family": "panic",
+      "langs": [
+        "es",
+        "en",
+        "pt",
+        "gl",
+        "ca",
+        "it",
+        "fr"
+      ]
+    },
+    {
+      "slug": "sonar-panic",
+      "name": "Sonar Panic",
+      "url": "https://sonar.pnyk.es/",
+      "type": "VideoGame",
+      "category": "saga",
+      "sagaOrder": 8,
       "family": "panic",
       "langs": [
         "es",
