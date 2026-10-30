@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-108bb99e';
+const CACHE = 'slotpanic-37e3e6bc';
 
 const PRECACHE = [
   'index.html',
@@ -85,13 +85,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '2c26087b',
-  'en/index.html':                '8b23a968',
-  'pt/index.html':                '6ab75669',
-  'gl/index.html':                '9d91c19a',
-  'ca/index.html':                '7d0264c6',
-  'it/index.html':                '052504ee',
-  'fr/index.html':                'bebcff52',
+  'index.html':                   '2665ca55',
+  'en/index.html':                'd9d63b86',
+  'pt/index.html':                '4879015d',
+  'gl/index.html':                '2b4b6b74',
+  'ca/index.html':                'e0a46d72',
+  'it/index.html':                'e59e84bb',
+  'fr/index.html':                '412dbd92',
   'ajustes.js':                   'e250c8f6',
   'analitica.js':                 'bccaef26',
   'audio.js':                     'f2303d59',
@@ -146,7 +146,7 @@ const HUELLAS = {
   'records.js':                   'f29f8ad1',
   'repeticion.js':                '080fef0c',
   'tablaRecords.js':              '68277b09',
-  'vendor/pnyk/red.js':           'e392dfce',
+  'vendor/pnyk/red.js':           'd0fcf2f2',
   'vendor/pnyk/pie.js':           'bc866a2f',
   'vendor/pnyk/consentimiento.js':'df9a1409',
   'style.css':                    'ef982470',
