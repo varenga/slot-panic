@@ -46,8 +46,7 @@ Lo que queda:
 El camino entero, con lo hecho marcado, en `APP.md` §8. Lo que queda:
 
 - [ ] Instalar la de Android por USB y probarla en un móvil (APP.md, Fase B).
-- [ ] Crear la app en la consola de Play (`es.pnyk.slot`), rellenar la ficha con
-      `app/store/` y subir el bundle a pruebas internas; luego, pública.
+- [ ] Subir a la prueba cerrada el bundle 1.18.0 (`versionCode` 4); luego, pública.
 - [ ] Más adelante, la de iOS (necesita un Mac).
 
 # Fase 4 — La pista de cuatro carriles

@@ -153,6 +153,8 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
 * [ ] Prueba cerrada (en curso), luego pública. Segundo bundle: `versionCode` 2,
   `versionName` 1.16.2, la web de producción (2026-10-13). Tercero: `versionCode` 3,
   `versionName` 1.17.0 (el atardecer fluido y empezar a jugar en horizontal, 2026-10-16).
+  Cuarto: `versionCode` 4, `versionName` 1.18.0 (los ajustes de rendimiento, 2026-11-04),
+  compilado y pendiente de subir.
 
 ### Fase D — La de iOS
 

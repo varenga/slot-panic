@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual
 
-Publicado (v1.0.0): carreras de slot en seis circuitos (*La horquilla*, y *El
+Publicado (la versión, en `pnyk.json`): carreras de slot en seis circuitos (*La horquilla*, y *El
 ocho*, *El nudo*, *El resbalón*, *La bañera* y *La diagonal*, de piezas), dos coches enganchados a carriles que se cambian en cada
 carrera, y la pista de cuatro carriles (un modo propio, con *El ocho largo*, *La judía* y *La ele* y cuatro
 coches; los que no son un ocho se corren en mangas, una por carril, y gana la menor suma), solo apretar y soltar (un gatillo que se
