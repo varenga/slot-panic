@@ -18,15 +18,8 @@ Cada idea pasa por el mismo filtro:
 
 ---
 
-# 1. Circuitos de piezas y constructor
+# 1. El constructor
 
-- El circuito se declara como una **lista de piezas** (recta, curva de 45° de radio 1,
-  de 90° de radio 2…), como las cajas de slot. Hoy se declara como vértices con radio
-  (`circuito.js`, heredado de Race Panic), y un circuito de piezas no usará ese módulo
-  tal cual.
-- Abre la puerta a un **constructor** para el jugador: elegir piezas, cerrar el
-  circuito, correrlo. Y a compartirlo (un código corto, como el fantasma de Race Panic).
-- **Cruces** (las piezas en X): vuelve la idea del ocho, sin puente.
 - **El puente en el constructor**: donde el trazado se cruza, elegir cruce o puente. Hoy
   solo lo tiene *La diagonal* (`BITACORA.md`, rama `42`).
 
@@ -34,14 +27,14 @@ Cada idea pasa por el mismo filtro:
 
 - **Cambio de carril**, como los slot digitales: un toque doble cambia de carril en las
   zonas marcadas. Y cambio de carril de la CPU.
-- **Niveles de CPU** (hoy una, `CPU_SLOT`).
 - **Gatillo analógico en el móvil**: la altura del dedo como potencia. El teclado
   seguiría con el de toques.
   Probado en la lupa (11/10/2026, una franja de 240 px: abajo nada, arriba a fondo):
   cuesta dosificar, se va más lento o más rápido de lo que se quiere y hay que
   entrenarlo; a toques se juega desde el primer momento. Se quedó el hueco del dedo,
   sin gatillo. Si vuelve, quizá como opción para quien ya domina los toques.
-- **Récords y fantasma** por circuito y carril.
+- **Récords y fantasma por carril**: hoy hay una tabla por circuito, y cada vuelta dice
+  por qué carril se dio.
 
 # 3. Plataforma
 
