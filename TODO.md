@@ -45,7 +45,7 @@ Lo que queda:
 
 El camino entero, con lo hecho marcado, en `APP.md` §8. Lo que queda:
 
-- [ ] Subir a la prueba cerrada el bundle 1.18.1 (`versionCode` 5); luego, pública.
+- [ ] Pasar a pública (en prueba cerrada, con el bundle 1.18.1, `versionCode` 5).
 - [ ] Más adelante, la de iOS (necesita un Mac).
 
 # Fase 4 — La pista de cuatro carriles

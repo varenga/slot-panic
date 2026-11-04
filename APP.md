@@ -147,7 +147,7 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
   respuestas de la consola, en `app/store/`.
 * [x] Slot Panic en la política común de pnyk.es (`privacy` en `pnyk/proyectos.js`, con
   su GA4 `G-LWMERSV8WH` y sin récords), publicada en pnyk.es.
-* [ ] Crear la app en la consola de Play con el paquete `es.pnyk.slot`, rellenar la ficha
+* [x] Crear la app en la consola de Play con el paquete `es.pnyk.slot`, rellenar la ficha
   y subir el bundle a pruebas internas, aceptando *Play App Signing*. Si el bundle es de
   la v0.8.0 o posterior (con la galería), la seguridad de los datos y el contenido de
   usuarios se contestan como dice `app/store/play-console.md`, no con «no recoge
@@ -155,9 +155,9 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
 * [ ] Prueba cerrada (en curso), luego pública. Segundo bundle: `versionCode` 2,
   `versionName` 1.16.2, la web de producción (2026-10-13). Tercero: `versionCode` 3,
   `versionName` 1.17.0 (el atardecer fluido y empezar a jugar en horizontal, 2026-10-16).
-  Siguiente: `versionCode` 5, `versionName` 1.18.1 (los ajustes de rendimiento y los
-  arreglos de la prueba por USB, 2026-11-04), compilado y pendiente de subir. El 4 (1.18.0)
-  se compiló pero no se llegó a dar por bueno.
+  El último: `versionCode` 5, `versionName` 1.18.1 (los ajustes de rendimiento y los
+  arreglos de la prueba por USB), subido el 2026-11-04. El 4 (1.18.0) se compiló pero no
+  se llegó a dar por bueno.
 
 ### Fase D — La de iOS
 
