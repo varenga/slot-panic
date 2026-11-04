@@ -420,7 +420,9 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   la pantalla. Tocando en la mesa, cuántos juegan lo dicen los dos botones de la portada
   (un toque fuera no arranca nada) y la salida espera a que cada uno apoye el dedo
   (`estado.espera`); el carril de la CPU no se toma tocando (solo en la lupa). Ninguna
-  mecánica nueva puede exigir un control que el móvil no tenga.
+  mecánica nueva puede exigir un control que el móvil no tenga. Los dedos se escuchan en
+  toda la escena, no en el lienzo: en horizontal quedan bandas a los lados, y más de un
+  toque cae en ellas. A dos, la partida no gira hasta volver a la portada.
 - **En vertical, la lupa** (`estado.lupa`): toda la pantalla es el J1 y el otro carril, la
   CPU. La vista nunca enseña fuera de la mesa (1280 × 720) y el lienzo tiene el alto de
   la pantalla: lo que dibuje la lupa no puede suponer 960 px de alto.

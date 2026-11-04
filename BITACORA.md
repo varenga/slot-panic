@@ -2138,3 +2138,35 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   sola vez (la PWA lo precarga) y a cambio traería un build, dos códigos (el arnés
   importa las fuentes) y errores ilegibles en producción. Se reconsidera solo si un día
   hay build por otra razón.
+
+## Slot Panic 1.18.1: lo que salió probando la app por USB (04/11/2026, rama `64-dedos-giro-y-audio`)
+
+- **El coche de la izquierda «se paraba» a dos** y había que despegar el dedo y volver a
+  pulsar. Medido en un Redmi Note 14 Pro 5G con la WebView depurada, a tres niveles (el
+  táctil en bruto, los eventos y lo que entendía el juego): ni `pointercancel` ni `blur`.
+  El juego solo escuchaba en el lienzo, y **30 de 106 toques (28 %) caían en las bandas de
+  los lados**: el dedo se apoyaba y el juego no lo veía. En horizontal el lienzo va de
+  x≈103 a x=771 de 834 px: la muesca lo empuja, la banda izquierda mide ~103 px y la
+  derecha 63, y por eso le pasaba casi siempre al de la izquierda. Ahora se escucha en
+  toda la escena; fuera del lienzo solo cuenta en carrera (un clic en el margen no
+  arranca nada en los menús). Jugando después, ya no se para.
+- **Hipótesis que no fue**: la pulsación larga. A los 0,4 s con un solo dedo Android
+  lanza `contextmenu` y vibra, y parecía «un comando de dos dedos», pero el dedo sigue
+  vivo. `preventDefault` no quita la vibración; se quita en `MainActivity`
+  (`setHapticFeedbackEnabled(false)`; medido con una pulsación simulada: de 1 a 0).
+- **La vibración del juego nunca había funcionado en la app**: el manifest no declaraba
+  `VIBRATE`, y `navigator.vibrate` devolvía `true` mientras la WebView avisaba en el
+  registro («requires VIBRATE permission»). Lo que se notaba era solo la de la pulsación
+  larga. Con el permiso, el motor vibra los 60 ms pedidos (medido en el registro).
+- **Y era demasiado corta**: 15-40 ms apenas se notaban jugando. Probado en el móvil con
+  40, 80, 120 y 200 ms: se nota más cuanto más larga, y aun 200 ms es suave (navegador y
+  WebView no dejan elegir la intensidad). Ahora 40-200 ms: una salida, 200; un bache a
+  fondo, ~88. Los choques no vibraban: ahora sí, según su fuerza.
+- **El audio seguía sonando al salir con el botón atrás**: nadie escuchaba
+  `visibilitychange`, el bucle se paraba y los zumbidos, que son continuos, no. Se
+  suspende el contexto con la página oculta. Vale también para la web y la PWA.
+- **Una partida a dos ya no gira**: en vertical se juega solo (la lupa), y pasar a ella
+  le daba el coche del J2 a la CPU. Hasta volver a la portada la vista sigue en la mesa y el giro
+  se bloquea: en la app con un plugin (`Giro.java`, la WebView no admite
+  `screen.orientation.lock`); en la web, si el navegador deja; si no, la mesa en pequeño.
+- Probado en el móvil, jugando: los tres. Arnés sin cambios: no toca la física.

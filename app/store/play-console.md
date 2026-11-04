@@ -70,8 +70,9 @@ No hay cuentas ni correo; nada se usa para publicidad ni se vende.
 
 ## Permisos
 
-Solo `INTERNET`, que Capacitor declara siempre. El juego va entero dentro de la
-app; la red solo la usa la galería (`https://slot.pnyk.es/api.php`, con CORS
+`INTERNET`, que Capacitor declara siempre, y `VIBRATE`, para los choques, las
+salidas y los baches (se apaga en AJUSTES). Android concede los dos sin preguntar.
+El juego va entero dentro de la app; la red solo la usa la galería (`https://slot.pnyk.es/api.php`, con CORS
 para `https://localhost`), y sin red se juega igual.
 
 ## Versión

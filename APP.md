@@ -80,10 +80,12 @@ corra la página.
   era `sensorLandscape`), y `configChanges` incluye `orientation`: al girar no se recrea la
   actividad ni se pierde la carrera, solo cambia la vista. `MainActivity` esconde las
   barras del sistema (vuelven un momento con un deslizamiento desde el borde). Las
-  muescas, con `env(safe-area-inset-*)`.
+  muescas, con `env(safe-area-inset-*)`. Una partida a dos no gira: la actividad se bloquea
+  en horizontal (`Giro.java`) hasta volver a la portada.
 * **El botón atrás** cierra la app desde cualquier pantalla, como en Orbit Panic: no hay
   historial. Se decide probando si molesta.
-* **Audio**: Web Audio arranca en el primer gesto, igual que en la web.
+* **Audio**: Web Audio arranca en el primer gesto, igual que en la web, y se suspende con
+  la página oculta (al salir de la app, también con el botón atrás).
 * **El mismo juego que la PWA del móvil** (v1.2.0): el menú, quién juega y qué se
   puede hacer se deciden por cómo se juega (tocando o con teclado), no por si es la app.
   El constructor y la galería también van en la app: quitarlos no simplificaba
@@ -133,9 +135,9 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
 * [x] Proyecto Android: `compileSdk` y `targetSdk` 36, cualquier orientación (`fullUser`,
   la lupa en vertical; §5), pantalla completa, compilado con `gradlew assembleDebug`.
 * [x] Icono adaptativo y pantalla de arranque desde `favicon.svg`.
-* [ ] Instalado por USB y comprobado en un móvil: jugar sin red, dos dedos a la vez, botón
-  atrás, muescas, audio y el conmutador de idioma. (En un Xiaomi con HyperOS hay que
-  activar «Instalar vía USB»; ver el `APP.md` de Orbit Panic.)
+* [x] Instalado por USB y comprobado en un Redmi Note 14 Pro 5G: jugar sin red, dos dedos a
+  la vez, botón atrás, muescas, audio y el conmutador de idioma. (En un Xiaomi con HyperOS
+  hay que activar «Instalar vía USB»; ver el `APP.md` de Orbit Panic.)
 
 ### Fase C — Google Play
 
@@ -153,8 +155,9 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
 * [ ] Prueba cerrada (en curso), luego pública. Segundo bundle: `versionCode` 2,
   `versionName` 1.16.2, la web de producción (2026-10-13). Tercero: `versionCode` 3,
   `versionName` 1.17.0 (el atardecer fluido y empezar a jugar en horizontal, 2026-10-16).
-  Cuarto: `versionCode` 4, `versionName` 1.18.0 (los ajustes de rendimiento, 2026-11-04),
-  compilado y pendiente de subir.
+  Siguiente: `versionCode` 5, `versionName` 1.18.1 (los ajustes de rendimiento y los
+  arreglos de la prueba por USB, 2026-11-04), compilado y pendiente de subir. El 4 (1.18.0)
+  se compiló pero no se llegó a dar por bueno.
 
 ### Fase D — La de iOS
 
