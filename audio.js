@@ -37,25 +37,42 @@ export function asegurarAudio() {
   if (audio.state === 'suspended') audio.resume();
 }
 
+/*
+ * Con la página oculta (otra pestaña, o salir de la app) no corre el bucle, y
+ * los zumbidos, que son continuos, se quedarían sonando: se suspende todo.
+ */
+export function pausarAudio() {
+  if (audio?.state === 'running') audio.suspend();
+}
+
+export function reanudarAudio() {
+  if (audio?.state === 'suspended') audio.resume();
+}
+
 export function silenciado() {
   return silencio;
 }
 
 /*
- * Un toque de vibración en el móvil al chocar: corto, más largo cuanto más
- * fuerte (`fuerza` en px/s normales, como sfxGolpe). El silencio la calla
- * también, como el ajuste de la vibración (ajustes.js), y nunca más de una
- * cada VIBRACION_MINIMA segundos.
+ * Un toque de vibración en el móvil: más largo cuanto más fuerte (`fuerza` de 0
+ * a 200). Navegador y WebView no dejan elegir la intensidad, solo la duración,
+ * y en un Redmi Note 14 Pro 40 ms casi no se notaban y 200 aún eran suaves. El
+ * silencio la calla también, como el ajuste de la vibración (ajustes.js). Nunca
+ * más de una cada VIBRACION_MINIMA segundos, salvo otra más larga: un choque
+ * flojo no se puede comer la salida de pista que provoca.
  */
 const VIBRACION_MINIMA = 0.15;
 let ultimaVibracion = 0;
+let ultimaDuracion = 0;
 
 export function vibrar(fuerza) {
   if (silencio || !ajuste('vibracion') || typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
   const ahora = performance.now() / 1000;
-  if (ahora - ultimaVibracion < VIBRACION_MINIMA) return;
+  const duracion = Math.round(40 + 160 * Math.min(1, fuerza / 200));
+  if (ahora - ultimaVibracion < VIBRACION_MINIMA && duracion <= ultimaDuracion) return;
   ultimaVibracion = ahora;
-  try { navigator.vibrate(Math.round(15 + 25 * Math.min(1, fuerza / 200))); } catch (error) { /* sin permiso */ }
+  ultimaDuracion = duracion;
+  try { navigator.vibrate(duracion); } catch (error) { /* sin permiso */ }
 }
 
 export function alternarSilencio() {

@@ -76,6 +76,11 @@ export function enApp() {
   return Boolean(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
 }
 
+/* Bloquea el giro de la app en horizontal, o lo devuelve al sensor (`Giro.java`). */
+export function bloquearGiroEnApp(bloquear) {
+  window.Capacitor.nativePromise?.('Giro', 'bloquear', { bloquear })?.catch?.(() => {});
+}
+
 // --- El coche -------------------------------------------------------------
 
 /*

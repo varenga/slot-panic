@@ -6,7 +6,7 @@
  */
 
 import {
-  ALTO, ANCHO, ANCHO_LUPA, CARRERAS, COCHE_REFERENCIA, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESCALA_LIGERA,
+  ALTO, ANCHO, ANCHO_LUPA, bloquearGiroEnApp, CARRERAS, COCHE_REFERENCIA, COLETEO_DESDE, COLOR, COLORES_COCHE, CONTROLES_SLOT, DEPURACION, DT_MAX, enApp, ESCALA_LIGERA,
   ESPERA_REINICIO, NIVELES_CPU, SITE_ORIGIN, TECLAS_BLOQUEADAS, TRAS_META, VELOCIDAD_SLOT
 } from './config.js';
 import {
@@ -50,8 +50,8 @@ import {
   marcoMenu, nombreCircuito
 } from './pantalla.js';
 import {
-  actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, sfxBache, sfxChoque, sfxClac, sfxCuenta, sfxFin, sfxSale,
-  sfxSalida, sfxVuelta, vibrar
+  actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, pausarAudio, reanudarAudio, sfxBache, sfxChoque, sfxClac, sfxCuenta,
+  sfxFin, sfxSale, sfxSalida, sfxVuelta, vibrar
 } from './audio.js';
 import { cambiarIdioma, idiomaActual, t } from './i18n.js';
 import { cargarAnalitica, evento } from './analitica.js';
@@ -670,6 +670,7 @@ function irAPortada() {
   estado.humanos = estado.carrera.coches.map(() => false);
   estado.carrera.fase = 'carrera';   // sin cuenta atrás: la exhibición ya está en marcha
   limpiarPista();
+  aplicarVista();   // acabada una carrera a dos, se puede volver a girar
 }
 
 /*
@@ -713,6 +714,7 @@ function correrManga() {
       slot.humanoDesde = 0;
     });
   }
+  aplicarVista();   // una carrera a dos ya no se gira
   estado.espera = juegaTactil();
   estado.fantasma = fantasmaElegido();
   if (conRecords()) cargarRecords(estado.circuito.clave);
@@ -1056,6 +1058,11 @@ window.addEventListener('blur', () => {
   for (const codigo in teclas) teclas[codigo] = false;
   punteros.clear();
 });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pausarAudio();
+  else reanudarAudio();
+});
+window.addEventListener('pagehide', pausarAudio);
 
 /** De coordenadas de la ventana a las del lienzo lógico (deshace el escalado CSS). */
 function aLienzo(evento) {
@@ -1076,7 +1083,21 @@ function listos() {
 }
 const dentro = (p, caja) => p.x >= caja.x && p.x <= caja.x + caja.ancho && p.y >= caja.y && p.y <= caja.y + caja.alto;
 
-lienzo.addEventListener('pointerdown', (evento) => {
+/*
+ * Se escucha en toda la escena, no solo en el lienzo: en horizontal en el móvil
+ * quedan bandas a los lados, y un pulgar medio apoyado en una caía fuera. Fuera
+ * del lienzo solo cuenta en carrera, donde importa el lado y no el sitio.
+ */
+const escenaDom = lienzo.parentElement;
+const esAjeno = (evento) => evento.target !== lienzo && !punteros.has(evento.pointerId);
+
+// Una pulsación larga no es un menú: es acelerar en la recta. La vibración que la
+// acompaña en la app se quita en MainActivity: esto no la evita.
+escenaDom.addEventListener('contextmenu', (evento) => {
+  if (estado.tactil) evento.preventDefault();
+});
+escenaDom.addEventListener('pointerdown', (evento) => {
+  if (evento.target !== lienzo && estado.fase !== 'carrera') return;
   evento.preventDefault();
   asegurarAudio();
   if (evento.pointerType === 'touch') estado.tactil = true;
@@ -1087,12 +1108,14 @@ lienzo.addEventListener('pointerdown', (evento) => {
   // el navegador se niega, no puede llevarse por delante la pulsación.
   try { lienzo.setPointerCapture(evento.pointerId); } catch (error) { /* sin captura */ }
 });
-lienzo.addEventListener('pointermove', (evento) => {
+escenaDom.addEventListener('pointermove', (evento) => {
+  if (esAjeno(evento)) return;
   if (punteros.has(evento.pointerId)) punteros.set(evento.pointerId, ladoDe(aLienzo(evento)));
   ESCENAS[estado.fase].mover?.(aLienzo(evento), evento.pointerId);
 });
 for (const tipo of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-  lienzo.addEventListener(tipo, (evento) => {
+  escenaDom.addEventListener(tipo, (evento) => {
+    if (esAjeno(evento)) return;
     punteros.delete(evento.pointerId);
     ESCENAS[estado.fase].soltar?.(evento.pointerId);
   });
@@ -1542,7 +1565,10 @@ const ESCENAS = {
           sfxSale();
           if (estado.tactil && estado.humanos[evento.coche]) vibrar(200);
         }
-        else if (evento.tipo === 'choque') sfxChoque(evento.fuerza);
+        else if (evento.tipo === 'choque') {
+          sfxChoque(evento.fuerza);
+          if (estado.tactil && evento.coches.some((i) => estado.humanos[i])) vibrar(200 * evento.fuerza);
+        }
         else if (evento.tipo === 'clac') sfxClac();
         else if (evento.tipo === 'bache') {
           // El del humano, más fuerte que el de la CPU; y, en el móvil, en la mano.
@@ -1749,9 +1775,28 @@ function quitarLoDeLaWeb() {
  */
 let densidadLupa = 1;
 
+/*
+ * A dos no se puede pasar a la lupa, donde se juega solo: mientras dure la
+ * partida (también el cartel de fin), el móvil no gira. Si el sistema no deja
+ * bloquearlo, como en una pestaña del navegador, sigue la mesa, pequeña en vertical.
+ */
+let giroBloqueado = false;
+
+function bloquearGiro(bloquear) {
+  if (bloquear === giroBloqueado) return;
+  giroBloqueado = bloquear;
+  if (enApp()) return bloquearGiroEnApp(bloquear);
+  try {
+    if (bloquear) screen.orientation?.lock?.('landscape')?.catch?.(() => {});
+    else screen.orientation?.unlock?.();
+  } catch (error) { /* sin bloqueo: la mesa se queda igual */ }
+}
+
 function aplicarVista() {
+  const aDos = Boolean(estado.humanos[1]);
+  bloquearGiro(aDos);
   // El constructor es la mesa entera: en vertical se ve pequeño, pero entero.
-  const lupa = (LUPA_FORZADA || Boolean(VERTICAL?.matches)) && estado.fase !== 'constructor';
+  const lupa = (LUPA_FORZADA || Boolean(VERTICAL?.matches)) && estado.fase !== 'constructor' && !aDos;
   // En la lupa, el alto del lienzo sigue la proporción del sitio que hay (sin
   // las muescas): así no quedan bandas en un móvil alargado.
   let alto = 0;

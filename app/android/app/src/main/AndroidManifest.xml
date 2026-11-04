@@ -33,4 +33,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- navigator.vibrate: los choques, las salidas y los baches (ajustes.js lo apaga). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>

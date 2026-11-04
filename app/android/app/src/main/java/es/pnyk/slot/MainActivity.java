@@ -17,7 +17,11 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(Giro.class);
         super.onCreate(savedInstanceState);
+        // Acelerar es dejar el dedo puesto: a los 0,4 s, Android lo toma por una
+        // pulsación larga y vibra. Las vibraciones del juego (navigator.vibrate) siguen.
+        getBridge().getWebView().setHapticFeedbackEnabled(false);
         pantallaCompleta();
     }
 

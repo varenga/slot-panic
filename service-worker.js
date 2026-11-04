@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-37e3e6bc';
+const CACHE = 'slotpanic-08e40578';
 
 const PRECACHE = [
   'index.html',
@@ -85,16 +85,16 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '2665ca55',
-  'en/index.html':                'd9d63b86',
-  'pt/index.html':                '4879015d',
-  'gl/index.html':                '2b4b6b74',
-  'ca/index.html':                'e0a46d72',
-  'it/index.html':                'e59e84bb',
-  'fr/index.html':                '412dbd92',
+  'index.html':                   '18a110a2',
+  'en/index.html':                '9bb4a158',
+  'pt/index.html':                '8b1d1f8b',
+  'gl/index.html':                '51aa65c7',
+  'ca/index.html':                '0db4d732',
+  'it/index.html':                '34319875',
+  'fr/index.html':                'c917efa6',
   'ajustes.js':                   'e250c8f6',
   'analitica.js':                 'bccaef26',
-  'audio.js':                     'f2303d59',
+  'audio.js':                     '3dce347d',
   'circuitos/banera.js':          '89b3bfc0',
   'circuitos/diagonal.js':        '131faa47',
   'circuitos/ele.js':             'ea63a1ae',
@@ -106,7 +106,7 @@ const HUELLAS = {
   'circuitos/primero.js':         '936cf9c2',
   'circuitos/resbalon.js':        'cc7c10f6',
   'coches.js':                    '217fd71f',
-  'config.js':                    '23ac673a',
+  'config.js':                    '4b44fd7a',
   'constructor.js':               'a4944864',
   'dibujo.js':                    '7c852c7a',
   'escenarios.js':                '448d173f',
@@ -120,7 +120,7 @@ const HUELLAS = {
   'idiomas/gl.js':                '79598c91',
   'idiomas/it.js':                'b725ae04',
   'idiomas/pt.js':                '6d20a429',
-  'juego.js':                     '49c1de6b',
+  'juego.js':                     '83aecde6',
   'lupa.js':                      '5f4421a7',
   'luz.js':                       '4473708b',
   'medida.js':                    '03f10cbb',
@@ -149,7 +149,7 @@ const HUELLAS = {
   'vendor/pnyk/red.js':           'd0fcf2f2',
   'vendor/pnyk/pie.js':           'bc866a2f',
   'vendor/pnyk/consentimiento.js':'df9a1409',
-  'style.css':                    'ef982470',
+  'style.css':                    'cbe2f8ee',
   'favicon.svg':                  '423ea574',
   'manifest.webmanifest':         'ddd3731a',
   'iconos/icon-192.png':          'cc0e9575',
