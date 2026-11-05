@@ -10,7 +10,7 @@
  * lo de debajo de los coches va en una sola capa.
  */
 
-import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR, LARGO_COCHE, PASO_BACHES } from './config.js';
+import { ALTO, ANCHO, ANCHO_COCHE, CARRIL, COCHES, COLOR, JUNTA, LARGO_COCHE, PASO_BACHES } from './config.js';
 import {
   circulo, crearCapa, ctx, dibujarEn, poligono, polilinea
 } from './nucleo/lienzo.js';
@@ -59,7 +59,6 @@ function negroMemorizado() {
   };
 }
 const negroGradas = negroMemorizado(), negroPiezas = negroMemorizado(), negroTorres = negroMemorizado();
-const JUNTA = 96;        // px de eje entre dos juntas de las piezas
 
 /*
  * El fondo entero: suelo, pista y decorado, en dos capas que se repintan solo

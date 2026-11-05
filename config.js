@@ -202,6 +202,7 @@ export const CARRERAS = [
   { id: 'resistencia', vueltas: 10, anochece: true }
 ];
 export const PASO_FANTASMA = 1 / 30;    // s entre muestras de una vuelta grabada (nucleo/fantasma.js)
+export const JUNTA = 96;                 // px de eje entre dos uniones de la pista: se ven y se oyen
 export const VELOCIDAD_SLOT = 470;      // px/s con la potencia a tope
 export const SUBE_POTENCIA = 0.35;      // s: pulsando, la potencia recorre 2/3 de lo que le falta
 export const BAJA_POTENCIA = 0.25;      // s: soltando, pierde 2/3 de la que tiene

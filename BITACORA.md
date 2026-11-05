@@ -2170,3 +2170,41 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   se bloquea: en la app con un plugin (`Giro.java`, la WebView no admite
   `screen.orientation.lock`); en la web, si el navegador deja; si no, la mesa en pequeño.
 - Probado en el móvil, jugando: los tres. Arnés sin cambios: no toca la física.
+
+## El sonido de una pista de verdad: 1.19.0 (05/11/2026, rama `66-el-sonido`)
+
+> El sonido era un zumbido por coche que solo seguía a la velocidad: soltar el gatillo no
+> se oía (±0,25 dB). Sigue siendo síntesis, sin ficheros, y se probó en el móvil por la LAN
+> comparando variantes con `?sonido=`.
+
+- **Primer intento, un motor de cuatro capas** (bobinado, engranajes, escobillas,
+  rodadura): 11,5 dB más fuerte, y soltar ya se oía (unos 8 dB a tope). Sonaba muy bien,
+  **pero a motor**: «casi lo que más se oye es el roce con la pista». No se tira: se
+  guarda en `reserva/motorDeCoche.mjs` para Traffic Panic o Race Panic, cuyo motor es
+  monótono.
+- **Se calibró contra un vídeo de 17 s de una pista real**, solo con sus medidas: ni una
+  muestra de él llega al juego y el audio se borró al acabar. Se grabó una carrera nuestra
+  y se le pasaron los mismos análisis. Nuestro espectrograma eran líneas limpias de
+  armónicos; el de la pista, un fondo granulado con un silbido a tramos.
+
+  | Medida | Pista | Cuatro capas | 1.19.0 |
+  |---|---|---|---|
+  | 20-120 Hz (mediana, sobre el total) | −6,9 dB | −44,0 | −12,1 |
+  | 120-300 Hz | −5,4 dB | −5,6 | −2,9 |
+  | 2-4 kHz | −14,4 dB | −11,3 | −18,8 |
+  | Centroide mediano | 697 Hz | 1016 | 508 |
+  | Golpes por segundo | 2,44 | 0,41 | 1,88 |
+  | Vaivén de volumen (p10-p90) | 13,5 dB | 2,1 | 5,8 |
+  | Cresta de la envolvente, 300-5000 Hz | 10,7 | 5,0 | 4,0 |
+
+- **Lo que cambió con esas medidas**: casi todo es ruido en dos bandas que siguen el tono,
+  con la sierra muy baja y temblor al azar (±35 cents) que deshace las líneas; un silbido
+  estrecho de 950-1350 Hz que sale al tirar; un retumbo rugoso de 110-320 Hz; uniones más
+  fuertes, graves e irregulares; y el volumen según lo cerca que pasa el coche del oído
+  (`cerca`: el borde de abajo de la mesa o, en la lupa, el J1), con el compresor más suelto.
+- **No se persiguió igualar el vídeo**: su micro va pegado a la pista y parece tener
+  cortes de edición, que inflan los golpes y el vaivén. Una serie regular de armónicos
+  que parecía verse en él no se confirmó (fuerza 0,05-0,28).
+- El veredicto, de oído: «suena más a pista real, me encaja bastante más».
+- Sin medir: el coste en un Android justo (cada coche lleva más filtros) y cuánto se pierde
+  del retumbo en el altavoz de un móvil. Arnés sin cambios en lo medido: no toca la física.
