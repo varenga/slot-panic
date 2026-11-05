@@ -58,7 +58,7 @@ la portada, con cuatro coches siempre, las mangas y *La judía* y *La ele*
 - [ ] Playtest de la pista de cuatro, en el ordenador y en el móvil: ¿se distingue el
       coche propio entre cuatro?, ¿el cruce con cuatro es divertido o un caos?, ¿se
       entiende que el carril de fuera de un lazo va a fondo?, ¿los paneles de la cuenta
-      atrás en los lazos se leen?, ¿cuatro zumbidos a la vez cansan?
+      atrás en los lazos se leen?, ¿cuatro coches a la vez cansan de oído?
 - [ ] Playtest de las mangas: ¿cuatro mangas de 10 vueltas (~7 min) se hacen largas?,
       ¿se entiende que gana la suma y no el que gana más mangas?, ¿el ámbar del primero
       de la suma, que al empezar la primera manga salta de un coche a otro, molesta?

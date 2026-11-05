@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-08e40578';
+const CACHE = 'slotpanic-4567c1ba';
 
 const PRECACHE = [
   'index.html',
@@ -85,16 +85,16 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '18a110a2',
-  'en/index.html':                '9bb4a158',
-  'pt/index.html':                '8b1d1f8b',
-  'gl/index.html':                '51aa65c7',
-  'ca/index.html':                '0db4d732',
-  'it/index.html':                '34319875',
-  'fr/index.html':                'c917efa6',
+  'index.html':                   '21f19ec9',
+  'en/index.html':                'd7474f51',
+  'pt/index.html':                '39916e30',
+  'gl/index.html':                'a8053a25',
+  'ca/index.html':                '612620c9',
+  'it/index.html':                'c573ba78',
+  'fr/index.html':                '93486ede',
   'ajustes.js':                   'e250c8f6',
   'analitica.js':                 'bccaef26',
-  'audio.js':                     '3dce347d',
+  'audio.js':                     'ae2b16b7',
   'circuitos/banera.js':          '89b3bfc0',
   'circuitos/diagonal.js':        '131faa47',
   'circuitos/ele.js':             'ea63a1ae',
@@ -106,9 +106,9 @@ const HUELLAS = {
   'circuitos/primero.js':         '936cf9c2',
   'circuitos/resbalon.js':        'cc7c10f6',
   'coches.js':                    '217fd71f',
-  'config.js':                    '4b44fd7a',
+  'config.js':                    '4e5b2727',
   'constructor.js':               'a4944864',
-  'dibujo.js':                    '7c852c7a',
+  'dibujo.js':                    'fb3e15a9',
   'escenarios.js':                '448d173f',
   'estado.js':                    'a2c72cb1',
   'galeria.js':                   '625d65a3',
@@ -120,7 +120,7 @@ const HUELLAS = {
   'idiomas/gl.js':                '79598c91',
   'idiomas/it.js':                'b725ae04',
   'idiomas/pt.js':                '6d20a429',
-  'juego.js':                     '83aecde6',
+  'juego.js':                     '6d23f3f6',
   'lupa.js':                      '5f4421a7',
   'luz.js':                       '4473708b',
   'medida.js':                    '03f10cbb',

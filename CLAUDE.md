@@ -240,8 +240,8 @@ i18n.js                los 7 idiomas, t() y cambiarIdioma() (asíncrona): baja c
 idiomas/es.js…fr.js    un catálogo por idioma (`export default {…}`); el generador
                        los añade a PRECACHE, que no los encuentra siguiendo import
 estado.js              el objeto `estado` mutable y el escenario guardado
-audio.js               Web Audio: tone(), noiseBurst(), sfx*(), el zumbido de cada coche
-                       y el chirrido continuos
+audio.js               Web Audio: tone(), noiseBurst(), sfx*(), la voz de cada coche
+                       (más roce con la pista que motor), las uniones y el chirrido
 analitica.js           GA4 tras consentimiento y evento(), que nunca rompe el juego
 ajustes.js             los ajustes de rendimiento (sin DOM): calidad Auto/Alta/Baja,
                        resolución, luces de noche, sombras, efectos, vibración y FPS;
@@ -326,6 +326,8 @@ servidor/cuadricula.php  la cuadrícula en PHP: la validación del servidor (no 
 servidor/records.php   qué vuelta se acepta como récord (no se sirve)
 schema.sql             las tablas de api.php (no se sirve)
 arnes.mjs              el arnés (no lo carga el juego)
+reserva/motorDeCoche.mjs  un módulo de audio con un buen motor de coche, para Traffic
+                       Panic o Race Panic (no lo carga el juego ni se publica)
 
 tools/gen-pages.mjs    genera las páginas por idioma, el manifest y el service worker;
                        PRECACHE sigue los import desde juego.js

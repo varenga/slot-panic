@@ -114,3 +114,11 @@ ve con retraso); qué pasa si uno se va (gana el otro, o la carrera sigue con la
 cuentan los récords (mejor no: no es una vuelta de un solo jugador); y cómo lo prueba
 el arnés (dos carreras en Node conectadas por una red de mentira, con retraso y
 pérdidas, que acaban igual que la del anfitrión).
+
+## Un motor de coche para los hermanos
+
+`reserva/motorDeCoche.mjs` es un módulo de audio completo con un motor de cuatro capas
+(bobinado, engranajes, escobillas, rodadura) en el que la velocidad da el tono y el
+acelerador, la fuerza y el brillo. Para el slot sonaba demasiado a motor (`BITACORA.md`,
+1.19.0), pero mejoraría **Traffic Panic** o **Race Panic**, cuyo motor es monótono. Se
+copia allí; no se importa.

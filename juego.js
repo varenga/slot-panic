@@ -50,7 +50,7 @@ import {
   marcoMenu, nombreCircuito
 } from './pantalla.js';
 import {
-  actualizarChirrido, actualizarZumbidos, alternarSilencio, asegurarAudio, pausarAudio, reanudarAudio, sfxBache, sfxChoque, sfxClac, sfxCuenta,
+  actualizarChirrido, actualizarCoches, alternarSilencio, asegurarAudio, pausarAudio, reanudarAudio, sfxBache, sfxChoque, sfxClac, sfxCuenta,
   sfxFin, sfxSale, sfxSalida, sfxVuelta, vibrar
 } from './audio.js';
 import { cambiarIdioma, idiomaActual, t } from './i18n.js';
@@ -937,7 +937,14 @@ function sonidoRepeticion(rp) {
   const m = momentoActual(rp);
   const ritmo = m ? ritmoRepeticion(m, rp.t) : 1;
   const coches = cochesRepeticion(rp, estado.carrera.coches);
-  actualizarZumbidos(coches.map((slot) => (slot.estado === 'carril' ? Math.hypot(slot.coche.vx, slot.coche.vy) * ritmo : 0)), VELOCIDAD_SLOT, true);
+  sonidoCoches.length = coches.length;
+  coches.forEach((slot, i) => {
+    const enCarril = slot.estado === 'carril';
+    const v = enCarril ? Math.hypot(slot.coche.vx, slot.coche.vy) * ritmo : 0;
+    // Lo grabado no guarda la potencia: se saca de la velocidad y de si frena.
+    ponerSonidoCoche(i, v, slot.coche.frenando ? 0 : Math.min(1, v / VELOCIDAD_SLOT + 0.2), slot, enCarril, ANCHO / 2);
+  });
+  actualizarCoches(sonidoCoches, VELOCIDAD_SLOT, true);
   actualizarChirrido(0, false);
 }
 
@@ -1305,24 +1312,62 @@ function luzAhora() {
   return luzDeCarrera(fraccion);
 }
 
+let chirria = 0;   // el coche que chirría: de ahí sale el sonido
+
 /** Cuánto chirría el coche más al límite de los que conduce alguien, en [0, 1]. */
 function intensidadChirrido() {
   let mayor = 0;
   const { coches } = estado.carrera;
   for (let i = 0; i < coches.length; i++) {
     const slot = coches[i];
-    if (estado.humanos[i]) mayor = Math.max(mayor, 0.6 * (slot.exigencia - COLETEO_DESDE) / (1 - COLETEO_DESDE), slot.derrape);
+    if (!estado.humanos[i]) continue;
+    const suya = Math.max(0.6 * (slot.exigencia - COLETEO_DESDE) / (1 - COLETEO_DESDE), slot.derrape);
+    if (suya > mayor) {
+      mayor = suya;
+      chirria = i;
+    }
   }
   return Math.max(0, Math.min(1, mayor));
 }
 
-const velocidades = [];   // la de cada coche, para su zumbido: cada fotograma, la misma lista
+/*
+ * Dónde se oye un punto de la mesa, en [-0,7, 0,7]: sin llevarlo del todo a un
+ * lado, que en un altavoz de móvil se perdería. En la lupa, respecto al J1.
+ */
+function panDe(x, centro) {
+  return Math.max(-0.7, Math.min(0.7, 0.7 * (x - centro) / (ANCHO / 2)));
+}
+
+const centroDelOido = () => (estado.lupa ? estado.carrera.coches[0].coche.x : ANCHO / 2);
+
+const ALTURA_PUENTE_SONIDO = 0.13;   // sobre esto va por el puente: los baches botan menos
+const sonidoCoches = [];   // lo que oye cada coche: cada fotograma, los mismos objetos
+
+function ponerSonidoCoche(i, v, potencia, slot, enCarril, centro) {
+  const c = sonidoCoches[i] || (sonidoCoches[i] = {});
+  c.v = v;
+  c.potencia = enCarril ? potencia : 0;
+  c.ficha = slot.ficha;
+  c.pan = panDe(slot.coche.x, centro);
+  // Lo cerca que pasa del oído: el borde de abajo de la mesa o, en la lupa, el J1.
+  const oidoY = estado.lupa ? estado.carrera.coches[0].coche.y : ALTO;
+  c.cerca = 1 / (1 + (Math.hypot(slot.coche.x - centro, slot.coche.y - oidoY) / 350) ** 2);
+  c.humano = Boolean(estado.humanos[i]);
+  c.puente = enCarril && slot.altura > ALTURA_PUENTE_SONIDO;
+}
+
 function sonido(activo) {
   const { coches } = estado.carrera;
-  velocidades.length = coches.length;
-  for (let i = 0; i < coches.length; i++) velocidades[i] = coches[i].estado === 'carril' ? coches[i].v : 0;
-  actualizarZumbidos(velocidades, VELOCIDAD_SLOT, activo);
-  actualizarChirrido(activo ? intensidadChirrido() : 0, activo);
+  const centro = centroDelOido();
+  sonidoCoches.length = coches.length;
+  for (let i = 0; i < coches.length; i++) {
+    const slot = coches[i];
+    const enCarril = slot.estado === 'carril';
+    ponerSonidoCoche(i, enCarril ? slot.v : 0, slot.potencia, slot, enCarril, centro);
+  }
+  actualizarCoches(sonidoCoches, VELOCIDAD_SLOT, activo);
+  const intensidad = activo ? intensidadChirrido() : 0;
+  actualizarChirrido(intensidad, activo, panDe(coches[chirria]?.coche.x ?? centro, centro));
 }
 
 const ESCENAS = {
@@ -1562,18 +1607,18 @@ const ESCENAS = {
         if (evento.tipo === 'cuenta') sfxCuenta();
         else if (evento.tipo === 'salida') sfxSalida();
         else if (evento.tipo === 'sale') {
-          sfxSale();
+          sfxSale(panDe(carrera.coches[evento.coche].coche.x, centroDelOido()));
           if (estado.tactil && estado.humanos[evento.coche]) vibrar(200);
         }
         else if (evento.tipo === 'choque') {
-          sfxChoque(evento.fuerza);
+          sfxChoque(evento.fuerza, panDe(evento.x, centroDelOido()));
           if (estado.tactil && evento.coches.some((i) => estado.humanos[i])) vibrar(200 * evento.fuerza);
         }
-        else if (evento.tipo === 'clac') sfxClac();
+        else if (evento.tipo === 'clac') sfxClac(panDe(carrera.coches[evento.coche].coche.x, centroDelOido()));
         else if (evento.tipo === 'bache') {
           // El del humano, más fuerte que el de la CPU; y, en el móvil, en la mano.
           const humano = estado.humanos[evento.coche];
-          sfxBache(evento.fuerza * (humano ? 1 : 0.5));
+          sfxBache(evento.fuerza * (humano ? 1 : 0.5), panDe(carrera.coches[evento.coche].coche.x, centroDelOido()));
           if (estado.tactil && humano) vibrar(60 * evento.fuerza);
         }
         else if (evento.tipo === 'vuelta' || evento.tipo === 'fin') apuntarVuelta(evento.coche);
