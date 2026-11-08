@@ -270,6 +270,11 @@ function pasoCarreraSlot(carrera, mandos, dt) {
   }
   for (let i = 0; i < carrera.coches.length; i++) {
     const slot = carrera.coches[i];
+    // Uno que se conduce en otro dispositivo solo rueda (ver «En red», abajo).
+    if (slot.remoto) {
+      pasoRemoto(slot, carrera.circuito, dt);
+      continue;
+    }
     // Acabada la carrera, nadie acelera: los coches frenan hasta pararse.
     const acelerar = carrera.fase === 'carrera' && slot.terminado === null && !!mandos[i]?.acelerar;
     const evento = pasoSlot(slot, carrera.circuito, acelerar, dt);
@@ -280,7 +285,12 @@ function pasoCarreraSlot(carrera, mandos, dt) {
     }
     if (carrera.fase === 'carrera') contarVueltas(carrera, slot, i);
   }
+  if (carrera.choques === false) return;
+  // Lo que los choques le hacen a un coche remoto se apunta para mandárselo.
+  const remotos = carrera.coches.some((c) => c.remoto);
+  if (remotos) for (const slot of carrera.coches) if (slot.remoto) fotografiar(slot);
   comprobarChoques(carrera);
+  if (remotos) for (const slot of carrera.coches) if (slot.remoto) anotarGolpe(slot);
 }
 
 const posados = [];   // lo que la mano ha posado en este paso: cada paso, la misma lista
@@ -683,6 +693,21 @@ function soltar(slot, curva) {
 
 function pasoFuera(slot, dt) {
   const { coche } = slot;
+  const rapidez = rodarPorLaMesa(slot, dt);
+  slot.tFuera += dt;
+  slot.tQuieto = rapidez < QUIETO ? slot.tQuieto + dt : 0;
+  if (slot.tQuieto > ESPERA_MANO || slot.tFuera > FUERA_MAXIMO) {
+    slot.estado = 'mano';
+    slot.tMano = 0;
+    slot.desde = { x: coche.x, y: coche.y, angulo: coche.angulo };
+    coche.vx = coche.vy = 0;
+  }
+  return null;
+}
+
+/** Fuera del carril: frena, rueda, da vueltas y rebota en el borde de la mesa. Devuelve la rapidez que le queda. */
+function rodarPorLaMesa(slot, dt) {
+  const { coche } = slot;
   const rapidez = Math.hypot(coche.vx, coche.vy);
   const queda = rapidez > 0 ? Math.max(0, rapidez - FRENO_MESA * dt) / rapidez : 0;
   coche.vx *= queda;
@@ -702,21 +727,23 @@ function pasoFuera(slot, dt) {
     coche.y = Math.max(margen, Math.min(ALTO - margen, coche.y));
     coche.vy = -coche.vy * REBOTE_MESA;
   }
-
-  slot.tFuera += dt;
-  slot.tQuieto = rapidez * queda < QUIETO ? slot.tQuieto + dt : 0;
-  if (slot.tQuieto > ESPERA_MANO || slot.tFuera > FUERA_MAXIMO) {
-    slot.estado = 'mano';
-    slot.tMano = 0;
-    slot.desde = { x: coche.x, y: coche.y, angulo: coche.angulo };
-    coche.vx = coche.vy = 0;
-  }
-  return null;
+  return rapidez * queda;
 }
 
 /** La mano lo levanta, lo lleva a donde se salió y lo deja en el carril, parado. */
 function pasoMano(slot, circuito, dt) {
   slot.tMano += dt;
+  const f = llevarEnLaMano(slot, circuito);
+  if (f < 1) return null;
+  slot.estado = 'carril';
+  slot.altura = alturaEn(circuito.eje[indiceEn(circuito, slot.s)]);
+  slot.posado = true;
+  colocarEnCarril(slot, circuito);
+  return 'clac';
+}
+
+/** La pose en la mano, a `tMano` de recogerlo. Devuelve la fracción del viaje. */
+function llevarEnLaMano(slot, circuito) {
   const f = Math.min(1, slot.tMano / DURACION_MANO);
   const suave = f * f * (3 - 2 * f);
   const destino = poseEnCarril(circuito, slot.s, slot.lateral, poseCarril);
@@ -725,12 +752,7 @@ function pasoMano(slot, circuito, dt) {
   coche.y = desde.y + (destino.y - desde.y) * suave;
   coche.angulo = desde.angulo + normalizarAngulo(destino.angulo - desde.angulo) * suave;
   slot.altura = Math.sin(Math.PI * f);
-  if (f < 1) return null;
-  slot.estado = 'carril';
-  slot.altura = alturaEn(circuito.eje[indiceEn(circuito, slot.s)]);
-  slot.posado = true;
-  colocarEnCarril(slot, circuito);
-  return 'clac';
+  return f;
 }
 
 function contarVueltas(carrera, slot, i) {
@@ -754,11 +776,144 @@ function contarVueltas(carrera, slot, i) {
     return;
   }
   slot.terminado = carrera.tiempo;
-  if (carrera.ganador === null) {
+  // En red, quién gana lo decide el anfitrión (nucleo/red.js).
+  if (carrera.ganador === null && carrera.arbitro !== false) {
     carrera.ganador = i;
     carrera.fase = 'fin';
     carrera.eventos.push({ tipo: 'fin', coche: i });
   }
+}
+
+// --- En red (MULTIJUGADOR.md §6) --------------------------------------------------
+
+/*
+ * Cada coche lo simula quien lo conduce, en su dispositivo: el gatillo no
+ * espera a la red. En los demás es `remoto`: no se simula, solo rueda con la
+ * velocidad que dijo su dueño, y nucleo/red.js lo va poniendo donde dice.
+ * No cuenta vueltas ni se sale por su cuenta: eso llega en sus mensajes.
+ *
+ * Los choques los decide el anfitrión, con todos los coches a la misma hora
+ * de carrera. Lo que le hacen a uno remoto (`fotografiar` antes, `anotarGolpe`
+ * después) se le manda como un golpe, y su dueño lo aplica (`aplicarGolpe`).
+ */
+
+/** Un paso de un coche remoto: sigue rodando con lo que llevaba. */
+function pasoRemoto(slot, circuito, dt) {
+  if (slot.estado === 'carril') {
+    const indice = indiceEn(circuito, slot.s);
+    const ds = slot.v * dt / factorCarril(circuito, indice, slot.lateral * signoVuelta(circuito, slot.s));
+    slot.s += ds;
+    slot.progreso += ds;
+    colocarEnCarril(slot, circuito);
+  } else if (slot.estado === 'fuera') {
+    rodarPorLaMesa(slot, dt);
+  } else {
+    slot.tMano = Math.min(DURACION_MANO, slot.tMano + dt);
+    llevarEnLaMano(slot, circuito);
+  }
+}
+
+/** Un coche remoto, `dt` segundos más allá (en pasos de física); con 0, solo su pose. */
+export function rodarRemoto(slot, circuito, dt) {
+  let restante = Math.max(0, dt);
+  pasoRemoto(slot, circuito, 0);
+  while (restante > 1e-9) {
+    const paso = Math.min(restante, PASO_FISICA);
+    pasoRemoto(slot, circuito, paso);
+    restante -= paso;
+  }
+}
+
+/** Lo que tenía un coche remoto antes de mirar los choques del paso. */
+function fotografiar(slot) {
+  const f = slot.foto ??= {};
+  const { coche } = slot;
+  f.estado = slot.estado;
+  f.v = slot.v;
+  f.derrape = slot.derrape;
+  f.coleteo = slot.coleteo;
+  f.angulo = coche.angulo;
+  f.x = coche.x;
+  f.y = coche.y;
+  f.vx = coche.vx;
+  f.vy = coche.vy;
+  f.giro = slot.giro;
+}
+
+/*
+ * Lo que los choques del paso le han hecho, sumado en `slot.golpe` hasta que
+ * red.js lo recoge: en el carril, lo que cambian su velocidad, su derrape y su
+ * cola; si lo han sacado, cómo sale (a lo largo y de lado de su rumbo, que
+ * su dueño tiene un poco más allá); fuera, lo que lo han movido.
+ */
+function anotarGolpe(slot) {
+  const f = slot.foto;
+  const { coche } = slot;
+  const g = () => slot.golpe ??= { dv: 0, dd: 0, dco: 0, dx: 0, dy: 0, dvx: 0, dvy: 0, dg: 0, sale: null };
+  if (f.estado === 'carril' && slot.estado === 'carril') {
+    const dv = slot.v - f.v, dd = slot.derrape - f.derrape, dco = slot.coleteo - f.coleteo;
+    if (!dv && !dd && !dco) return;
+    const golpe = g();
+    golpe.dv += dv;
+    golpe.dd += dd;
+    golpe.dco += dco;
+  } else if (f.estado === 'carril' && slot.estado === 'fuera') {
+    const rumbo = f.angulo - f.coleteo;
+    const hx = Math.cos(rumbo), hy = Math.sin(rumbo);
+    g().sale = {
+      adelante: coche.vx * hx + coche.vy * hy,
+      lado: -coche.vx * hy + coche.vy * hx,
+      giro: slot.giro,
+      angulo: normalizarAngulo(coche.angulo - rumbo)
+    };
+  } else if (f.estado === 'fuera' && slot.estado === 'fuera') {
+    const dx = coche.x - f.x, dy = coche.y - f.y, dvx = coche.vx - f.vx, dvy = coche.vy - f.vy, dg = slot.giro - f.giro;
+    if (!dx && !dy && !dvx && !dvy && !dg) return;
+    const golpe = g();
+    golpe.dx += dx;
+    golpe.dy += dy;
+    golpe.dvx += dvx;
+    golpe.dvy += dvy;
+    golpe.dg += dg;
+  }
+}
+
+/*
+ * El golpe que manda el anfitrión, en el coche propio. Si entre tanto el
+ * coche ya no está como estaba (se ha salido solo, o ya lo recogen), lo que
+ * no le cuadra no se aplica. El anfitrión decide quién sale: un golpe que no
+ * lo saca no lo deja en 1 de derrape (lo que siga derrapando, ya es suyo).
+ * Devuelve 'sale' si lo ha sacado.
+ */
+export function aplicarGolpe(slot, golpe) {
+  const { coche } = slot;
+  if (golpe.sale) {
+    if (slot.estado !== 'carril') return null;
+    const rumbo = coche.angulo - slot.coleteo;
+    const { adelante, lado, giro, angulo } = golpe.sale;
+    soltar(slot, 1);
+    const hx = Math.cos(rumbo), hy = Math.sin(rumbo);
+    coche.vx = hx * adelante - hy * lado;
+    coche.vy = hy * adelante + hx * lado;
+    coche.angulo = rumbo + angulo;
+    slot.giro = giro;
+    return 'sale';
+  }
+  // Lo que no lleva el golpe (el mensaje se ahorra los ceros) es 0.
+  const { dv = 0, dd = 0, dco = 0, dx = 0, dy = 0, dvx = 0, dvy = 0, dg = 0 } = golpe;
+  if (slot.estado === 'carril') {
+    slot.v = Math.max(0, slot.v + dv);
+    slot.derrape = Math.max(0, Math.min(0.999, slot.derrape + dd));
+    slot.coleteo += dco;
+    coche.angulo += dco;
+  } else if (slot.estado === 'fuera') {
+    coche.x = Math.max(0, Math.min(ANCHO, coche.x + dx));
+    coche.y = Math.max(0, Math.min(ALTO, coche.y + dy));
+    coche.vx += dvx;
+    coche.vy += dvy;
+    slot.giro += dg;
+  }
+  return null;
 }
 
 /** Vuelta en curso de un coche, de 1 a las de la carrera. */

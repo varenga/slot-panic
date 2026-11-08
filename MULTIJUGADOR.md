@@ -1,7 +1,7 @@
 # Slot Panic en red
 
 Cómo correr en Slot Panic contra otras personas, **cada una en su dispositivo**, sin que deje
-de ser el juego de un dedo que ya es. Es la Fase 5 del `TODO.md`, pero el diseño vive aquí: toca
+de ser el juego de un dedo que ya es. Es la Fase 6 del `TODO.md`, pero el diseño vive aquí: toca
 reglas, red, el servidor de salas común y privacidad, y hay que poder leerlo de una vez. El
 camino, por bloques, está en §10, y las casillas en el `TODO.md`.
 
@@ -38,8 +38,8 @@ La pregunta del README sigue siendo el filtro de cada añadido: «¿hace la carr
 | Decisión | Elegido | Motivo |
 |---|---|---|
 | Conexión | El servidor de salas común (WebSocket) | Ya está montado, medido (p50 80 ms entre jugadores) y dado de alta para Slot en el plan de Orbit (§12 de su documento) |
-| Quién simula | Un navegador, el del anfitrión | La física es de paso fijo, pero `Math.sin` o `Math.exp` no dan el mismo último bit en todos los motores: un *lockstep* puro acabaría desviándose |
-| El coche propio | Se adelanta en local y se corrige hacia el anfitrión | Un bit de mando y un paso fijo lo hacen barato, y el gatillo no espera a la red |
+| Quién simula | Cada coche, quien lo conduce; el anfitrión arbitra | El gatillo no espera a la red, y lo que ves es lo que corres (§6). La física es de paso fijo, pero `Math.sin` o `Math.exp` no dan el mismo último bit en todos los motores: un *lockstep* puro acabaría desviándose |
+| Choques y ganador | El anfitrión | Alguien tiene que ver a todos a la vez; el golpe viaja a quien lo recibe |
 | Jugadores | Dos primero; hasta cuatro con el bloque S4 | Dos no tocan el servidor; cuatro cambian `salas.js` y `net.js`, que comparte Orbit |
 | Récords | No cuentan | La vuelta de un invitado pasa por la red y el anfitrión decide sus choques: no es una vuelta de un solo jugador |
 
@@ -140,43 +140,56 @@ de Orbit y las de su app de Play, que tarda en actualizarse:
 
 `nucleo/` sigue sin saber del DOM ni de la red. Lo de la red se reparte así:
 
-* **`nucleo/red.js`**, puro, como el resto del núcleo: hace y aplica las instantáneas, adelanta el
-  coche propio y lo corrige, e interpola a los demás. Lo prueba el arnés sin sockets.
+* **`nucleo/red.js`**, puro, como el resto del núcleo: hace y aplica los mensajes. Lo prueba el
+  arnés sin sockets (§11).
 * **`juego.js`**, el único que ve `net`: conecta, manda lo que `red.js` prepara y le pasa lo que llega.
 * **`sala.js`**, las pantallas de §4.
 
 | Qué | Quién decide | Cómo viaja |
 |---|---|---|
-| La carrera entera: coches, choques, salidas, la mano, vueltas, ganador | Anfitrión | Instantáneas a 20 Hz |
-| El gatillo de cada invitado | Invitado | Un bit, solo cuando cambia, con su número de orden |
-| Los coches de la CPU | Anfitrión | En la instantánea, como los demás |
+| Cada coche de una persona: su física, sus salidas, la mano y sus vueltas | Quien lo conduce | Reporte a 30 Hz al anfitrión |
+| Los choques entre coches | Anfitrión | Un golpe a quien lo recibe, en el acto |
+| Su coche, los de la CPU, la fase y el ganador | Anfitrión | Instantáneas a 20 Hz |
 | La sala: circuito, vueltas, coches, `turno`, empezar | Anfitrión | Un mensaje al cambiar |
-| Sonido, partículas, chirrido y vibración | Cada lado | Los eventos de la instantánea, con azar local |
+| Sonido, partículas, chirrido y vibración | Cada lado | Los eventos, con azar local |
 
-* **El gatillo.** El invitado manda `{k:'g', n, a}` (número de orden y pulsado o no) cada vez que
-  cambia, y lo repite cada 250 ms por si acaso. El anfitrión aplica el último que le llega. Son
-  unos pocos bytes por pulsación.
-* **Las instantáneas** (`{k:'s', …}`): la hora de la carrera, la fase, la cuenta y, de cada coche,
-  lo que necesitan la física y el dibujo: `estado`, `s`, `progreso`, `v`, `potencia`, `derrape`,
-  `coleteo`, `altura` y vueltas; fuera del carril, además la pose (`x`, `y`, `angulo`, `giro`) y sus
-  tiempos. Más el último número de gatillo aplicado de cada invitado y los eventos del intervalo
-  (`carrera.eventos`, acumulados entre instantáneas). Números redondeados, en JSON; binario solo si
-  la medida lo pide. Cuatro coches deberían quedar por debajo de 400 bytes: unos 8 KB/s.
-* **El coche propio no tiene retardo.** El invitado lo simula en local con la misma física y su
-  gatillo al momento. Al llegar una instantánea, toma el estado de su coche en el anfitrión, que ya
-  incluye su gatillo hasta el número que dice, y vuelve a simular desde ahí los gatillos que el
-  anfitrión aún no ha visto. Lo que difiera de lo que ya pintaba se reparte en unos 100 ms, en el
-  dibujo, no en la física. Para eso `slot.js` exporta el paso de un coche suelto (hoy
-  `pasoSlot`, interno).
-* **Los choques los decide el anfitrión**, con todos los coches donde él los tiene. El invitado no
-  adelanta los choques: los demás coches los ve en el pasado. Un golpe le llega en la instantánea
-  como un cambio de `v` o de `derrape`, y la corrección lo hace notar. Es el precio de un anfitrión, y
-  hay que medir si se nota (bloque D).
-* **Los demás coches** se pintan unos 100 ms por detrás de la hora del anfitrión, interpolando
-  entre las dos instantáneas que rodean ese instante, como en Orbit. En el carril se interpola la
-  `s` y la pose sale de `poseEnCarril`: así un coche nunca se pinta fuera de su carril. Fuera, la pose.
-* **El anfitrión** corre la carrera como siempre (`avanzarSlot`): su mando, el último bit de cada
-  invitado y `decidirSlot` para la CPU.
+**El primer diseño** —el anfitrión simula toda la carrera y el invitado adelanta su coche en su
+pantalla y lo corrige— se descartó en el bloque A, antes de escribirlo: el anfitrión vería soltar el
+gatillo unos 60 ms tarde, y un coche que en la pantalla del invitado pasaba la curva se saldría en la
+suya. Así que el coche es de quien lo conduce, como la nave del invitado en Orbit («lo que ves es lo
+que te mata»), y en los demás es `remoto` (`slot.js`): no se simula, solo rueda con lo que su dueño
+dijo la última vez.
+
+* **La misma hora de carrera.** Cada uno cuenta el tiempo de carrera desde su propia salida, y la
+  del invitado es la del anfitrión cuando le llega: a la misma hora de carrera, todos están a la par.
+  Lo que llega se lleva a la hora propia: el anfitrión adelanta un reporte lo que tardó en llegarle
+  más lo que el invitado salió después (unos 120 ms con 60 de ida), y un invitado, casi nada (lo que
+  tardó la instantánea menos lo que él salió después). Las vueltas y la llegada de cada coche son las
+  de su dueño, en su reloj de carrera: gana el menor, y el anfitrión cambia el ganador si un reporte
+  trae una llegada anterior a la que dio por buena.
+* **Los reportes** (`{k:'c', t, ag, c}`): la hora de carrera del invitado, el último golpe que ha
+  aplicado y su coche. Las **instantáneas** (`{k:'s', t, f, cu, g, c, e}`): la hora, la fase, la
+  cuenta, el ganador, cada coche y los eventos desde la anterior. Un coche viaja como una lista:
+  `estado`, `s`, `v`, `potencia`, `derrape`, `exigencia`, `coleteo`, `altura`, vueltas, llegada,
+  salidas y freno; fuera del carril, además su pose y su velocidad; en la mano, de dónde lo recoge.
+  El progreso no viaja: es siempre `s − largo`. Números redondeados, en JSON: con cuatro coches,
+  ≤ 401 B y unos 5,4 KB/s (§11).
+* **Los choques los decide el anfitrión**, con todos a la misma hora de carrera. Lo que un choque le
+  hace a un coche remoto se apunta (`fotografiar` antes de mirar los choques, `anotarGolpe` después)
+  y se le manda como golpe (`{k:'g', n, g}`): en el carril, lo que cambian su velocidad, su derrape y
+  su cola; si lo saca, cómo sale respecto a su rumbo; fuera, lo que lo mueve. Su dueño lo aplica
+  (`aplicarGolpe`) donde lo tenga ya. Hasta que confirma que lo tiene (`ag`), el anfitrión aplica ese
+  golpe encima de cada reporte, y antes de adelantarlo: sin lo primero, un reporte de antes del golpe
+  lo desharía y volverían a chocar; sin lo segundo, adelantado con la velocidad de antes del golpe se
+  metía en el otro más de lo que se mete (en los encuentros salían los dos tres veces más que en la
+  mesa). Si el golpe lo sacaba, mientras no lo confirma el anfitrión no toca su coche. Quién se sale
+  lo decide el anfitrión: un golpe que no lo saca no lo deja en 1 de derrape.
+* **Los demás coches**, en un invitado, salen de la última instantánea llevada a su hora de carrera,
+  y lo que ya pintaba se acerca a eso en unos 100 ms (`SUAVIZA`): en el carril, por la `s`, así que
+  nunca se pinta un coche fuera de su carril. Si cambia de estado, va en la mano o está a más de 60 px
+  (`SALTO`), se pone de golpe.
+* **El anfitrión** corre la carrera como siempre (`avanzarSlot`): su mando y `decidirSlot` para la
+  CPU; los remotos ruedan.
 * **Segundo plano.** Si el anfitrión oculta la pestaña, su `requestAnimationFrame` se para y la
   carrera con él: los demás ven «Esperando al anfitrión…» pasado medio segundo sin instantáneas. Al
   volver, el `dt` acotado a `DT_MAX` hace que siga donde estaba. Si se oculta un invitado, su
@@ -210,15 +223,16 @@ anfitrión, chat, el campeonato en red, récords en red y espectadores.
 
 ## 10. El camino
 
-Las casillas están en la Fase 5 del `TODO.md`. El orden importa:
+Las casillas están en la Fase 6 del `TODO.md`. El orden importa:
 
 0. **Prueba de red.** Heredada: la superó Orbit el 2026-11-07 con el mismo servidor.
 1. **A. La red de mentira.** `nucleo/red.js` y una sección del arnés que une dos carreras en Node
    con una red de mentira, con retraso, variación y huecos. Va antes que los sockets a propósito,
-   como el A de Orbit: separa los fallos del protocolo de los de conexión.
+   como el A de Orbit: separa los fallos del protocolo de los de conexión. **Hecho** (§11).
 2. **B. Alta en salas.** `juegos.js`, `net.js` (comun 1.3.0), la copia a la raíz y `PRECACHE`.
 3. **C. Pantallas.** EN RED, crear, unirse y la sala, en la mesa y en la lupa.
-4. **D. A dos en red.** Instantáneas, gatillo, adelanto y corrección, interpolación y eventos.
+4. **D. A dos en red.** `juego.js` con `net` y `red.js`: reportes, instantáneas, golpes, los
+   remotos en el dibujo y los eventos.
 5. **E. Reglas en red.** La salida que espera, la revancha, las mangas, la CPU en los huecos,
    segundo plano y desconexiones.
 6. **G. Publicación a dos.** Prosa, ficha de Play, versión 1.20.0 y `BITACORA.md`.
@@ -230,19 +244,26 @@ y `?jitter=`; y al final, siempre, dos móviles reales en redes distintas (y en 
 
 ## 11. Lo que mide el arnés
 
-Una sección nueva, **En red**, con los módulos reales y una red de mentira (cada mensaje sale con
-un retraso fijo más una variación al azar sembrado, en orden, como TCP). En cada oficial y con
-pilotos automáticos:
+Es la sección 10 del arnés (`correrEnRed`), con los módulos reales y una red de mentira: cada
+mensaje sale con un retraso fijo más una variación al azar sembrado, en orden, como TCP, y en
+JSON, como por `net.js`. Con 60 ms de ida y 20 de variación (lo que midió Orbit), en los seis
+oficiales a dos, en los tres de cuatro con dos CPU y en *El ocho largo* con cuatro personas:
 
-* **Nada cambia sin red**: las demás secciones dan las mismas cifras.
-* **El coche propio**: con 60 ms de ida y 20 de variación, lo que pinta el invitado se separa
-  < 3 px de lo que tiene el anfitrión a la misma hora, salvo en los choques, y vuelve en ≤ 200 ms.
-* **El gatillo**: con el piloto prudente en el invitado, su vuelta dista < 2 % de la misma vuelta
-  sin red, y no se sale.
-* **Los demás**: interpolados, nunca fuera de su carril y sin saltos de más de un coche de largo
-  entre fotogramas, salvo tras un hueco de la red.
-* **La carrera acaba igual** en los dos: mismo ganador, mismas vueltas y los tiempos del anfitrión.
-* **El tamaño**: la instantánea, < 400 bytes con cuatro coches; una carrera de 10 vueltas, < 2 MB
-  de ida.
+* **Nada cambia sin red**: las demás secciones dan las mismas cifras que antes del bloque A,
+  idénticas.
+* **Cada coche donde va**: el anfitrión tiene al invitado a < 3,5 px de donde va a la misma hora de
+  carrera (p95; hoy 2,3-2,6; máximo < 8, hoy 4,4), y el invitado pinta a los demás a < 2,5 (hoy
+  1,2-1,4; máximo < 5, hoy 2,5). Lejos de los choques, las salidas y la mano, que corrigen de golpe.
+* **El gatillo**: la mejor vuelta del invitado en red, a < 2 % de la suya sin red (hoy, la misma).
+* **La carrera acaba igual** en todos: el mismo ganador, las mismas vueltas y la llegada de cada
+  uno, la suya.
+* **El tamaño**: la instantánea < 500 B (hoy ≤ 401 con cuatro coches) y una carrera de 10 vueltas
+  largas (150 s) < 2 MB de ida (hoy unos 5,4 KB/s: ~0,8 MB).
+* **Los encuentros**, los de la sección 3 con el invitado al otro lado de la red: chocan donde
+  chocan en la mesa, las salidas del invitado cuadran en los dos lados (un golpe que lo saca no se
+  aplica dos veces) y salen los dos como mucho el doble que en la mesa, más 2. Hoy, siguen los dos /
+  se sale uno / los dos: en la mesa 47 / 6 / 2, en red 47 / 5 / 3.
+* **Un hueco de 450 ms** (el peor que midió Orbit) a mitad de carrera: acaba igual en los dos.
 
-Las cifras son de partida, como todas: se fijan con lo que se mida.
+Lo que el arnés no ve, el bloque D lo prueba a mano: si un golpe que llega 60 ms tarde se entiende
+en la pantalla de quien lo recibe.

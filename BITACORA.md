@@ -2208,3 +2208,41 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
 - El veredicto, de oído: «suena más a pista real, me encaja bastante más».
 - Sin medir: el coste en un Android justo (cada coche lleva más filtros) y cuánto se pierde
   del retumbo en el altavoz de un móvil. Arnés sin cambios en lo medido: no toca la física.
+
+## En red, bloque A: la red de mentira (08/11/2026, rama `67-en-red`)
+
+> Fase 6 del `TODO.md`, con su diseño en `MULTIJUGADOR.md`: correr en red, cada uno en su
+> dispositivo, siguiendo los pasos del cooperativo de Orbit Panic. El bloque A va antes que
+> los sockets, como el de Orbit: separa los fallos del protocolo de los de conexión.
+
+- **Cada coche lo simula quien lo conduce; el anfitrión arbitra.** El diseño de partida era
+  el de Orbit: el anfitrión simula la carrera entera y el invitado adelanta su coche y lo
+  corrige. Se descartó antes de escribirlo: el anfitrión vería soltar el gatillo ~60 ms tarde,
+  y un coche que en la pantalla del invitado pasaba la curva se saldría en la suya. Ahora, en
+  los demás dispositivos el coche es `remoto` (`slot.js`): no se simula, rueda con lo que dijo
+  su dueño. Los choques y el ganador son del anfitrión, que manda el golpe a quien lo recibe.
+- **La misma hora de carrera.** Cada uno cuenta desde su propia salida, y el invitado sale
+  cuando le llega la del anfitrión: a la misma hora de carrera están a la par. El anfitrión
+  adelanta cada reporte lo que tardó más lo que el otro salió después (~120 ms con 60 de ida);
+  el invitado, a los demás, casi nada. Gana la llegada menor, cada una en el reloj de su dueño.
+- **El golpe** (`fotografiar` / `anotarGolpe` / `aplicarGolpe`): lo que un choque le cambia a un
+  coche remoto (velocidad, derrape y cola; cómo sale, respecto a su rumbo; o lo que lo mueve
+  fuera). Hasta que el invitado confirma que lo tiene, el anfitrión lo aplica encima de cada
+  reporte; si no, un reporte de antes del golpe lo deshacía y el coche se salía dos veces. Y lo
+  aplica **antes** de adelantarlo: adelantado con la velocidad de antes del golpe, lo veía
+  meterse en el otro más de lo que se mete, y en los encuentros salían los dos 10 veces contra
+  3 en la mesa; aplicándolo antes, 4 contra 3.
+- **Lo que viaja**: un coche como una lista de 13 números (más la pose fuera del carril, o de
+  dónde lo recoge la mano). El progreso no viaja, es siempre `s − largo`: quitarlo bajó la
+  instantánea de cuatro coches de 407 a ≤ 401 B. Reportes a 30 Hz e instantáneas a 20 Hz:
+  3,3 KB/s a dos y 5,4 con cuatro coches.
+- **El arnés, sección 10**, con una red de mentira (60 ms de ida, 20 de variación, en orden
+  como TCP, en JSON): en los seis oficiales a dos, en los tres de cuatro con dos CPU y en *El
+  ocho largo* con cuatro personas, el anfitrión tiene al invitado a 2,3-2,6 px (p95; máx 4,4)
+  de donde va y el invitado pinta a los demás a 1,1-1,4 (máx 2,5); la vuelta del invitado en
+  red es la suya sin red (12,55 / 12,55 s en *La horquilla*); mismo ganador, vueltas y
+  llegadas en todos. Encuentros (siguen / sale uno / los dos): mesa 47 / 6 / 2, red 47 / 5 / 3,
+  con las salidas del invitado cuadrando siempre. Con un hueco de 450 ms, acaba igual (el
+  propio se va a 17 px y vuelve).
+- **Nada cambia sin red**: las secciones 1 a 9 dan, línea a línea, la misma salida que antes
+  (2351 aserciones). Con la sección 10, 2454.

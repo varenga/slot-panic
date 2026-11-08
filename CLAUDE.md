@@ -43,7 +43,7 @@ lo que ha pasado el arnés; el trabajo se hace en ramas.
 - `IDEAS.md` — tormenta de ideas a futuro. No compromete nada: una idea entra en
   `TODO.md` cuando toca.
 - `APP.md` — la app de las tiendas (Capacitor en `/app`): decisiones y roadmap por fases.
-- `MULTIJUGADOR.md` — el modo en red (Fase 5): reglas, servidor de salas común, protocolo y
+- `MULTIJUGADOR.md` — el modo en red (Fase 6): reglas, servidor de salas común, protocolo y
   bloques.
 
 **Ante una discrepancia, manda `TODO.md`.** Al terminar un bloque de trabajo, muévelo de
@@ -208,6 +208,16 @@ demás, en `BITACORA.md`). Mide y comprueba:
 9. **Los ajustes de rendimiento** (`ajustes.js`): los de serie, las vueltas de cada fila,
    lo guardado que no vale, Baja (lo gráfico al mínimo sin tocar lo elegido) y Alta, Auto
    (no baja con lentos sueltos; con 2 s lento, una vez) y que cada fila tiene su texto.
+10. **En red** (`nucleo/red.js`, `MULTIJUGADOR.md` §11): carreras con el anfitrión y sus
+   invitados unidos por una red de mentira (60 ms de ida, 20 de variación, en orden como
+   TCP), en los oficiales a dos, en los de cuatro con dos CPU y en *El ocho largo* con
+   cuatro personas. El anfitrión tiene a cada invitado a < 3,5 px de donde va a la misma
+   hora de carrera (p95; hoy ~2,5) y el invitado pinta a los demás a < 2,5 (hoy ~1,3); la
+   vuelta del invitado en red es la suya sin red (< 2 %); el ganador, las vueltas y las
+   llegadas son las mismas en todos; la instantánea < 500 B (hoy ≤ 401). En los
+   encuentros de la sección 3, con el invitado al otro lado, chocan donde en la mesa, sus
+   salidas cuadran en los dos lados y salen los dos como mucho el doble que en la mesa; y
+   con un hueco de 450 ms, acaba igual.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).
@@ -265,6 +275,9 @@ nucleo/campeonato.js   el campeonato: los oficiales en orden, victorias, tiempos
                        del que no acaba, a su ritmo) y el desempate
 nucleo/mangas.js       las mangas: cuántas pide un circuito (mangasDe), la serie y
                        su suma, también a media manga (sumaEnCarrera)
+nucleo/red.js          la carrera en red (MULTIJUGADOR.md §6), sin red ni DOM: el
+                       anfitrión (reportes, golpes, instantáneas) y el invitado
+                       (su coche, los golpes y los demás, a su hora de carrera)
 nucleo/fantasma.js     cada vuelta grabada a 1/30 s y reproducida con su reloj;
                        codificar() / decodificar() para guardarla y enviarla
 nucleo/momentos.js     los mejores momentos: el búfer de poses de la carrera, los
@@ -420,6 +433,11 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   una por carril, cada coche al carril de al lado en cada una (el `turno`); gana la
   menor suma, y en el campeonato cuenta la suma. Si los paneles de la cuenta atrás no
   caben donde siempre, el circuito dice dónde (`guia`).
+- **En red, cada coche lo simula quien lo conduce** (`MULTIJUGADOR.md` §6): en los demás
+  dispositivos es `remoto` (no se simula, rueda con lo que dijo su dueño) y `nucleo/red.js`
+  lo pone donde dice, a la propia hora de carrera. Los choques y el ganador, el anfitrión,
+  que manda el golpe a quien lo recibe (`aplicarGolpe`). Sin coches remotos, `slot.js` es
+  el de siempre: la sección 10 del arnés lo exige con las mismas cifras en las demás.
 - **Un dedo por jugador**: a dos, la mitad izquierda es J1 y la derecha J2; a uno, toda
   la pantalla. Tocando en la mesa, cuántos juegan lo dicen los dos botones de la portada
   (un toque fuera no arranca nada) y la salida espera a que cada uno apoye el dedo
