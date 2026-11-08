@@ -65,3 +65,37 @@ la portada, con cuatro coches siempre, las mangas y *La judía* y *La ele*
 - [ ] Playtest de *La judía* y *La ele*: ¿se entiende que el carril de fuera va casi a
       fondo y el de dentro hay que soltar?, ¿el carril de dentro de *La ele* (radio 25)
       se ve demasiado cerrado?
+
+# Fase 5 — En red
+
+Cada uno en su dispositivo, en una sala privada con código: primero a dos, después hasta
+cuatro en la pista de cuatro. El diseño y sus razones, en `MULTIJUGADOR.md`; sigue los
+pasos del cooperativo de Orbit Panic y usa el servidor de salas común (`salas.pnyk.es`).
+La prueba de red (el bloque 0) la superó Orbit con el mismo servidor. El orden importa:
+
+- [ ] **Bloque A: la red de mentira.** `nucleo/red.js` (instantáneas, adelanto del coche
+      propio, interpolación) y la sección «En red» del arnés, con dos carreras unidas por
+      una red de mentira (`MULTIJUGADOR.md` §11). Criterio: con 60 ms de ida y 20 de
+      variación, el coche propio se separa < 3 px del anfitrión fuera de los choques, la
+      carrera acaba igual en los dos y las demás secciones dan las mismas cifras.
+- [ ] **Bloque B: alta en salas.** `slot-panic` en `salas/juegos.js` (push = despliegue),
+      `vendor/pnyk/net.js` con `propagar.js` (comun 1.3.0), la copia a la raíz en
+      `gen-pages.mjs`, el `<script>` y `PRECACHE`. Criterio: `comprobar.js` contra
+      producción con `slot-panic` y `https://slot.pnyk.es`.
+- [ ] **Bloque C: pantallas.** EN RED en CARRERA, unirse (las casillas del código) y la
+      sala, en `sala.js`, en la mesa y en la lupa. Criterio: se entra en la sala con
+      teclado, ratón y tacto, en los siete idiomas, y cada motivo de cierre se lee.
+- [ ] **Bloque D: a dos en red.** Gatillo, instantáneas, adelanto y corrección,
+      interpolación y eventos (sonido y partículas). Criterio: a `?lag=60&jitter=20`, el
+      coche propio responde sin retardo, los demás se ven fluidos y un choque se entiende.
+- [ ] **Bloque E: reglas en red.** La salida que espera a todos, la revancha con el turno
+      cambiado, las mangas, la CPU en los huecos y en el coche de quien se va, segundo
+      plano y desconexiones. Criterio: cerrar cualquier pestaña deja a los demás en un
+      estado usable.
+- [ ] **Bloque G: publicación a dos.** Prosa y JSON-LD, ficha de Play, `pnyk.json` a
+      1.20.0, `BITACORA.md` y `CLAUDE.md`. Criterio: probado entre web y app de Android, y
+      con dos móviles reales en redes distintas.
+- [ ] **Bloque S4: salas de cuatro.** El servidor admite `max` hasta 4 sin cambiar las
+      salas de dos (Orbit), `net.js` a comun 1.4.0, la política común dice «con otras
+      personas», y hasta cuatro personas en la pista de cuatro (`MULTIJUGADOR.md` §5.2).
+      Criterio: Orbit sigue igual y cuatro navegadores corren juntos.

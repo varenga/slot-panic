@@ -43,6 +43,8 @@ lo que ha pasado el arnés; el trabajo se hace en ramas.
 - `IDEAS.md` — tormenta de ideas a futuro. No compromete nada: una idea entra en
   `TODO.md` cuando toca.
 - `APP.md` — la app de las tiendas (Capacitor en `/app`): decisiones y roadmap por fases.
+- `MULTIJUGADOR.md` — el modo en red (Fase 5): reglas, servidor de salas común, protocolo y
+  bloques.
 
 **Ante una discrepancia, manda `TODO.md`.** Al terminar un bloque de trabajo, muévelo de
 `TODO.md` a `BITACORA.md` con lo que se haya medido: `TODO.md` no acumula tareas marcadas.
