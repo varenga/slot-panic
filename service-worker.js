@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-d5b6f239';
+const CACHE = 'slotpanic-45655081';
 
 const PRECACHE = [
   'index.html',
@@ -74,6 +74,7 @@ const PRECACHE = [
   'vendor/pnyk/red.js',
   'vendor/pnyk/pie.js',
   'vendor/pnyk/consentimiento.js',
+  'vendor/pnyk/net.js',
   'style.css',
   'favicon.svg',
   'manifest.webmanifest',
@@ -85,13 +86,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '21f19ec9',
-  'en/index.html':                'd7474f51',
-  'pt/index.html':                '39916e30',
-  'gl/index.html':                'a8053a25',
-  'ca/index.html':                '612620c9',
-  'it/index.html':                'c573ba78',
-  'fr/index.html':                '93486ede',
+  'index.html':                   '31a0b60c',
+  'en/index.html':                'e2becff9',
+  'pt/index.html':                'ff239215',
+  'gl/index.html':                '23815749',
+  'ca/index.html':                '35aee1be',
+  'it/index.html':                '9cd288ca',
+  'fr/index.html':                'b25d4726',
   'ajustes.js':                   'e250c8f6',
   'analitica.js':                 'bccaef26',
   'audio.js':                     'ae2b16b7',
@@ -120,7 +121,7 @@ const HUELLAS = {
   'idiomas/gl.js':                '79598c91',
   'idiomas/it.js':                'b725ae04',
   'idiomas/pt.js':                '6d20a429',
-  'juego.js':                     '6d23f3f6',
+  'juego.js':                     'c7d10cff',
   'lupa.js':                      '5f4421a7',
   'luz.js':                       '4473708b',
   'medida.js':                    '03f10cbb',
@@ -149,6 +150,7 @@ const HUELLAS = {
   'vendor/pnyk/red.js':           '3e6b29f5',
   'vendor/pnyk/pie.js':           'bc866a2f',
   'vendor/pnyk/consentimiento.js':'df9a1409',
+  'vendor/pnyk/net.js':           '97762af0',
   'style.css':                    'cbe2f8ee',
   'favicon.svg':                  '423ea574',
   'manifest.webmanifest':         'ddd3731a',

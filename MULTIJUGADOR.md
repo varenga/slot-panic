@@ -104,11 +104,13 @@ Es el común (`C:\html\salas`, su `README.md`): no conoce el juego, empareja y r
 
 * **Alta**: `'slot-panic': ['https://slot.pnyk.es', ...APP]` en `salas/juegos.js`, push (=
   despliegue) y `node comprobar.js wss://salas.pnyk.es/ws https://slot.pnyk.es slot-panic`.
-* **Cliente**: `vendor/pnyk/net.js` con `propagar.js` (comun 1.3.0; Slot está en la 1.2.4).
+* **Cliente**: `vendor/pnyk/net.js` con `propagar.js` (comun 1.3.0). `juego.js` pone
   `net.juego = 'slot-panic'` y `net.version`, la de los mensajes de §6, que sube cuando cambian.
-* **Sitio**: como `vendor/` no se sirve, `tools/gen-pages.mjs` copia `net.js` a la raíz, como hace
-  Orbit; `index.html` lo carga con `<script>` antes que `juego.js` (deja `net` en `window`, como
-  `pie.js` deja `pieRed`) y va a mano en `PRECACHE`, porque no se llega a él siguiendo `import`.
+* **Sitio**: aquí `vendor/pnyk/` sí se sirve (el `.htaccess` no lo deniega, y de ahí cargan ya
+  `red.js`, `pie.js` y `consentimiento.js`), así que no se copia a la raíz como en Orbit: va en
+  `CLASICOS` de `tools/gen-pages.mjs`, que lo pone en un `<script>` antes que `juego.js` y en
+  `PRECACHE`. Es un script clásico: `net` queda en el ámbito global (un `const`, no en `window`), y
+  `juego.js` lo lee con `typeof net`.
 * **En local**, `npm run dev` en `C:\html\salas` (puerto 3001); `net.js` lo busca solo cuando la web
   se sirve por `http://`. `?lag=` y `?jitter=` simulan una mala red.
 

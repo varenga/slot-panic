@@ -123,7 +123,9 @@ const MODULOS = ['juego.js', ...modulos('juego.js').filter((f) => f !== 'juego.j
 const CATALOGOS_JS = IDIOMAS.map((l) => `idiomas/${l.codigo}.js`);
 
 // Los scripts clásicos que index.html carga antes del juego (vendor/pnyk/).
-const CLASICOS = ['vendor/pnyk/red.js', 'vendor/pnyk/pie.js', 'vendor/pnyk/consentimiento.js'];
+// net.js es el transporte de las carreras en red (MULTIJUGADOR.md §5): deja
+// `net` en el ámbito global y no abre ninguna conexión hasta crear o unirse.
+const CLASICOS = ['vendor/pnyk/red.js', 'vendor/pnyk/pie.js', 'vendor/pnyk/consentimiento.js', 'vendor/pnyk/net.js'];
 
 // Iconos del manifest, generados por tools/gen-icons.mjs desde favicon.svg.
 const ICONOS = [
@@ -285,6 +287,8 @@ ${idiomas}
   <script src="${base}vendor/pnyk/pie.js"></script>
   <!-- Aviso de cookies común de PNYK: GA4 solo si el jugador acepta (analitica.js lo inicia). -->
   <script src="${base}vendor/pnyk/consentimiento.js"></script>
+  <!-- El transporte de las carreras en red, con el servidor de salas común (salas.pnyk.es). -->
+  <script src="${base}vendor/pnyk/net.js"></script>
   <script type="module" src="${base}juego.js"></script>
 </body>
 </html>

@@ -76,6 +76,19 @@ let punteroConstructor = null; // el dedo que dibuja en el constructor
 let reloj = 0;                // s desde que se cargó la página (parpadeos)
 
 /*
+ * Las carreras en red (MULTIJUGADOR.md): `net` es el transporte común
+ * (vendor/pnyk/net.js, un script clásico que index.html carga antes). Aquí
+ * solo se presenta: el juego, con su slug de pnyk, y la versión de sus
+ * mensajes (nucleo/red.js), que sube cuando cambian. Sin él (una página vieja
+ * en caché), no hay carreras en red.
+ */
+const RED = typeof net === 'undefined' ? null : net;
+if (RED) {
+  RED.juego = 'slot-panic';
+  RED.version = 1;
+}
+
+/*
  * El modo lupa (`lupa.js`): en el móvil en vertical, en vez de pedir que se
  * gire, el lienzo pasa a 9:16 y sigue al J1. Con ?lupa se fuerza (para
  * probarlo en el ordenador), y ?lupa=1.5 cambia el zoom.

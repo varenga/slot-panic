@@ -75,10 +75,11 @@ La prueba de red (el bloque 0) la superó Orbit con el mismo servidor, y el bloq
 red de mentira, `nucleo/red.js` y la sección 10 del arnés) está hecho (`BITACORA.md`). El
 orden importa:
 
-- [ ] **Bloque B: alta en salas.** `slot-panic` en `salas/juegos.js` (push = despliegue),
-      `vendor/pnyk/net.js` con `propagar.js` (comun 1.3.0), la copia a la raíz en
-      `gen-pages.mjs`, el `<script>` y `PRECACHE`. Criterio: `comprobar.js` contra
-      producción con `slot-panic` y `https://slot.pnyk.es`.
+- [ ] **Bloque B: alta en salas.** Hecho en local: `net.js` (comun 1.3.0, rama
+      `68-comun-1.3.0`, traída a esta), en `CLASICOS` de `gen-pages.mjs`, y `slot-panic`
+      en `salas/juegos.js` (rama `02-slot-panic` de `salas`), probado sin `--dev` y con
+      dos pestañas. Falta publicar `salas` (push = despliegue) y el criterio:
+      `comprobar.js` contra producción con `slot-panic` y `https://slot.pnyk.es`.
 - [ ] **Bloque C: pantallas.** EN RED en CARRERA, unirse (las casillas del código) y la
       sala, en `sala.js`, en la mesa y en la lupa. Criterio: se entra en la sala con
       teclado, ratón y tacto, en los siete idiomas, y cada motivo de cierre se lee.

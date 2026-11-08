@@ -78,7 +78,11 @@ de `pnyk/comun/` (no se edita aquí: se actualiza desde pnyk con `node tools/pro
 `red.js` + `pie.js` dan los enlaces a los demás juegos de la familia Panic: `index.html`
 los carga con `<script>` (son scripts clásicos, no módulos ES; dejan `pieRed` en `window`)
 y `textosDelDocumento()` de `juego.js` pinta con ellos la línea «Otros juegos» del pie
-(`#otros`, clave `pie.otros`), también al cambiar de idioma.
+(`#otros`, clave `pie.otros`), también al cambiar de idioma. `net.js` es el transporte de
+las carreras en red con el servidor de salas común (`salas.pnyk.es`, repositorio
+`C:\html\salas`, donde `slot-panic` está en `juegos.js`): también lo carga `index.html` antes
+que el juego, deja `net` en el ámbito global y `juego.js` le dice su juego y la versión de
+sus mensajes (`MULTIJUGADOR.md` §5).
 
 Google Analytics 4 se carga **solo tras consentimiento**: `index.html` carga el aviso común
 (`vendor/pnyk/consentimiento.js`) y `analitica.js` lo inicia; el botón «Cookies» (`#cookies`)
