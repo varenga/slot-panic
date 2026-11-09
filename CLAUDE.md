@@ -340,6 +340,8 @@ galeria.js             COMUNIDAD (galería o constructor) y la galería de circu
 publicos.js            la red de la galería (api.php): nunca bloquea el juego
 records.js             la red de los récords de vuelta (api.php): la tabla y firmar
 tablaRecords.js        RÉCORDS (la tabla y el fantasma elegido) y la firma
+sala.js                las pantallas en red (MULTIJUGADOR.md §4): EN RED, unirse
+                       (el código) y la sala. Presentación: no ve `net`
 api.php                los circuitos públicos (PHP + MySQL); config.php, fuera de git
 servidor/cuadricula.php  la cuadrícula en PHP: la validación del servidor (no se sirve)
 servidor/records.php   qué vuelta se acepta como récord (no se sirve)

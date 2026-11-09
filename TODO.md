@@ -72,14 +72,13 @@ Cada uno en su dispositivo, en una sala privada con código: primero a dos, desp
 cuatro en la pista de cuatro. El diseño y sus razones, en `MULTIJUGADOR.md`; sigue los
 pasos del cooperativo de Orbit Panic y usa el servidor de salas común (`salas.pnyk.es`).
 La prueba de red (el bloque 0) la superó Orbit con el mismo servidor; el bloque A (la
-red de mentira, `nucleo/red.js` y la sección 10 del arnés) y el B (`net.js` y el alta en
-`salas.pnyk.es`) están hechos (`BITACORA.md`). El orden importa:
+red de mentira, `nucleo/red.js` y la sección 10 del arnés), el B (`net.js` y el alta en
+`salas.pnyk.es`) y el C (las pantallas, `sala.js`) están hechos (`BITACORA.md`). El orden
+importa:
 
-- [ ] **Bloque C: pantallas.** EN RED en CARRERA, unirse (las casillas del código) y la
-      sala, en `sala.js`, en la mesa y en la lupa. Criterio: se entra en la sala con
-      teclado, ratón y tacto, en los siete idiomas, y cada motivo de cierre se lee.
-- [ ] **Bloque D: a dos en red.** `juego.js` con `net` y `red.js`: reportes,
-      instantáneas, golpes, los remotos en el dibujo y los eventos (sonido y partículas).
+- [ ] **Bloque D: a dos en red.** EMPEZAR en la sala (hoy no hace nada) y `juego.js` con
+      `net` y `red.js`: reportes, instantáneas, golpes, los remotos en el dibujo y los
+      eventos (sonido y partículas).
       Criterio: a `?lag=60&jitter=20`, el coche propio responde sin retardo, los demás se
       ven fluidos y un golpe que llega 60 ms tarde se entiende en quien lo recibe.
 - [ ] **Bloque E: reglas en red.** La salida que espera a todos, la revancha con el turno

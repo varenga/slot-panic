@@ -2265,3 +2265,30 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
 - **El push no reinició la aplicación**: nueve minutos después, `/estado` seguía con el
   arranque de antes, aunque Plesk tenía el commit desplegado. Hizo falta *Restart App* a mano en
   la pantalla de Node.js. Tras un push a `salas`, mirar que `/estado` cambie de `arranque`.
+
+## En red, bloque C: las pantallas (09/11/2026, rama `67-en-red`)
+
+- **`sala.js`**, presentación como `menu.js`: EN RED (crear o unirse, con el motivo del último
+  cierre debajo), UNIRSE y la sala, en la mesa y en la lupa. Se entra con **EN RED ›**, la
+  última fila de CARRERA, o con la tecla N. `juego.js` lleva la sala (`redUI`) y los
+  manejadores de `net`.
+- **El código, con un teclado en el lienzo** de las 31 letras de `NET_ALFABETO` y ⌫, no con
+  ▲▼ por casilla como la firma: eran hasta 15 toques por letra. Tecleado también (en UNIRSE la M
+  es una letra, no el sonido). Tocar una casilla borra desde ella: un fallo («no existe»,
+  «sin red»…) se queda junto al código y se corrige una letra sin escribirlo entero.
+- **La sala**: el código en grande, los dos puestos (rojo el anfitrión, azul el invitado: el
+  color es del puesto), el coche de cada uno (el propio, con ‹ › o K) y si está; el anfitrión
+  elige pista, circuito, vueltas y, en la de cuatro, la CPU, con las filas y las teclas de la
+  portada. Detrás, la exhibición en el circuito elegido. El invitado lo ve apagado.
+- **Dos mensajes** (versión 1, aún sin publicar): `{k:'yo', modelo}` del invitado al
+  anfitrión y `{k:'sala', clave, pub, duracion, nivel, modelos}` del anfitrión cada vez que
+  cambia algo. Un circuito de la cuadrícula viaja en su clave (`c-<código>`) y lo construye el
+  invitado; uno de la galería lleva además su nombre. Al salir, el invitado recupera el
+  circuito que tenía.
+- **Probado** con dos pestañas contra el servidor de salas en local, una en la mesa (en
+  gallego) y otra en la lupa (en gallego y en francés): crear, unirse con un código que no
+  existe y corregirlo, los cambios del anfitrión y su coche en el invitado, la pista de cuatro
+  con su fila de CPU, el aviso «tu rival ha cerrado la sala» y «sin red» con el servidor
+  parado. En la lupa, el título de la barra iba encima de VOLVER: ahora va a su derecha y se
+  encoge si no cabe.
+- **EMPEZAR** se ve (apagado hasta que hay rival) pero aún no arranca nada: es el bloque D.

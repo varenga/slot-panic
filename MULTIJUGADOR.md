@@ -81,8 +81,9 @@ en `BITACORA.md`.
 * El código, el del servidor común: 4 caracteres de `NET_ALFABETO`, sin los que se confunden.
 * Pantallas nuevas en un módulo propio, `sala.js`, como `menu.js`: presentación, y la misma
   función da la caja para dibujar y para pulsar. También en la lupa. Los textos, en `idiomas/`.
-  * **Unirse**: el código en cuatro casillas, con ▲▼, tecleado o tocado, como el alias de la firma
-    (`tablaRecords.js`), solo con el alfabeto del código. Los fallos —no existe, llena, demasiados
+  * **Unirse**: el código en cuatro casillas, tecleado o con un teclado en el lienzo que solo tiene
+    las letras del código (y ⌫). Con ▲▼ por casilla, como la firma, eran hasta 15 toques por letra.
+    Tocar una casilla borra desde ella. Los fallos —no existe, llena, demasiados
     intentos, sin red, versión— se quedan aquí, junto al código, para corregirlo sin escribirlo entero.
   * **La sala**: el código en grande mientras se espera; los puestos, con su color, su coche y si
     están conectados; el anfitrión ve además circuito, pista, vueltas y EMPEZAR. De aquí solo se sale
@@ -232,7 +233,7 @@ Las casillas están en la Fase 6 del `TODO.md`. El orden importa:
    con una red de mentira, con retraso, variación y huecos. Va antes que los sockets a propósito,
    como el A de Orbit: separa los fallos del protocolo de los de conexión. **Hecho** (§11).
 2. **B. Alta en salas.** `juegos.js`, `net.js` (comun 1.3.0), la copia a la raíz y `PRECACHE`.
-3. **C. Pantallas.** EN RED, crear, unirse y la sala, en la mesa y en la lupa.
+3. **C. Pantallas.** EN RED, crear, unirse y la sala, en la mesa y en la lupa. **Hecho.**
 4. **D. A dos en red.** `juego.js` con `net` y `red.js`: reportes, instantáneas, golpes, los
    remotos en el dibujo y los eventos.
 5. **E. Reglas en red.** La salida que espera, la revancha, las mangas, la CPU en los huecos,

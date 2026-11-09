@@ -266,7 +266,7 @@ export function aceptarNormas() {
 }
 
 export const estado = {
-  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'momentos' | 'constructor' | 'circuitos' | 'galeria'
+  fase: 'portada',     // 'portada' | 'carrera' | 'fin' | 'momentos' | 'constructor' | 'circuitos' | 'galeria' | 'red' | 'unirse' | 'sala'
   circuito: null,      // el que se corre, de CIRCUITOS (circuitos/indice.js)
   escenario: null,     // 'verde' | 'tierra' | 'desierto' | 'nieve'
   decorado: null,      // lo que generarDecorado() sembró para circuito + escenario

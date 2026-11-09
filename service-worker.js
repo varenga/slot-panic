@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-45655081';
+const CACHE = 'slotpanic-fd078075';
 
 const PRECACHE = [
   'index.html',
@@ -70,6 +70,7 @@ const PRECACHE = [
   'publicos.js',
   'records.js',
   'repeticion.js',
+  'sala.js',
   'tablaRecords.js',
   'vendor/pnyk/red.js',
   'vendor/pnyk/pie.js',
@@ -86,13 +87,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '31a0b60c',
-  'en/index.html':                'e2becff9',
-  'pt/index.html':                'ff239215',
-  'gl/index.html':                '23815749',
-  'ca/index.html':                '35aee1be',
-  'it/index.html':                '9cd288ca',
-  'fr/index.html':                'b25d4726',
+  'index.html':                   '5bcf9397',
+  'en/index.html':                '2678065b',
+  'pt/index.html':                'dc7b5ab3',
+  'gl/index.html':                'f3e22795',
+  'ca/index.html':                '7724590a',
+  'it/index.html':                '98831702',
+  'fr/index.html':                'f8cc035c',
   'ajustes.js':                   'e250c8f6',
   'analitica.js':                 'bccaef26',
   'audio.js':                     'ae2b16b7',
@@ -111,21 +112,21 @@ const HUELLAS = {
   'constructor.js':               'a4944864',
   'dibujo.js':                    'fb3e15a9',
   'escenarios.js':                '448d173f',
-  'estado.js':                    'a2c72cb1',
+  'estado.js':                    'd481a982',
   'galeria.js':                   '625d65a3',
   'i18n.js':                      '1859ef57',
-  'idiomas/ca.js':                '7f7b91fd',
-  'idiomas/en.js':                'e709cc95',
-  'idiomas/es.js':                '7653e74e',
-  'idiomas/fr.js':                'f3b4473e',
-  'idiomas/gl.js':                '79598c91',
-  'idiomas/it.js':                'b725ae04',
-  'idiomas/pt.js':                '6d20a429',
-  'juego.js':                     'c7d10cff',
+  'idiomas/ca.js':                'c78be19c',
+  'idiomas/en.js':                '3c62d477',
+  'idiomas/es.js':                'f656685c',
+  'idiomas/fr.js':                '1f04acf9',
+  'idiomas/gl.js':                '4f6389db',
+  'idiomas/it.js':                '72d61898',
+  'idiomas/pt.js':                '60cac8ed',
+  'juego.js':                     '4d8f8ad0',
   'lupa.js':                      '5f4421a7',
   'luz.js':                       '4473708b',
   'medida.js':                    '03f10cbb',
-  'menu.js':                      '57bb3e01',
+  'menu.js':                      '7c596985',
   'nucleo/campeonato.js':         '5fab5848',
   'nucleo/circuito.js':           'eeff2a68',
   'nucleo/cuadricula.js':         'ae7eca4d',
@@ -146,6 +147,7 @@ const HUELLAS = {
   'publicos.js':                  '63cec294',
   'records.js':                   'f29f8ad1',
   'repeticion.js':                '080fef0c',
+  'sala.js':                      'b67ec48c',
   'tablaRecords.js':              '68277b09',
   'vendor/pnyk/red.js':           '3e6b29f5',
   'vendor/pnyk/pie.js':           'bc866a2f',
