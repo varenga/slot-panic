@@ -2292,3 +2292,40 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   parado. En la lupa, el título de la barra iba encima de VOLVER: ahora va a su derecha y se
   encoge si no cabe.
 - **EMPEZAR** se ve (apagado hasta que hay rival) pero aún no arranca nada: es el bloque D.
+
+## En red, bloque D: la carrera a dos (09/11/2026, rama `67-en-red`)
+
+- **EMPEZAR** (o Intro) en la sala: el anfitrión manda la salida (`{k:'go', turno,
+  duracion}`) y sale ya; el invitado, cuando le llega, aunque esté en el cartel de fin o
+  viendo los momentos. Los dos crean la misma carrera: el circuito y los coches de la sala,
+  el color de cada puesto (`COLORES_RED`) y, en la pista de cuatro, la CPU en los carriles
+  libres, que solo simula el anfitrión. El turno sube en cada salida, así que la revancha ya
+  cambia de carril.
+- **El paso de la carrera**, en `avanzarMundo`: sin red, `avanzarSlot` como siempre; en red,
+  `avanzarAnfitrion` o `avanzarInvitado` (`nucleo/red.js`), y lo que devuelven, a `net`.
+  `alRecibir` lleva los reportes al anfitrión y las instantáneas y golpes al invitado. El
+  sonido, las partículas y la vibración salen de los mismos eventos de siempre (los del
+  invitado incluyen los que deduce de las instantáneas).
+- **Los mandos**: el propio, con cualquiera de las dos teclas del gatillo o un dedo en
+  cualquier sitio; los de la CPU, del anfitrión; los remotos, `null`.
+- **El coche propio no es siempre el 0**: el invitado lleva el 1. `humanos` dice solo cuál es
+  el propio (para el sonido y la vibración), y los nombres van por el puesto, J1 y J2 en los
+  dos dispositivos (`ponerPuestosRed` en `pantalla.js`). La lupa, el oído, el acelerador y la
+  depuración siguen al propio (`cochePropio`), y el marcador y el mapa de la lupa lo ponen a
+  la izquierda y resaltado (`propio` en `dibujarMarcadorLupa` y `dibujarMapa`, 0 por
+  defecto). Dos fallos de esto, vistos al probar: `aplicarVista` tomaba al invitado por «a
+  dos en la misma pantalla» (su `humanos[1]`) y quitaba la lupa, en carrera y al salir de
+  ella.
+- **Sin récords ni fantasma** en red: `conRecords()` es falso. La repetición de los momentos
+  sí, la de cada uno. En el cartel de fin, SALA (y MOMENTOS): de vuelta a la sala, que sigue
+  abierta. Si el «fin» llega dos veces en un fotograma (el del anfitrión y el de un reporte),
+  `terminarCarrera` corre una vez.
+- **Probado** con el anfitrión en una pestaña y el invitado en un `<iframe>` dentro de ella
+  (en lupa), contra el servidor de salas en local y a `?lag=60&jitter=20`: Chrome tenía la
+  ventana a 1,5 fps (no estaba a la vista) y `requestAnimationFrame` se cambió, solo para la
+  prueba, por un temporizador de 16 ms (~40 fps). En la pista de dos y en *El ocho largo*
+  con dos CPU: los coches en el mismo sitio en los dos lados, el mismo ganador, tiempo y
+  clasificación, la revancha con el turno cambiado y, si el invitado se va a media carrera,
+  «tu rival ha cerrado la sala» en el anfitrión. Lo que no se ha podido juzgar así (si el
+  propio responde sin retardo, si los demás se ven fluidos, si un golpe se entiende) queda
+  como playtest en `TODO.md`.

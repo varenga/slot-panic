@@ -235,7 +235,7 @@ Las casillas están en la Fase 6 del `TODO.md`. El orden importa:
 2. **B. Alta en salas.** `juegos.js`, `net.js` (comun 1.3.0), la copia a la raíz y `PRECACHE`.
 3. **C. Pantallas.** EN RED, crear, unirse y la sala, en la mesa y en la lupa. **Hecho.**
 4. **D. A dos en red.** `juego.js` con `net` y `red.js`: reportes, instantáneas, golpes, los
-   remotos en el dibujo y los eventos.
+   remotos en el dibujo y los eventos. **Hecho**; falta el playtest.
 5. **E. Reglas en red.** La salida que espera, la revancha, las mangas, la CPU en los huecos,
    segundo plano y desconexiones.
 6. **G. Publicación a dos.** Prosa, ficha de Play, versión 1.20.0 y `BITACORA.md`.

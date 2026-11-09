@@ -367,5 +367,7 @@ export default {
   'sala.tuCoche': "El teu cotxe",
   'sala.empezar': "COMENÇAR",
   'sala.esperaAnfitrion': "Qui ha creat la sala tria el circuit i comença",
-  'sala.teclaCoche': "K · canvia el teu cotxe"
+  'sala.teclaCoche': "K · canvia el teu cotxe",
+  'fin.botonSala': "SALA",
+  'fin.volverSala': "ENTER PER TORNAR A LA SALA · O PER VEURE ELS MOMENTS"
 };

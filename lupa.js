@@ -231,7 +231,7 @@ function caminoEje(circuito) {
 }
 
 /** El circuito entero, la meta y los coches; el J1, con un aro. */
-export function dibujarMapa(circuito, coches) {
+export function dibujarMapa(circuito, coches, propio = 0) {
   const { escala, x, y } = encajeMapa(circuito);
   ctx.fillStyle = COLOR.panel;
   rectanguloRedondo(MAPA.x, MAPA.y, MAPA.ancho, MAPA.alto, 10);
@@ -260,7 +260,7 @@ export function dibujarMapa(circuito, coches) {
   for (let i = coches.length - 1; i >= 0; i--) {
     const { coche } = coches[i];
     const cx = x + coche.x * escala, cy = y + coche.y * escala;
-    if (i === 0) {
+    if (i === propio) {
       ctx.fillStyle = COLOR.hud;
       circulo(cx, cy, 9);
     }
@@ -276,8 +276,9 @@ export function dibujarMapa(circuito, coches) {
  * vuelta; en el centro, la cuenta atrás o el tiempo. Debajo del J1, su
  * potencia. En la pista de cuatro, a la derecha, el puesto del J1; en mangas,
  * con `suma` (`sumaEnCarrera`), el de la suma y, debajo, lo que lleva en ella.
+ * En red, a la izquierda va el coche `propio`, que puede no ser el 0.
  */
-export function dibujarMarcadorLupa(carrera, humanos, rotulo = null, suma = null) {
+export function dibujarMarcadorLupa(carrera, humanos, rotulo = null, suma = null, propio = 0) {
   ctx.fillStyle = COLOR.banda;
   ctx.fillRect(0, 0, ANCHO_LUPA, BARRA);
   if (suma) {
@@ -285,11 +286,13 @@ export function dibujarMarcadorLupa(carrera, humanos, rotulo = null, suma = null
     texto(t('hud.suma', { n: puesto, total: carrera.coches.length }), ANCHO_LUPA - 12, BARRA / 2 - 8, { tam: 18, color: COLOR.hud, peso: 800, alinear: 'right' });
     texto(diferenciaSuma(suma, 0), ANCHO_LUPA - 12, BARRA - 12, { tam: 14, color: puesto === 1 ? COLOR.ambar : COLOR.texto, peso: 700, alinear: 'right' });
   } else if (carrera.coches.length > 2) {
-    const puesto = ordenEnCarrera(carrera).indexOf(0) + 1;
+    const puesto = ordenEnCarrera(carrera).indexOf(propio) + 1;
     texto(t('hud.puesto', { n: puesto, total: carrera.coches.length }), ANCHO_LUPA - 12, BARRA / 2 - 6, { tam: 20, color: COLOR.hud, peso: 800, alinear: 'right' });
   }
-  carrera.coches.slice(0, carrera.coches.length > 2 ? 1 : 2).forEach((slot, i) => {
-    const izquierda = i === 0;
+  const lados = carrera.coches.length > 2 ? [propio] : [propio, 1 - propio];
+  lados.forEach((i, k) => {
+    const slot = carrera.coches[i];
+    const izquierda = k === 0;
     const borde = izquierda ? 12 : ANCHO_LUPA - 12;
     const lado = izquierda ? 1 : -1;
     const alinear = izquierda ? 'left' : 'right';

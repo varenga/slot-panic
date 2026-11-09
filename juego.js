@@ -47,7 +47,7 @@ import {
 } from './particulas.js';
 import {
   botonesFin, cajaRecordsPortada, cajasJugar, dibujarAvisos, dibujarDepuracion, dibujarFinSlot, dibujarFps, dibujarMarcadorSlot, dibujarPortada, idsFinCampeonato,
-  marcoMenu, nombreCircuito
+  marcoMenu, nombreCircuito, ponerPuestosRed
 } from './pantalla.js';
 import {
   actualizarChirrido, actualizarCoches, alternarSilencio, asegurarAudio, pausarAudio, reanudarAudio, sfxBache, sfxChoque, sfxClac, sfxCuenta,
@@ -60,7 +60,8 @@ import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra
 import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from './galeria.js';
 import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js';
 import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
-import { cajasRed, cajasSala, cajasUnirse, dibujarRed, dibujarSala, dibujarUnirse } from './sala.js';
+import { cajasRed, cajasSala, cajasUnirse, COLORES_RED, dibujarRed, dibujarSala, dibujarUnirse } from './sala.js';
+import { avanzarAnfitrion, avanzarInvitado, crearAnfitrion, crearInvitado, recibirDelAnfitrion, recibirReporte } from './nucleo/red.js';
 import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, oscurecer, pintarHora } from './luz.js';
 import { ajuste, cambiarAjuste, OPCIONES, ponerAjustes, vigilar } from './ajustes.js';
 import { anotarFotograma, crearMedida } from './medida.js';
@@ -708,10 +709,15 @@ if (RED) {
   RED.alRecibir = (datos) => {
     const { sala } = redUI;
     if (!sala || !datos) return;
+    const { red } = estado;
     if (datos.k === 'yo' && sala.puesto === 0) {
       sala.modelos[1] = modeloValido(datos.modelo);
       contarSala();
     } else if (datos.k === 'sala' && sala.puesto === 1) ponerSala(datos);
+    else if (datos.k === 'go' && sala.puesto === 1) salirInvitado(datos);
+    // La carrera (nucleo/red.js): reportes al anfitrión; instantáneas y golpes al invitado.
+    else if (datos.k === 'c' && red?.anf) recibirReporte(red.anf, 1, datos);
+    else if ((datos.k === 's' || datos.k === 'g') && red?.inv) recibirDelAnfitrion(red.inv, datos);
   };
   RED.alCerrar = (motivo) => {
     redUI.conectando = false;
@@ -788,8 +794,9 @@ function salirDeSala() {
   abrirRed();
 }
 
-/* Olvida la sala; el invitado recupera el circuito que tenía. */
+/* Olvida la sala (y la carrera en red, si la había); el invitado recupera el circuito que tenía. */
 function dejarSala() {
+  acabarRed();
   if (redUI.antes) {
     estado.circuito = redUI.antes;
     estado.decorado = generarDecorado(estado.circuito, estado.escenario);
@@ -858,6 +865,97 @@ function datosSala() {
   if (sala.puesto === 0) return estado;
   return { circuito: estado.circuito, duracion: sala.duracion ?? estado.duracion, nivel: sala.nivel ?? estado.nivel };
 }
+
+// --- En red: la carrera ------------------------------------------------------
+
+/*
+ * EMPEZAR (MULTIJUGADOR.md §6): el anfitrión manda la salida (`go`), con el
+ * turno de esta carrera y sus vueltas, y sale ya; el invitado, cuando le
+ * llega. Cada uno corre su carrera con su coche: el anfitrión arbitra
+ * (`crearAnfitrion`) y el invitado sigue lo que le cuenta (`crearInvitado`).
+ * La revancha con el turno cambiado, las mangas y la salida que espera a
+ * todos son del bloque E: aquí, una carrera suelta.
+ */
+function empezarEnRed() {
+  const { sala } = redUI;
+  if (!sala || sala.puesto !== 0 || !sala.compa) return;
+  estado.turno = (estado.turno + 1) % estado.circuito.carriles.length;
+  const salida = { k: 'go', turno: estado.turno, duracion: estado.duracion };
+  RED.enviar(salida);
+  correrEnRed(salida, 0);
+}
+
+function salirInvitado(datos) {
+  const n = estado.circuito.carriles.length;
+  if (!Number.isInteger(datos.turno) || datos.turno < 0 || datos.turno >= n || !CARRERAS.some((c) => c.id === datos.duracion)) return;
+  correrEnRed(datos, 1);
+}
+
+/*
+ * La carrera en red, igual en los dos dispositivos: el circuito de la sala,
+ * los coches de la sala, el color de cada puesto y, en la pista de cuatro,
+ * la CPU (que solo simula el anfitrión) en los demás carriles.
+ */
+function correrEnRed({ turno, duracion }, propio) {
+  const { sala } = redUI;
+  const n = estado.circuito.carriles.length;
+  const colores = [...COLORES_RED, ...COLORES_COCHE.filter((c) => !COLORES_RED.includes(c))].slice(0, n);
+  const modelos = colores.map((_, i) => sala.modelos[i] ?? COCHE_REFERENCIA);
+  const carrera = crearCarreraSlot(estado.circuito, colores, turno, { vueltas: CARRERAS.find((c) => c.id === duracion).vueltas, modelos });
+  carrera.anochece = !!CARRERAS.find((c) => c.id === duracion).anochece;
+  Object.assign(estado, {
+    fase: 'carrera', carrera, campeonato: null, serie: null, denuncia: null, menu: null, espera: false, fantasma: null,
+    ultimaAvisada: false, trasMeta: 0, momentos: null, reproduccion: null, avisoFin: null
+  });
+  // `humanos`: el propio. Los nombres, por el puesto (J1 y J2), los ponen ponerPuestosRed.
+  estado.humanos = carrera.coches.map((_, i) => i === propio);
+  ponerPuestosRed(2);
+  const { piloto } = NIVELES_CPU.find((nv) => nv.id === (propio === 0 ? estado.nivel : sala.nivel ?? estado.nivel));
+  estado.pilotos = carrera.coches.map(() => crearPiloto({ ...piloto, semilla: semilla() }));
+  estado.red = propio === 0 ? { propio, anf: crearAnfitrion(carrera, [1]) } : { propio, inv: crearInvitado(carrera, 1) };
+  estado.repeticion = crearRepeticion(estado.circuito, n);
+  punteros.clear();
+  limpiarPista();
+  aplicarVista();
+  evento('empezar_red', { circuito: estado.circuito.clave, vueltas: carrera.vueltas, anfitrion: propio === 0, lupa: estado.lupa, tactil: estado.tactil });
+}
+
+/* Se acaba la carrera en red (o la sala): vuelve a ser la de siempre. */
+function acabarRed() {
+  if (!estado.red) return;
+  estado.red = null;
+  // Su coche era el propio, no el de un J2 en la misma pantalla: si no, aplicarVista lo tomaría por «a dos».
+  estado.humanos = estado.humanos.map(() => false);
+  ponerPuestosRed(null);
+}
+
+/* SALA en el cartel de fin: de vuelta a la sala, que sigue abierta. */
+function volverASala() {
+  acabarRed();
+  Object.assign(estado, { fase: 'sala', momentos: null, reproduccion: null, trasMeta: 0, avisoFin: null });
+  punteros.clear();
+  exhibicion();
+  aplicarVista();
+}
+
+/*
+ * Los mandos en red: el propio, con cualquiera de las dos teclas o con un
+ * dedo en cualquier sitio (cada uno tiene la pantalla entera); los de la CPU,
+ * en el anfitrión; los remotos ruedan solos (null).
+ */
+function mandosRed() {
+  const { carrera, red } = estado;
+  listaMandos.length = carrera.coches.length;
+  for (let i = 0; i < carrera.coches.length; i++) {
+    const slot = carrera.coches[i];
+    if (i === red.propio) listaMandos[i] = pulsada(CONTROLES_SLOT[0]) || pulsada(CONTROLES_SLOT[1]) || punteros.size > 0 ? APRETADO : SUELTO;
+    else listaMandos[i] = red.anf && !slot.remoto ? decidirSlot(estado.pilotos[i], slot, carrera.circuito) : null;
+  }
+  return listaMandos;
+}
+
+/** El coche que se sigue (la lupa, el oído, la depuración): el propio en red; si no, el del J1. */
+const cochePropio = () => estado.carrera.coches[estado.red?.propio ?? 0];
 
 /** Salir de una carrera: a la portada (abandonando el campeonato) o, si era la prueba, al constructor. */
 function alMenu() {
@@ -955,7 +1053,7 @@ function correrManga() {
 // --- Récords -------------------------------------------------------------------
 
 /** Solo los circuitos oficiales tienen récords (y fantasma). */
-const conRecords = () => CIRCUITOS.includes(estado.circuito);
+const conRecords = () => !estado.red && CIRCUITOS.includes(estado.circuito);
 
 /*
  * El fantasma propio del J1 (el que se guarda en el dispositivo). El del
@@ -1186,7 +1284,7 @@ function idsFinSuelta() {
 
 /** Los botones del fin; si hay momentos, MOMENTOS tras los dos primeros. */
 function idsFin() {
-  const ids = enMangas() ? ['manga', 'menu'] : estado.campeonato ? idsFinCampeonato(estado.campeonato) : idsFinSuelta();
+  const ids = estado.red ? ['sala'] : enMangas() ? ['manga', 'menu'] : estado.campeonato ? idsFinCampeonato(estado.campeonato) : idsFinSuelta();
   return estado.momentos?.lista.length ? [...ids.slice(0, 2), 'momentos', ...ids.slice(2)] : ids;
 }
 
@@ -1430,8 +1528,13 @@ function textosDelDocumento() {
 
 /** Los coches y sus efectos. */
 function avanzarMundo(mandosCoches, dt) {
-  const { carrera } = estado;
-  avanzarSlot(carrera, mandosCoches, dt);
+  const { carrera, red } = estado;
+  if (!red) avanzarSlot(carrera, mandosCoches, dt);
+  else {
+    // En red, el anfitrión arbitra y el invitado sigue: lo que salga, a la red.
+    const salida = red.anf ? avanzarAnfitrion(red.anf, mandosCoches, dt) : avanzarInvitado(red.inv, mandosCoches[red.propio], dt);
+    for (const { d } of salida) RED?.enviar(d);
+  }
   for (const evento of carrera.eventos) {
     // Rápido por los baches, cada uno levanta polvo.
     if (evento.tipo === 'bache' && evento.fuerza > 0.7) {
@@ -1566,7 +1669,7 @@ function panDe(x, centro) {
   return Math.max(-0.7, Math.min(0.7, 0.7 * (x - centro) / (ANCHO / 2)));
 }
 
-const centroDelOido = () => (estado.lupa ? estado.carrera.coches[0].coche.x : ANCHO / 2);
+const centroDelOido = () => (estado.lupa ? cochePropio().coche.x : ANCHO / 2);
 
 const ALTURA_PUENTE_SONIDO = 0.13;   // sobre esto va por el puente: los baches botan menos
 const sonidoCoches = [];   // lo que oye cada coche: cada fotograma, los mismos objetos
@@ -1578,7 +1681,7 @@ function ponerSonidoCoche(i, v, potencia, slot, enCarril, centro) {
   c.ficha = slot.ficha;
   c.pan = panDe(slot.coche.x, centro);
   // Lo cerca que pasa del oído: el borde de abajo de la mesa o, en la lupa, el J1.
-  const oidoY = estado.lupa ? estado.carrera.coches[0].coche.y : ALTO;
+  const oidoY = estado.lupa ? cochePropio().coche.y : ALTO;
   c.cerca = 1 / (1 + (Math.hypot(slot.coche.x - centro, slot.coche.y - oidoY) / 350) ** 2);
   c.humano = Boolean(estado.humanos[i]);
   c.puente = enCarril && slot.altura > ALTURA_PUENTE_SONIDO;
@@ -1727,7 +1830,7 @@ const ESCENAS = {
       else if (codigo === 'KeyC') opcionSala('circuito');
       else if (codigo === 'KeyV') opcionSala('duracion');
       else if (codigo === 'KeyD') opcionSala('nivel');
-      // EMPEZAR (Intro), con el bloque D.
+      else if (empezar(codigo)) empezarEnRed();
     },
     pulsar(p) {
       punteros.clear();
@@ -1736,7 +1839,7 @@ const ESCENAS = {
       if (caja?.id === 'salir') salirDeSala();
       else if (caja?.id === 'modelo') cambiarModeloEnSala(caja.paso);
       else if (caja?.id === 'opcion') opcionSala(caja.opcion);
-      // EMPEZAR, con el bloque D.
+      else if (caja?.id === 'empezar') empezarEnRed();
     }
   },
 
@@ -1908,7 +2011,7 @@ const ESCENAS = {
         }
         estado.espera = false;
       }
-      avanzarMundo(mandos(), dt);
+      avanzarMundo(estado.red ? mandosRed() : mandos(), dt);
       grabarCuadro(estado.repeticion, carrera, dt, estado.humanos);
       for (const evento of carrera.eventos) {
         if (evento.tipo === 'cuenta') sfxCuenta();
@@ -1936,7 +2039,7 @@ const ESCENAS = {
             estado.ultimaAvisada = true;
             estado.avisos.push({ texto: t('aviso.ultima'), vida: 1.6, color: COLOR.rojo });
           }
-        } else if (evento.tipo === 'fin') terminarCarrera();
+        } else if (evento.tipo === 'fin' && estado.fase === 'carrera') terminarCarrera();   // en red puede llegar dos veces
       }
       // Se filtran en el sitio: no una lista nueva en cada fotograma.
       let quedan = 0;
@@ -1947,16 +2050,22 @@ const ESCENAS = {
     dibujar() {
       dibujarMundo();
       if (estado.lupa) {
-        dibujarMapa(estado.circuito, estado.carrera.coches);
-        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCarrera(), sumaDelMarcador());
+        const propio = estado.red?.propio ?? 0;
+        dibujarMapa(estado.circuito, estado.carrera.coches, propio);
+        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCarrera(), sumaDelMarcador(), propio);
         dibujarAvisosLupa(estado.avisos);
-        if (conAcelerador()) dibujarAcelerador(estado.carrera.coches[0], punteros.size > 0);
+        if (conAcelerador()) dibujarAcelerador(cochePropio(), punteros.size > 0);
         return;
       }
       dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCarrera(), sumaDelMarcador(), estado.espera ? listos() : null);
       dibujarAvisos(estado.avisos);
     },
     teclear(codigo) {
+      // En red, Escape deja la sala (y al otro, con su aviso); nada más se repite.
+      if (estado.red) {
+        if (codigo === 'Escape') salirDeSala();
+        return;
+      }
       // En el campeonato no se repite una carrera a medias; en mangas, solo en la primera.
       if (codigo === 'KeyR' && !estado.campeonato && !estado.serie?.mangas.length) empezarCarrera();
       else if (codigo === 'Escape') alMenu();
@@ -2000,6 +2109,11 @@ const ESCENAS = {
     },
     teclear(codigo) {
       if (estado.trasMeta > 0) return;
+      if (estado.red) {
+        if (codigo === 'Escape' || (estado.esperaReinicio <= 0 && empezar(codigo))) volverASala();
+        else if (codigo === 'KeyO' && estado.esperaReinicio <= 0 && estado.momentos?.lista.length) verTodos();
+        return;
+      }
       if (codigo === 'Escape') alMenu();
       else if (estado.esperaReinicio > 0) return;
       else if (empezar(codigo) || codigo === 'KeyR') seguir();
@@ -2015,6 +2129,7 @@ const ESCENAS = {
       else if (boton?.id === 'siguiente') correrSiguiente();
       else if (boton?.id === 'manga') correrManga();
       else if (boton?.id === 'menu') alMenu();
+      else if (boton?.id === 'sala') volverASala();
       else if (boton?.id === 'momentos') verTodos();
       else if (boton?.id === 'denunciar') estado.denuncia = 'pendiente';
       else if (boton?.id === 'confirmarDenuncia') denunciarDesdeFin();
@@ -2076,7 +2191,7 @@ function bucle(tActual) {
 
   ESCENAS[estado.fase].actualizar(dt);
   if (estado.lupa) {
-    seguirCamara(camara, estado.carrera.coches[0], estado.circuito, dt);
+    seguirCamara(camara, cochePropio(), estado.circuito, dt);
     empezarFotogramaLupa();
   }
   ESCENAS[estado.fase].dibujar();
@@ -2084,8 +2199,8 @@ function bucle(tActual) {
   // El trabajo se mide sin el panel de depuración, que no estará publicado.
   if (mide) anotarFotograma(medida, performance.now() - inicio, hueco, dt);
   if (DEPURACION) {
-    if (estado.lupa) dibujarDepuracionLupa(medida, estado.carrera.coches[0], ZOOM);
-    else dibujarDepuracion(medida, estado.carrera.coches[0]);
+    if (estado.lupa) dibujarDepuracionLupa(medida, cochePropio(), ZOOM);
+    else dibujarDepuracion(medida, cochePropio());
   } else if (ajuste('fps')) dibujarFps(medida, estado.lupa ? altoLienzoLupa() - 12 : ALTO - 9);
 
   // En Auto, si va lento se baja la calidad (una vez): la resolución cambia el lienzo.
@@ -2145,7 +2260,8 @@ function bloquearGiro(bloquear) {
 }
 
 function aplicarVista() {
-  const aDos = Boolean(estado.humanos[1]);
+  // En red, cada uno tiene su pantalla: no es «a dos» aunque su coche sea el 1.
+  const aDos = !estado.red && Boolean(estado.humanos[1]);
   bloquearGiro(aDos);
   // El constructor es la mesa entera: en vertical se ve pequeño, pero entero.
   const lupa = (LUPA_FORZADA || Boolean(VERTICAL?.matches)) && estado.fase !== 'constructor' && !aDos;

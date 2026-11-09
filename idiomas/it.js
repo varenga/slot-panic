@@ -367,5 +367,7 @@ export default {
   'sala.tuCoche': "La tua auto",
   'sala.empezar': "INIZIA",
   'sala.esperaAnfitrion': "Chi ha creato la stanza sceglie il circuito e fa partire",
-  'sala.teclaCoche': "K · cambia la tua auto"
+  'sala.teclaCoche': "K · cambia la tua auto",
+  'fin.botonSala': "STANZA",
+  'fin.volverSala': "INVIO PER TORNARE ALLA STANZA · O PER VEDERE I MOMENTI"
 };

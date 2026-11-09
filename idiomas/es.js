@@ -370,5 +370,7 @@ export default {
   'sala.tuCoche': "Tu coche",
   'sala.empezar': "EMPEZAR",
   'sala.esperaAnfitrion': "Quien creó la sala elige el circuito y empieza",
-  'sala.teclaCoche': "K · cambia tu coche"
+  'sala.teclaCoche': "K · cambia tu coche",
+  'fin.botonSala': "SALA",
+  'fin.volverSala': "ENTER PARA VOLVER A LA SALA · O PARA VER LOS MOMENTOS"
 };

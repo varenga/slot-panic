@@ -367,5 +367,7 @@ export default {
   'sala.tuCoche': "Ta voiture",
   'sala.empezar': "DÉMARRER",
   'sala.esperaAnfitrion': "Celui qui a créé le salon choisit le circuit et lance",
-  'sala.teclaCoche': "K · change ta voiture"
+  'sala.teclaCoche': "K · change ta voiture",
+  'fin.botonSala': "SALON",
+  'fin.volverSala': "ENTRÉE POUR REVENIR AU SALON · O POUR VOIR LES MOMENTS"
 };

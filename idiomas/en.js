@@ -367,5 +367,7 @@ export default {
   'sala.tuCoche': "Your car",
   'sala.empezar': "START",
   'sala.esperaAnfitrion': "Whoever created the room picks the track and starts",
-  'sala.teclaCoche': "K · change your car"
+  'sala.teclaCoche': "K · change your car",
+  'fin.botonSala': "ROOM",
+  'fin.volverSala': "ENTER TO GO BACK TO THE ROOM · O TO WATCH THE HIGHLIGHTS"
 };

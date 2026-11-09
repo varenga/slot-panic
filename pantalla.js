@@ -214,10 +214,11 @@ export function botonesFin(ids = ['repetir', 'menu'], y = ALTO / 2 + 130) {
 
 export const ETIQUETA_BOTON = {
   repetir: 'fin.botonRepetir', siguiente: 'fin.botonSiguiente', manga: 'fin.botonManga', menu: 'fin.botonMenu',
-  momentos: 'fin.botonMomentos', denunciar: 'fin.botonDenunciar', confirmarDenuncia: 'fin.botonConfirmarDenuncia', denunciado: 'fin.botonDenunciado'
+  momentos: 'fin.botonMomentos', denunciar: 'fin.botonDenunciar', confirmarDenuncia: 'fin.botonConfirmarDenuncia', denunciado: 'fin.botonDenunciado',
+  sala: 'fin.botonSala'
 };
 // Los que van destacados (en ámbar).
-export const DESTACADO = new Set(['repetir', 'siguiente', 'manga', 'confirmarDenuncia']);
+export const DESTACADO = new Set(['repetir', 'siguiente', 'manga', 'confirmarDenuncia', 'sala']);
 
 function botones(cajas) {
   for (const caja of cajas) {
@@ -229,8 +230,19 @@ function botones(cajas) {
 
 // --- La carrera ----------------------------------------------------------------
 
+/*
+ * En red, el puesto de cada coche: J1 el anfitrión y J2 el invitado, iguales
+ * en los dos dispositivos (`humanos` solo dice cuál es el propio). Fuera de
+ * una carrera en red, null.
+ */
+let puestosRed = null;
+export function ponerPuestosRed(n) {
+  puestosRed = n;
+}
+
 /** «J1», «J2» o «CPU»: quién lleva cada carril. */
 export function nombreSlot(i, humanos) {
+  if (puestosRed) return i < puestosRed ? t('slot.jugador', { n: i + 1 }) : t('slot.cpu');
   return humanos[i] ? t('slot.jugador', { n: i + 1 }) : t('slot.cpu');
 }
 
@@ -459,7 +471,7 @@ export function dibujarFinSlot(carrera, humanos, tactil, { campeonato = null, se
     texto((cuatro ? `${k + 1}.  ` : '') + nombreSlot(i, humanos), x - 234, fila, { tam: 16, color: COLOR.hud, peso: 800, alinear: 'left' });
     texto(t('slot.resumen', { tiempo: formatearTiempo(mejorVueltaSlot(slot)), n: slot.salidas }), x + 260, fila, { tam: 16, color: COLOR.texto, alinear: 'right' });
   });
-  if (!tactil) texto(t('fin.repetir'), x, y + 95, { tam: 14, color: COLOR.texto, peso: 500 });
+  if (!tactil) texto(t(puestosRed ? 'fin.volverSala' : 'fin.repetir'), x, y + 95, { tam: 14, color: COLOR.texto, peso: 500 });
   botones(botonesFin(ids));
 }
 
