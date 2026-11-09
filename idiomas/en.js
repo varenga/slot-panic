@@ -369,5 +369,17 @@ export default {
   'sala.esperaAnfitrion': "Whoever created the room picks the track and starts",
   'sala.teclaCoche': "K · change your car",
   'fin.botonSala': "ROOM",
-  'fin.volverSala': "ENTER TO GO BACK TO THE ROOM · O TO WATCH THE HIGHLIGHTS"
+  'fin.volverSala': "ENTER TO GO BACK TO THE ROOM · O TO WATCH THE HIGHLIGHTS",
+  // Las reglas en red (bloque E)
+  'slot.controlesRed': "W, SPACE, ↑ OR L: HOLD TO ACCELERATE · ESC TWICE LEAVES THE ROOM",
+  'slot.teclasRed': "W, SPACE, ↑ OR L",
+  'slot.pulsaListo': "PRESS WHEN READY",
+  'slot.tocaListo': "TAP WHEN READY",
+  'slot.esperandoRival': "WAITING…",
+  'red.sigueCPU': "You carry on against the CPU.",
+  'red.escapeOtraVez': "ESC AGAIN TO LEAVE THE ROOM",
+  'red.esperandoAnfitrion': "Waiting for the host…",
+  'sala.enCarrera': "Still in the race",
+  'fin.botonSalirRed': "LEAVE",
+  'fin.salirRed': "ENTER TO LEAVE · O TO WATCH THE HIGHLIGHTS"
 };

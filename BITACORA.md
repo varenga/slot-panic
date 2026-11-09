@@ -2329,3 +2329,41 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   «tu rival ha cerrado la sala» en el anfitrión. Lo que no se ha podido juzgar así (si el
   propio responde sin retardo, si los demás se ven fluidos, si un golpe se entiende) queda
   como playtest en `TODO.md`.
+
+## En red, bloque E: las reglas (09/11/2026, rama `67-en-red`)
+
+- **La salida espera a todos** (`salidaEnRed`): cada uno queda listo al pulsar una vez y se lo
+  dice al otro (`{k:'listo'}`); no hace falta seguir pulsando, porque con el retraso de la red
+  «los dos a la vez» no se ve igual en los dos lados. El anfitrión arranca cuando lo están todos,
+  o pasados 20 s (`ESPERA_RED`), y se lo dice al invitado (`{k:'arranca'}`), que cuenta su hora de
+  carrera desde ahí. En la guía, «PULSA/TOCA CUANDO ESTÉS LISTO», «¡LISTO!» y «ESPERANDO…» por
+  puesto; en la lupa, en el panel de abajo, sin cuenta ni semáforo hasta que arranca.
+- **La revancha espera al otro**: tras EMPEZAR, el anfitrión no puede lanzar otra hasta que el
+  invitado vuelva a la sala (`{k:'enSala'}`); mientras, su puesto dice «Aún en la carrera» y
+  EMPEZAR sale apagado. Si el anfitrión cambia la sala con el invitado aún en el cartel, el
+  invitado la pone al volver (`redUI.pendiente`): cambiar el circuito antes se llevaba por delante
+  la carrera que estaba viendo.
+- **Las mangas**: en un circuito de mangas, el anfitrión crea la serie y la manda con cada salida
+  (`go.serie`); acabada una manga, manda cómo la apunta (`{k:'manga'}`), porque los tiempos de
+  los que no llegan salen de lo que han corrido y el invitado lo ve con retraso: así la suma es la
+  misma en los dos. Entre manga y manga, la sala: EMPEZAR dice «MANGA 2 DE 4». Cambiar algo en la
+  sala empieza la serie de nuevo.
+- **Quien se va o cae**: a dos, el servidor cierra la sala; quien se queda sigue su carrera
+  (`quedarseSolo`): pasa a arbitrarla (`choques` y `arbitro`), los coches dejan de ser remotos, la
+  CPU coge el del otro (con el nombre «CPU») y sale el aviso del motivo con «Sigues contra la
+  CPU.». Igual se vaya el anfitrión o el invitado (antes el diseño acababa la carrera si se iba el
+  anfitrión: así queda en un estado usable y con menos piezas). En el fin, SALIR, a EN RED con el
+  motivo.
+- **Escape en carrera**, dos veces en 2 s: el primero solo avisa.
+- **Segundo plano**: oculta la pestaña, el gatillo queda suelto (teclas y dedos). El invitado sin
+  instantáneas medio segundo ve «Esperando al anfitrión…».
+- **La ayuda de la banda de abajo** en red ya no es la de la mesa a dos: cualquiera de las teclas
+  y «ESC DOS VECES DEJA LA SALA». `ponerPuestosRed` pasa a ser una lista (quién es persona), para
+  que el coche que coge la CPU se llame CPU. En la lupa, la suma es la del coche propio, no la del 0.
+- **Probado** con el anfitrión en una pestaña y el invitado en un `<iframe>` en lupa, contra el
+  servidor de salas en local y a `?lag=60&jitter=20` (con `requestAnimationFrame` cambiado por un
+  temporizador, como en el D): la salida que espera en *La judía* (manga 1 de 4), el invitado que
+  se va con Escape (el anfitrión sigue con la CPU y acaba la manga), el anfitrión que se va (el
+  invitado sigue y acaba), y en *La horquilla* la carrera entera con el mismo resultado en los
+  dos, la revancha bloqueada hasta que el invitado vuelve y el circuito cambiado mientras él
+  estaba en el cartel. Una serie de mangas entera queda para el playtest. El arnés, 2454/2454.

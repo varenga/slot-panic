@@ -369,5 +369,17 @@ export default {
   'sala.esperaAnfitrion': "Quen creou a sala escolle o circuíto e empeza",
   'sala.teclaCoche': "K · cambia o teu coche",
   'fin.botonSala': "SALA",
-  'fin.volverSala': "ENTER PARA VOLVER Á SALA · O PARA VER OS MOMENTOS"
+  'fin.volverSala': "ENTER PARA VOLVER Á SALA · O PARA VER OS MOMENTOS",
+  // Las reglas en red (bloque E)
+  'slot.controlesRed': "W, ESPAZO, ↑ OU L: MANTÉN PARA ACELERAR · ESC DÚAS VECES DEIXA A SALA",
+  'slot.teclasRed': "W, ESPAZO, ↑ OU L",
+  'slot.pulsaListo': "PREME CANDO ESTEAS LISTO",
+  'slot.tocaListo': "TOCA CANDO ESTEAS LISTO",
+  'slot.esperandoRival': "AGARDANDO…",
+  'red.sigueCPU': "Segues contra a CPU.",
+  'red.escapeOtraVez': "ESC OUTRA VEZ PARA DEIXAR A SALA",
+  'red.esperandoAnfitrion': "Agardando polo anfitrión…",
+  'sala.enCarrera': "Aínda na carreira",
+  'fin.botonSalirRed': "SAÍR",
+  'fin.salirRed': "ENTER PARA SAÍR · O PARA VER OS MOMENTOS"
 };

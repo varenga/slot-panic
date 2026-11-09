@@ -213,11 +213,12 @@ export function cajasSala({ ancho, alto }, { puesto, cuatro }) {
 }
 
 /*
- * `sala`: { codigo, puesto, compa, modelos, conectando }. `e`: lo que enseñan
- * las filas (circuito, duracion, nivel), el de la sala. Encima del mundo (la
+ * `sala`: { codigo, puesto, compa, enSala, modelos }. `e`: lo que enseñan
+ * las filas (circuito, duracion, nivel), el de la sala; `manga` ({ n, total }),
+ * a media serie de mangas: EMPEZAR corre la siguiente. Encima del mundo (la
  * exhibición en el circuito elegido), con un velo.
  */
-export function dibujarSala(vista, sala, e, { tactil, tiempo }) {
+export function dibujarSala(vista, sala, e, { tactil, tiempo, manga = null }) {
   const { ancho, alto } = vista;
   const lupa = ancho <= 800;
   ctx.fillStyle = 'rgba(18, 20, 26, 0.82)';
@@ -245,12 +246,15 @@ export function dibujarSala(vista, sala, e, { tactil, tiempo }) {
       boton(caja, etiquetaOpcion(caja.opcion, e, !tactil && anfitrion), false, lupa ? 17 : 15);
       ctx.globalAlpha = 1;
     } else if (caja.id === 'empezar') {
+      const rotulo = manga && t('manga.n', manga);
       if (!anfitrion) {
-        texto(t('sala.esperaAnfitrion'), ancho / 2, caja.y + caja.alto / 2, { tam: 15, color: COLOR.texto, peso: 600 });
+        const espera = t('sala.esperaAnfitrion');
+        texto(rotulo ? `${rotulo} · ${espera}` : espera, ancho / 2, caja.y + caja.alto / 2, { tam: 15, color: COLOR.texto, peso: 600 });
         continue;
       }
-      ctx.globalAlpha = sala.compa ? 1 : 0.4;
-      boton(caja, (tactil ? '' : '↵ · ') + t('sala.empezar'), true, 20);
+      // La revancha espera a que el otro haya vuelto a la sala.
+      ctx.globalAlpha = sala.compa && sala.enSala ? 1 : 0.4;
+      boton(caja, (tactil ? '' : '↵ · ') + (rotulo || t('sala.empezar')), true, rotulo ? 18 : 20);
       ctx.globalAlpha = 1;
     }
   }
@@ -281,5 +285,8 @@ function puesto(caja, sala, tiempo) {
   }
   const modelo = sala.modelos[i];
   texto(modelo ? t('coche.' + modelo) : '…', cx, caja.y + caja.alto - 30, { tam: 17, color: COLOR.hud, peso: 700 });
-  texto(t(propio ? 'sala.tuCoche' : 'sala.conectado'), cx, caja.y + 50, { tam: 12, color: propio ? COLOR.texto : COLOR.verde, peso: 600 });
+  // El otro, aún en el cartel de fin de la anterior: el anfitrión no puede empezar todavía.
+  const fuera = !propio && sala.puesto === 0 && !sala.enSala;
+  const estadoPuesto = propio ? 'sala.tuCoche' : fuera ? 'sala.enCarrera' : 'sala.conectado';
+  texto(t(estadoPuesto), cx, caja.y + 50, { tam: 12, color: propio || fuera ? COLOR.texto : COLOR.verde, peso: 600 });
 }

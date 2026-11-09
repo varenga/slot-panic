@@ -73,19 +73,16 @@ cuatro en la pista de cuatro. El diseño y sus razones, en `MULTIJUGADOR.md`; si
 pasos del cooperativo de Orbit Panic y usa el servidor de salas común (`salas.pnyk.es`).
 La prueba de red (el bloque 0) la superó Orbit con el mismo servidor; el bloque A (la
 red de mentira, `nucleo/red.js` y la sección 10 del arnés), el B (`net.js` y el alta en
-`salas.pnyk.es`), el C (las pantallas, `sala.js`) y el D (la carrera a dos) están hechos
-(`BITACORA.md`). El orden importa:
+`salas.pnyk.es`), el C (las pantallas, `sala.js`), el D (la carrera a dos) y el E (las reglas)
+están hechos (`BITACORA.md`). El orden importa:
 
 - [ ] **Playtest del bloque D**, a dos pestañas en ventanas separadas (o dos dispositivos) y
       a `?lag=60&jitter=20`: ¿el coche propio responde sin retardo?, ¿los demás se ven
       fluidos?, ¿un golpe que llega 60 ms tarde se entiende en quien lo recibe?
-- [ ] **Bloque E: reglas en red.** La salida que espera a todos, la revancha con el turno
-      cambiado (hoy ya cambia, pero el anfitrión puede empezar sin esperar a que el otro
-      vuelva a la sala), las mangas (hoy, una carrera suelta), la CPU en los huecos y en el
-      coche de quien se va (hoy, si se va uno, la sala se cierra), Escape en carrera (hoy
-      deja la sala), segundo plano («Esperando al anfitrión…») y desconexiones. La ayuda de
-      teclas de la banda de abajo, la de la mesa a dos. Criterio: cerrar cualquier pestaña
-      deja a los demás en un estado usable.
+- [ ] **Playtest del bloque E**, en dos dispositivos: ¿se entiende que hay que pulsar para estar
+      listo?, ¿20 s de espera son muchos?, ¿se lee «Aún en la carrera» en la sala?, ¿y el aviso
+      cuando el otro se va? Una serie de mangas en red entera (cuatro carreras), que en la prueba
+      del bloque solo se vio empezar.
 - [ ] **Bloque G: publicación a dos.** Prosa y JSON-LD, ficha de Play, `pnyk.json` a
       1.20.0, `BITACORA.md` y `CLAUDE.md`. Criterio: probado entre web y app de Android, y
       con dos móviles reales en redes distintas.

@@ -369,5 +369,17 @@ export default {
   'sala.esperaAnfitrion': "Celui qui a créé le salon choisit le circuit et lance",
   'sala.teclaCoche': "K · change ta voiture",
   'fin.botonSala': "SALON",
-  'fin.volverSala': "ENTRÉE POUR REVENIR AU SALON · O POUR VOIR LES MOMENTS"
+  'fin.volverSala': "ENTRÉE POUR REVENIR AU SALON · O POUR VOIR LES MOMENTS",
+  // Las reglas en red (bloque E)
+  'slot.controlesRed': "W, ESPACE, ↑ OU L : MAINTIENS POUR ACCÉLÉRER · ÉCHAP DEUX FOIS QUITTE LE SALON",
+  'slot.teclasRed': "W, ESPACE, ↑ OU L",
+  'slot.pulsaListo': "APPUIE QUAND TU ES PRÊT",
+  'slot.tocaListo': "TOUCHE QUAND TU ES PRÊT",
+  'slot.esperandoRival': "EN ATTENTE…",
+  'red.sigueCPU': "Tu continues contre le CPU.",
+  'red.escapeOtraVez': "ÉCHAP ENCORE POUR QUITTER LE SALON",
+  'red.esperandoAnfitrion': "En attente de l'hôte…",
+  'sala.enCarrera': "Encore en course",
+  'fin.botonSalirRed': "QUITTER",
+  'fin.salirRed': "ENTRÉE POUR QUITTER · O POUR VOIR LES MOMENTS"
 };

@@ -671,14 +671,15 @@ function esquinaGaleria(publico, i) {
  * `redUI` es lo que enseñan: el motivo del último cierre, el código que se
  * escribe y la sala. La arma el anfitrión (circuito, vueltas y CPU) y se la
  * cuenta al invitado cada vez que cambia; cada uno elige su coche y se lo dice
- * al otro. Lo de correr (reportes, instantáneas, golpes) es del bloque D.
+ * al otro. Lo de correr (reportes, instantáneas, golpes), más abajo.
  */
 const redUI = {
   motivo: null,       // el de NET_MOTIVOS del último cierre, o null
   conectando: false,  // unirse: esperando al servidor
   codigo: '',         // unirse: lo escrito
-  sala: null,         // { codigo, puesto, compa, modelos, duracion, nivel }
-  antes: null         // el invitado: el circuito que tenía antes de entrar
+  sala: null,         // { codigo, puesto, compa, enSala, modelos, duracion, nivel }
+  antes: null,        // el invitado: el circuito que tenía antes de entrar
+  pendiente: null     // el invitado: la sala que le contaron mientras no estaba en ella
 };
 const LARGO_CODIGO = 4;
 
@@ -688,7 +689,7 @@ if (RED) {
     redUI.conectando = false;
     redUI.motivo = null;
     redUI.sala = {
-      codigo, puesto: anfitrion ? 0 : 1, compa: !anfitrion,
+      codigo, puesto: anfitrion ? 0 : 1, compa: !anfitrion, enSala: true,
       modelos: anfitrion ? [estado.modelos[0], null] : [null, estado.modelos[0]],
       duracion: estado.duracion, nivel: estado.nivel
     };
@@ -704,6 +705,7 @@ if (RED) {
   RED.alCompa = () => {
     if (!redUI.sala) return;
     redUI.sala.compa = true;
+    redUI.sala.enSala = true;
     contarSala();
   };
   RED.alRecibir = (datos) => {
@@ -715,17 +717,31 @@ if (RED) {
       contarSala();
     } else if (datos.k === 'sala' && sala.puesto === 1) ponerSala(datos);
     else if (datos.k === 'go' && sala.puesto === 1) salirInvitado(datos);
+    else if (datos.k === 'enSala' && sala.puesto === 0) sala.enSala = true;
+    // La salida que espera a todos: quién está listo y, el anfitrión, cuándo arranca.
+    else if (datos.k === 'listo' && red) red.listos[1 - sala.puesto] = true;
+    else if (datos.k === 'arranca' && red?.inv) {
+      red.arranca = true;
+      red.llegada = reloj;
+    } else if (datos.k === 'manga' && red?.inv) ponerManga(datos);
     // La carrera (nucleo/red.js): reportes al anfitrión; instantáneas y golpes al invitado.
     else if (datos.k === 'c' && red?.anf) recibirReporte(red.anf, 1, datos);
-    else if ((datos.k === 's' || datos.k === 'g') && red?.inv) recibirDelAnfitrion(red.inv, datos);
+    else if ((datos.k === 's' || datos.k === 'g') && red?.inv) {
+      if (datos.k === 's') red.llegada = reloj;
+      recibirDelAnfitrion(red.inv, datos);
+    }
   };
   RED.alCerrar = (motivo) => {
     redUI.conectando = false;
     redUI.motivo = motivo;
     // Al unirse, el fallo se queda junto al código, para corregirlo.
     if (estado.fase === 'unirse') return;
-    dejarSala();
-    abrirRed(motivo);
+    // En carrera (o en su cartel de fin), sigue: la CPU coge el coche del otro.
+    if (estado.red) quedarseSolo(motivo);
+    else {
+      dejarSala();
+      abrirRed(motivo);
+    }
   };
 }
 
@@ -748,7 +764,7 @@ function pulsarRed(id) {
   } else if (id === 'crear') {
     // A la sala ya: el código llega en cuanto contesta el servidor.
     redUI.motivo = null;
-    redUI.sala = { codigo: null, puesto: 0, compa: false, modelos: [estado.modelos[0], null] };
+    redUI.sala = { codigo: null, puesto: 0, compa: false, enSala: true, modelos: [estado.modelos[0], null] };
     estado.fase = 'sala';
     exhibicion();
     RED.crear();
@@ -803,6 +819,15 @@ function dejarSala() {
   }
   redUI.sala = null;
   redUI.antes = null;
+  redUI.pendiente = null;
+  estado.serie = null;
+}
+
+/* Fuera ya de la sala (se cerró a media carrera): a EN RED, con el motivo. */
+function salirTrasRed() {
+  const { motivo } = redUI;
+  dejarSala();
+  abrirRed(motivo);
 }
 
 /*
@@ -817,9 +842,17 @@ function contarSala() {
   RED.enviar({ k: 'sala', clave: circuito.clave, pub, duracion: estado.duracion, nivel: estado.nivel, modelos: sala.modelos });
 }
 
-/* El invitado pone la sala que le cuenta el anfitrión. */
+/*
+ * El invitado pone la sala que le cuenta el anfitrión. Si aún está en el
+ * cartel de fin (o en los momentos), al volver a la sala: cambiar ahora el
+ * circuito se llevaría por delante la carrera que está viendo.
+ */
 function ponerSala(datos) {
   const { sala } = redUI;
+  if (estado.fase !== 'sala') {
+    redUI.pendiente = datos;
+    return;
+  }
   if (CARRERAS.some((c) => c.id === datos.duracion)) sala.duracion = datos.duracion;
   if (NIVELES_CPU.some((n) => n.id === datos.nivel)) sala.nivel = datos.nivel;
   sala.modelos[0] = modeloValido(datos.modelos?.[0]);
@@ -852,11 +885,20 @@ function cambiarModeloEnSala(paso) {
 /* Lo que elige el anfitrión en la sala; el invitado no toca nada. */
 function opcionSala(id) {
   if (redUI.sala?.puesto !== 0) return;
+  // Otro circuito, otras vueltas u otra CPU: las mangas empiezan de nuevo.
+  estado.serie = null;
   if (id === 'pista') cambiarPista();
   else if (id === 'circuito') cambiarCircuito();
   else if (id === 'nivel' && cuatro()) cambiarNivel();
   else if (id === 'duracion') cambiarDuracion();
   contarSala();
+}
+
+/* A media serie de mangas, cuál es la siguiente: EMPEZAR la corre. */
+function mangaSiguiente() {
+  const { serie } = estado;
+  if (!serie || !serie.mangas.length || serieAcabada(serie)) return null;
+  return { n: serie.mangas.length + 1, total: serie.total };
 }
 
 /* La vista de la sala: lo que enseñan las filas es lo del anfitrión. */
@@ -869,18 +911,22 @@ function datosSala() {
 // --- En red: la carrera ------------------------------------------------------
 
 /*
- * EMPEZAR (MULTIJUGADOR.md §6): el anfitrión manda la salida (`go`), con el
- * turno de esta carrera y sus vueltas, y sale ya; el invitado, cuando le
- * llega. Cada uno corre su carrera con su coche: el anfitrión arbitra
- * (`crearAnfitrion`) y el invitado sigue lo que le cuenta (`crearInvitado`).
- * La revancha con el turno cambiado, las mangas y la salida que espera a
- * todos son del bloque E: aquí, una carrera suelta.
+ * EMPEZAR (MULTIJUGADOR.md §3 y §6): el anfitrión manda la salida (`go`), con
+ * el turno de esta carrera, sus vueltas y, en un circuito de mangas, cómo va
+ * la serie; el invitado sale cuando le llega. Cada uno corre su carrera con su
+ * coche: el anfitrión arbitra (`crearAnfitrion`) y el invitado sigue lo que le
+ * cuenta (`crearInvitado`). La revancha, con el turno cambiado, espera a que el
+ * otro haya vuelto a la sala (`enSala`).
  */
 function empezarEnRed() {
   const { sala } = redUI;
-  if (!sala || sala.puesto !== 0 || !sala.compa) return;
+  if (!sala || sala.puesto !== 0 || !sala.compa || !sala.enSala) return;
+  const total = mangasDe(estado.circuito);
+  if (total < 2) estado.serie = null;
+  else if (!estado.serie || serieAcabada(estado.serie)) estado.serie = crearSerie(total);
   estado.turno = (estado.turno + 1) % estado.circuito.carriles.length;
-  const salida = { k: 'go', turno: estado.turno, duracion: estado.duracion };
+  const salida = { k: 'go', turno: estado.turno, duracion: estado.duracion, serie: estado.serie };
+  sala.enSala = false;
   RED.enviar(salida);
   correrEnRed(salida, 0);
 }
@@ -888,14 +934,42 @@ function empezarEnRed() {
 function salirInvitado(datos) {
   const n = estado.circuito.carriles.length;
   if (!Number.isInteger(datos.turno) || datos.turno < 0 || datos.turno >= n || !CARRERAS.some((c) => c.id === datos.duracion)) return;
+  const serie = serieDeRed(datos.serie, n);
+  if (datos.serie && !serie) return;
+  estado.serie = serie;
   correrEnRed(datos, 1);
+}
+
+/* Una manga apuntada que llega por la red, si es lo que dice ser. */
+const mangaValida = (m, n) => Array.isArray(m?.tiempos) && m.tiempos.length === n && m.tiempos.every(Number.isFinite)
+  && (m.ganador === null || (Number.isInteger(m.ganador) && m.ganador >= 0 && m.ganador < n));
+
+/* La serie de mangas que cuenta el anfitrión al dar la salida, o null. */
+function serieDeRed(d, n) {
+  if (!d || !Number.isInteger(d.total) || d.total < 2 || d.total > n || !Array.isArray(d.mangas) || d.mangas.length >= d.total) return null;
+  if (!d.mangas.every((m) => mangaValida(m, n))) return null;
+  return { total: d.total, mangas: d.mangas.map(({ ganador, tiempos }) => ({ ganador, tiempos })) };
+}
+
+/*
+ * Acabada una manga, el anfitrión cuenta cómo la apunta: los tiempos de los
+ * que no llegan salen de lo que han corrido, y el invitado lo ve con el
+ * retraso de la red. Así la suma es la misma en los dos.
+ */
+function ponerManga({ n, m }) {
+  const { serie, red } = estado;
+  if (!serie || n !== red.manga || !mangaValida(m, estado.carrera.coches.length)) return;
+  serie.mangas[n] = { ganador: m.ganador, tiempos: m.tiempos };
 }
 
 /*
  * La carrera en red, igual en los dos dispositivos: el circuito de la sala,
  * los coches de la sala, el color de cada puesto y, en la pista de cuatro,
- * la CPU (que solo simula el anfitrión) en los demás carriles.
+ * la CPU (que solo simula el anfitrión) en los demás carriles. La salida
+ * espera a que cada uno pulse (`listos`), o ESPERA_RED.
  */
+const ESPERA_RED = 20;   // s que la salida espera al que no pulsa: después, sale parado
+
 function correrEnRed({ turno, duracion }, propio) {
   const { sala } = redUI;
   const n = estado.circuito.carriles.length;
@@ -904,20 +978,77 @@ function correrEnRed({ turno, duracion }, propio) {
   const carrera = crearCarreraSlot(estado.circuito, colores, turno, { vueltas: CARRERAS.find((c) => c.id === duracion).vueltas, modelos });
   carrera.anochece = !!CARRERAS.find((c) => c.id === duracion).anochece;
   Object.assign(estado, {
-    fase: 'carrera', carrera, campeonato: null, serie: null, denuncia: null, menu: null, espera: false, fantasma: null,
+    fase: 'carrera', carrera, campeonato: null, denuncia: null, menu: null, espera: true, fantasma: null,
     ultimaAvisada: false, trasMeta: 0, momentos: null, reproduccion: null, avisoFin: null
   });
   // `humanos`: el propio. Los nombres, por el puesto (J1 y J2), los ponen ponerPuestosRed.
   estado.humanos = carrera.coches.map((_, i) => i === propio);
-  ponerPuestosRed(2);
+  ponerPuestosRed(carrera.coches.map((_, i) => i < COLORES_RED.length));
   const { piloto } = NIVELES_CPU.find((nv) => nv.id === (propio === 0 ? estado.nivel : sala.nivel ?? estado.nivel));
   estado.pilotos = carrera.coches.map(() => crearPiloto({ ...piloto, semilla: semilla() }));
-  estado.red = propio === 0 ? { propio, anf: crearAnfitrion(carrera, [1]) } : { propio, inv: crearInvitado(carrera, 1) };
+  estado.red = {
+    propio,
+    anf: propio === 0 ? crearAnfitrion(carrera, [1]) : null,
+    inv: propio === 0 ? null : crearInvitado(carrera, 1),
+    listos: COLORES_RED.map(() => false),   // por puesto: quién ha pulsado ya para salir
+    esperado: 0,          // el anfitrión: s esperando la salida
+    arranca: false,       // el invitado: el anfitrión ha dado la salida
+    llegada: 0,           // el invitado: `reloj` de lo último que llegó del anfitrión
+    manga: estado.serie?.mangas.length ?? 0,
+    solo: false,          // la sala se ha cerrado: arbitra este dispositivo, con la CPU
+    escapeHasta: 0        // hasta cuándo un segundo Escape deja la sala
+  };
   estado.repeticion = crearRepeticion(estado.circuito, n);
   punteros.clear();
   limpiarPista();
   aplicarVista();
   evento('empezar_red', { circuito: estado.circuito.clave, vueltas: carrera.vueltas, anfitrion: propio === 0, lupa: estado.lupa, tactil: estado.tactil });
+}
+
+/*
+ * La salida que espera a todos: cada uno, al pulsar, está listo y se lo dice
+ * al otro (no hace falta seguir pulsando). El anfitrión arranca cuando lo
+ * están todos o pasados ESPERA_RED, y se lo dice al invitado: quien no ha
+ * pulsado sale parado y coge su coche en cuanto pulse. Devuelve si ya sale.
+ */
+function salidaEnRed(dt) {
+  const { red } = estado;
+  if (pulsadoPropio() && !red.listos[red.propio]) {
+    red.listos[red.propio] = true;
+    if (!red.solo) RED.enviar({ k: 'listo' });
+  }
+  if (red.inv) return red.arranca;
+  red.esperado += dt;
+  if (!listosRed().every(Boolean) && red.esperado < ESPERA_RED) return false;
+  if (!red.solo) RED.enviar({ k: 'arranca' });
+  return true;
+}
+
+/* Quién está listo, por puesto; el coche de quien se ha ido ya lo lleva la CPU. */
+function listosRed() {
+  const { red } = estado;
+  return red.listos.map((listo, i) => listo || (red.solo && i !== red.propio));
+}
+
+/*
+ * Se ha cerrado la sala a media carrera (o en su cartel de fin): se va el
+ * otro, o cae la red. La carrera sigue en este dispositivo, que pasa a
+ * arbitrarla, y el coche del otro lo coge la CPU; al acabar, SALIR lleva a
+ * EN RED con el motivo.
+ */
+function quedarseSolo(motivo) {
+  const { red, carrera } = estado;
+  redUI.sala = null;
+  if (red.solo) return;
+  carrera.choques = true;
+  carrera.arbitro = true;
+  for (const slot of carrera.coches) slot.remoto = false;
+  estado.red = { ...red, anf: crearAnfitrion(carrera, []), inv: null, solo: true };
+  ponerPuestosRed(carrera.coches.map((_, i) => i === red.propio));
+  if (estado.fase === 'carrera') {
+    const texto = `${t('red.motivo.' + motivo)} ${t('red.sigueCPU')}`;
+    estado.avisos.push({ texto, vida: 4, color: COLOR.ambar, largo: true });
+  }
 }
 
 /* Se acaba la carrera en red (o la sala): vuelve a ser la de siempre. */
@@ -929,29 +1060,69 @@ function acabarRed() {
   ponerPuestosRed(null);
 }
 
-/* SALA en el cartel de fin: de vuelta a la sala, que sigue abierta. */
+/*
+ * SALA en el cartel de fin: de vuelta a la sala, que sigue abierta. El
+ * invitado se lo dice al anfitrión (ya puede empezar otra) y pone la sala que
+ * le contó mientras tanto. Cerrada la sala, a EN RED.
+ */
 function volverASala() {
+  if (!redUI.sala) return salirTrasRed();
   acabarRed();
   Object.assign(estado, { fase: 'sala', momentos: null, reproduccion: null, trasMeta: 0, avisoFin: null });
   punteros.clear();
   exhibicion();
+  if (redUI.sala.puesto === 1) {
+    const { pendiente } = redUI;
+    redUI.pendiente = null;
+    if (pendiente) ponerSala(pendiente);
+    RED.enviar({ k: 'enSala' });
+  }
   aplicarVista();
 }
 
 /*
- * Los mandos en red: el propio, con cualquiera de las dos teclas o con un
- * dedo en cualquier sitio (cada uno tiene la pantalla entera); los de la CPU,
- * en el anfitrión; los remotos ruedan solos (null).
+ * Escape en una carrera en red deja la sala, y al otro con la CPU: el primero
+ * solo avisa, por si se escapó. Cerrada ya la sala, sale sin más.
+ */
+function escaparEnRed() {
+  const { red } = estado;
+  if (!redUI.sala) salirTrasRed();
+  else if (reloj < red.escapeHasta) salirDeSala();
+  else {
+    red.escapeHasta = reloj + 2;
+    estado.avisos.push({ texto: t('red.escapeOtraVez'), vida: 2, color: COLOR.ambar, largo: true });
+  }
+}
+
+/* El invitado, sin instantáneas del anfitrión (tiene la pestaña oculta, o la red se ha atascado). */
+const SIN_ANFITRION = 0.5;   // s
+function esperandoAnfitrion() {
+  const { red } = estado;
+  return Boolean(red?.inv) && !estado.espera && estado.carrera.fase !== 'fin' && reloj - red.llegada > SIN_ANFITRION;
+}
+
+/* El propio pulsa: cualquiera de las dos teclas del gatillo o un dedo en cualquier sitio. */
+const pulsadoPropio = () => pulsada(CONTROLES_SLOT[0]) || pulsada(CONTROLES_SLOT[1]) || punteros.size > 0;
+
+/*
+ * Los mandos en red: el propio (cada uno tiene la pantalla entera); los de la
+ * CPU, en el anfitrión; los remotos ruedan solos (null).
  */
 function mandosRed() {
   const { carrera, red } = estado;
   listaMandos.length = carrera.coches.length;
   for (let i = 0; i < carrera.coches.length; i++) {
     const slot = carrera.coches[i];
-    if (i === red.propio) listaMandos[i] = pulsada(CONTROLES_SLOT[0]) || pulsada(CONTROLES_SLOT[1]) || punteros.size > 0 ? APRETADO : SUELTO;
+    if (i === red.propio) listaMandos[i] = pulsadoPropio() ? APRETADO : SUELTO;
     else listaMandos[i] = red.anf && !slot.remoto ? decidirSlot(estado.pilotos[i], slot, carrera.circuito) : null;
   }
   return listaMandos;
+}
+
+/* Los avisos de la carrera; en red, sin noticias del anfitrión, además, que se le espera. */
+function avisosCarrera() {
+  if (!esperandoAnfitrion()) return estado.avisos;
+  return [...estado.avisos, { texto: t('red.esperandoAnfitrion'), vida: 1, color: COLOR.hud, largo: true }];
 }
 
 /** El coche que se sigue (la lupa, el oído, la depuración): el propio en red; si no, el del J1. */
@@ -1192,7 +1363,10 @@ function terminarCarrera() {
   evento('acabar_carrera', { ...datosCarrera(), jugadores: estado.humanos.filter(Boolean).length });
   const { campeonato, serie } = estado;
   if (serie) {
-    anotarManga(serie, estado.carrera);
+    // En red, el invitado puede tenerla ya: se la cuenta el anfitrión (ponerManga).
+    if (serie.mangas.length === (estado.red?.manga ?? serie.mangas.length)) anotarManga(serie, estado.carrera);
+    const { red } = estado;
+    if (red?.anf && !red.solo) RED.enviar({ k: 'manga', n: red.manga, m: serie.mangas[red.manga] });
     // Al acabar la última, lo que se celebra es la suma.
     if (serieAcabada(serie)) {
       const { ganador } = sumaSerie(serie);
@@ -1284,7 +1458,7 @@ function idsFinSuelta() {
 
 /** Los botones del fin; si hay momentos, MOMENTOS tras los dos primeros. */
 function idsFin() {
-  const ids = estado.red ? ['sala'] : enMangas() ? ['manga', 'menu'] : estado.campeonato ? idsFinCampeonato(estado.campeonato) : idsFinSuelta();
+  const ids = estado.red ? [redUI.sala ? 'sala' : 'salirRed'] : enMangas() ? ['manga', 'menu'] : estado.campeonato ? idsFinCampeonato(estado.campeonato) : idsFinSuelta();
   return estado.momentos?.lista.length ? [...ids.slice(0, 2), 'momentos', ...ids.slice(2)] : ids;
 }
 
@@ -1391,8 +1565,12 @@ window.addEventListener('blur', () => {
   punteros.clear();
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) pausarAudio();
-  else reanudarAudio();
+  if (document.hidden) {
+    pausarAudio();
+    // Oculto, el gatillo está suelto: en red, el coche propio no sigue acelerando solo.
+    for (const codigo in teclas) teclas[codigo] = false;
+    punteros.clear();
+  } else reanudarAudio();
 });
 window.addEventListener('pagehide', pausarAudio);
 
@@ -1820,7 +1998,7 @@ const ESCENAS = {
     },
     dibujar() {
       dibujarMundo();
-      dibujarSala(vistaGaleria(), redUI.sala, datosSala(), { tactil: estado.tactil, tiempo: reloj });
+      dibujarSala(vistaGaleria(), redUI.sala, datosSala(), { tactil: estado.tactil, tiempo: reloj, manga: mangaSiguiente() });
     },
     teclear(codigo) {
       // De la sala solo se sale con Escape o SALIR: un toque perdido no la cierra.
@@ -2005,7 +2183,7 @@ const ESCENAS = {
       const { carrera } = estado;
       // La salida espera, con la parrilla quieta, a que cada jugador apoye el dedo.
       if (estado.espera) {
-        if (listos().some((listo, i) => estado.humanos[i] && !listo)) {
+        if (estado.red ? !salidaEnRed(dt) : listos().some((listo, i) => estado.humanos[i] && !listo)) {
           sonido(false);
           return;
         }
@@ -2052,18 +2230,18 @@ const ESCENAS = {
       if (estado.lupa) {
         const propio = estado.red?.propio ?? 0;
         dibujarMapa(estado.circuito, estado.carrera.coches, propio);
-        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCarrera(), sumaDelMarcador(), propio);
-        dibujarAvisosLupa(estado.avisos);
+        dibujarMarcadorLupa(estado.carrera, estado.humanos, rotuloCarrera(), sumaDelMarcador(), propio, estado.espera && estado.red ? listosRed() : null);
+        dibujarAvisosLupa(avisosCarrera());
         if (conAcelerador()) dibujarAcelerador(cochePropio(), punteros.size > 0);
         return;
       }
-      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCarrera(), sumaDelMarcador(), estado.espera ? listos() : null);
-      dibujarAvisos(estado.avisos);
+      dibujarMarcadorSlot(estado.carrera, estado.humanos, estado.tactil, rotuloCarrera(), sumaDelMarcador(), estado.espera ? (estado.red ? listosRed() : listos()) : null);
+      dibujarAvisos(avisosCarrera());
     },
     teclear(codigo) {
-      // En red, Escape deja la sala (y al otro, con su aviso); nada más se repite.
+      // En red, Escape (dos veces) deja la sala, y al otro con la CPU; nada más se repite.
       if (estado.red) {
-        if (codigo === 'Escape') salirDeSala();
+        if (codigo === 'Escape') escaparEnRed();
         return;
       }
       // En el campeonato no se repite una carrera a medias; en mangas, solo en la primera.
@@ -2110,6 +2288,7 @@ const ESCENAS = {
     teclear(codigo) {
       if (estado.trasMeta > 0) return;
       if (estado.red) {
+        // Con la sala cerrada, volverASala sale a EN RED.
         if (codigo === 'Escape' || (estado.esperaReinicio <= 0 && empezar(codigo))) volverASala();
         else if (codigo === 'KeyO' && estado.esperaReinicio <= 0 && estado.momentos?.lista.length) verTodos();
         return;
@@ -2130,6 +2309,7 @@ const ESCENAS = {
       else if (boton?.id === 'manga') correrManga();
       else if (boton?.id === 'menu') alMenu();
       else if (boton?.id === 'sala') volverASala();
+      else if (boton?.id === 'salirRed') salirTrasRed();
       else if (boton?.id === 'momentos') verTodos();
       else if (boton?.id === 'denunciar') estado.denuncia = 'pendiente';
       else if (boton?.id === 'confirmarDenuncia') denunciarDesdeFin();

@@ -58,9 +58,10 @@ política de privacidad que contara la IP del otro.
   `turno` cambia en cada carrera. En la pista de cuatro, los puestos vacíos los lleva la CPU, con
   el nivel que elige el anfitrión. Los circuitos de mangas se corren en mangas (`estado.serie`), y
   gana la menor suma, como siempre.
-* **La salida espera a todos**: la cuenta atrás no empieza hasta que cada persona apoya el dedo
-  (o la tecla), como `estado.espera` en la mesa. Quien no lo apoya en 20 s sale con el coche parado,
-  y lo puede coger en cuanto pulse.
+* **La salida espera a todos**: la cuenta atrás no empieza hasta que cada persona pulsa (el dedo
+  o la tecla) una vez: queda lista y se lo dice a los demás, sin tener que seguir pulsando (con el
+  retraso de la red, «todos a la vez» no se puede ver). Quien no pulsa en 20 s sale con el coche
+  parado, y lo puede coger en cuanto pulse.
 * **Salirse, la mano y los choques**, los de siempre. Los decide el anfitrión.
 * **La sala sigue tras la carrera.** Al acabar, el cartel de fin y la repetición; después, todos
   vuelven a la sala y el anfitrión lanza otra (la revancha, con el turno cambiado). Las carreras
@@ -92,10 +93,11 @@ en `BITACORA.md`.
 
 **Desconexiones**, sin reconexión:
 
-* **Cae un invitado** a mitad de carrera: su coche lo coge la CPU y la carrera sigue; al acabar,
-  su puesto queda libre. En la sala, su puesto se vacía.
-* **Cae el anfitrión**: la carrera acaba para todos, con el aviso y la clasificación que había.
-  Sin migración de anfitrión.
+* **Se va o cae cualquiera** a mitad de carrera (o en su cartel de fin): a dos, el servidor cierra
+  la sala, y quien se queda sigue su carrera contra la CPU, que coge el coche del otro; su
+  dispositivo pasa a arbitrarla. Al acabar, SALIR lleva a EN RED con el motivo. Es lo mismo se
+  vaya el anfitrión o el invitado: no es migración de anfitrión, porque ya no hay sala.
+* **Escape en carrera** deja la sala, pero solo el segundo: el primero avisa.
 * **Sin red o sin servidor**: mensaje claro al crear o unirse. Jugar sin red sigue funcionando
   entero, también offline y en la app.
 
@@ -237,7 +239,7 @@ Las casillas están en la Fase 6 del `TODO.md`. El orden importa:
 4. **D. A dos en red.** `juego.js` con `net` y `red.js`: reportes, instantáneas, golpes, los
    remotos en el dibujo y los eventos. **Hecho**; falta el playtest.
 5. **E. Reglas en red.** La salida que espera, la revancha, las mangas, la CPU en los huecos,
-   segundo plano y desconexiones.
+   segundo plano y desconexiones. **Hecho**; falta el playtest.
 6. **G. Publicación a dos.** Prosa, ficha de Play, versión 1.20.0 y `BITACORA.md`.
 7. **S4. Salas de cuatro.** Servidor, `net.js` (comun 1.4.0), la política común y hasta cuatro
    personas en la pista de cuatro.

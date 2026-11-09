@@ -372,5 +372,17 @@ export default {
   'sala.esperaAnfitrion': "Quien creó la sala elige el circuito y empieza",
   'sala.teclaCoche': "K · cambia tu coche",
   'fin.botonSala': "SALA",
-  'fin.volverSala': "ENTER PARA VOLVER A LA SALA · O PARA VER LOS MOMENTOS"
+  'fin.volverSala': "ENTER PARA VOLVER A LA SALA · O PARA VER LOS MOMENTOS",
+  // Las reglas en red (bloque E)
+  'slot.controlesRed': "W, ESPACIO, ↑ O L: MANTÉN PARA ACELERAR · ESC DOS VECES DEJA LA SALA",
+  'slot.teclasRed': "W, ESPACIO, ↑ O L",
+  'slot.pulsaListo': "PULSA CUANDO ESTÉS LISTO",
+  'slot.tocaListo': "TOCA CUANDO ESTÉS LISTO",
+  'slot.esperandoRival': "ESPERANDO…",
+  'red.sigueCPU': "Sigues contra la CPU.",
+  'red.escapeOtraVez': "ESC OTRA VEZ PARA DEJAR LA SALA",
+  'red.esperandoAnfitrion': "Esperando al anfitrión…",
+  'sala.enCarrera': "Aún en la carrera",
+  'fin.botonSalirRed': "SALIR",
+  'fin.salirRed': "ENTER PARA SALIR · O PARA VER LOS MOMENTOS"
 };

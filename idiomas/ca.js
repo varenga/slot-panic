@@ -369,5 +369,17 @@ export default {
   'sala.esperaAnfitrion': "Qui ha creat la sala tria el circuit i comença",
   'sala.teclaCoche': "K · canvia el teu cotxe",
   'fin.botonSala': "SALA",
-  'fin.volverSala': "ENTER PER TORNAR A LA SALA · O PER VEURE ELS MOMENTS"
+  'fin.volverSala': "ENTER PER TORNAR A LA SALA · O PER VEURE ELS MOMENTS",
+  // Las reglas en red (bloque E)
+  'slot.controlesRed': "W, ESPAI, ↑ O L: MANTÉN PER ACCELERAR · ESC DUES VEGADES DEIXA LA SALA",
+  'slot.teclasRed': "W, ESPAI, ↑ O L",
+  'slot.pulsaListo': "PREM QUAN ESTIGUIS A PUNT",
+  'slot.tocaListo': "TOCA QUAN ESTIGUIS A PUNT",
+  'slot.esperandoRival': "ESPERANT…",
+  'red.sigueCPU': "Continues contra la CPU.",
+  'red.escapeOtraVez': "ESC UN ALTRE COP PER DEIXAR LA SALA",
+  'red.esperandoAnfitrion': "Esperant l'amfitrió…",
+  'sala.enCarrera': "Encara a la cursa",
+  'fin.botonSalirRed': "SORTIR",
+  'fin.salirRed': "ENTER PER SORTIR · O PER VEURE ELS MOMENTS"
 };

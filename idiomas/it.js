@@ -369,5 +369,17 @@ export default {
   'sala.esperaAnfitrion': "Chi ha creato la stanza sceglie il circuito e fa partire",
   'sala.teclaCoche': "K · cambia la tua auto",
   'fin.botonSala': "STANZA",
-  'fin.volverSala': "INVIO PER TORNARE ALLA STANZA · O PER VEDERE I MOMENTI"
+  'fin.volverSala': "INVIO PER TORNARE ALLA STANZA · O PER VEDERE I MOMENTI",
+  // Las reglas en red (bloque E)
+  'slot.controlesRed': "W, SPAZIO, ↑ O L: TIENI PREMUTO PER ACCELERARE · ESC DUE VOLTE ESCE DALLA STANZA",
+  'slot.teclasRed': "W, SPAZIO, ↑ O L",
+  'slot.pulsaListo': "PREMI QUANDO SEI PRONTO",
+  'slot.tocaListo': "TOCCA QUANDO SEI PRONTO",
+  'slot.esperandoRival': "IN ATTESA…",
+  'red.sigueCPU': "Continui contro la CPU.",
+  'red.escapeOtraVez': "ESC DI NUOVO PER USCIRE DALLA STANZA",
+  'red.esperandoAnfitrion': "In attesa dell'host…",
+  'sala.enCarrera': "Ancora in gara",
+  'fin.botonSalirRed': "ESCI",
+  'fin.salirRed': "INVIO PER USCIRE · O PER VEDERE I MOMENTI"
 };

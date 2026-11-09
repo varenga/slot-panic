@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-a05ce9d0';
+const CACHE = 'slotpanic-d13d25b6';
 
 const PRECACHE = [
   'index.html',
@@ -116,15 +116,15 @@ const HUELLAS = {
   'estado.js':                    'feb8ab89',
   'galeria.js':                   '625d65a3',
   'i18n.js':                      '1859ef57',
-  'idiomas/ca.js':                'c53f311a',
-  'idiomas/en.js':                '5719908a',
-  'idiomas/es.js':                '8e9b32e4',
-  'idiomas/fr.js':                '30b01f49',
-  'idiomas/gl.js':                'fb74f16e',
-  'idiomas/it.js':                '0d9a977a',
-  'idiomas/pt.js':                '9df59639',
-  'juego.js':                     'bc138463',
-  'lupa.js':                      '0c12f04b',
+  'idiomas/ca.js':                'cf3b8d22',
+  'idiomas/en.js':                '82702c11',
+  'idiomas/es.js':                '3fb5dde5',
+  'idiomas/fr.js':                '3ee924b7',
+  'idiomas/gl.js':                'e87ea2cc',
+  'idiomas/it.js':                '39a916a7',
+  'idiomas/pt.js':                '8e3f2f20',
+  'juego.js':                     'd8f501cf',
+  'lupa.js':                      '3792e9cc',
   'luz.js':                       '4473708b',
   'medida.js':                    '03f10cbb',
   'menu.js':                      '7c596985',
@@ -143,13 +143,13 @@ const HUELLAS = {
   'nucleo/slot.js':               '177f1916',
   'nucleo/trazo.js':              'baeee985',
   'nucleo/validar.js':            '4a20240f',
-  'pantalla.js':                  '0e3666de',
+  'pantalla.js':                  'c0695b1f',
   'particulas.js':                'bc85b204',
   'publicar.js':                  '3a304ef5',
   'publicos.js':                  '63cec294',
   'records.js':                   'f29f8ad1',
   'repeticion.js':                '080fef0c',
-  'sala.js':                      'b67ec48c',
+  'sala.js':                      'e8b74f39',
   'tablaRecords.js':              '68277b09',
   'vendor/pnyk/red.js':           '3e6b29f5',
   'vendor/pnyk/pie.js':           'bc866a2f',
