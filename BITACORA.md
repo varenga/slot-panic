@@ -2246,3 +2246,22 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   propio se va a 17 px y vuelve).
 - **Nada cambia sin red**: las secciones 1 a 9 dan, línea a línea, la misma salida que antes
   (2351 aserciones). Con la sección 10, 2454.
+
+## En red, bloque B: el alta en el servidor de salas (09/11/2026, rama `67-en-red`)
+
+- **`net.js`**, el cliente común, llega con comun 1.3.0 (`propagar.js --aplicar --solo
+  slot-panic`, que lo deja en su rama `68-comun-1.3.0`, fusionada en esta). Aquí no se copia a
+  la raíz como en Orbit: `vendor/pnyk/` ya se sirve (el `.htaccess` no lo deniega), así que va
+  en `CLASICOS` de `gen-pages.mjs`, con su `<script>` antes de `juego.js` y en `PRECACHE`.
+  `juego.js` le dice su juego (`slot-panic`) y la versión de sus mensajes (1). Es un `const`
+  de un script clásico: está en el ámbito global, no en `window`.
+- **`salas`**: `slot-panic` en `juegos.js`, con su dominio y los orígenes de la app. Antes de
+  publicarlo, `comprobar.js` contra el servidor en local **sin** `--dev` (que admite cualquier
+  juego): pasaba para Slot y para Orbit. Y la página de verdad, servida en local, con dos
+  pestañas contra el de desarrollo: crear, unirse en minúsculas, mensajes en los dos sentidos
+  y el aviso al irse, sin errores en la consola.
+- **Publicado** (`salas` 508666a) y comprobado en producción: `comprobar.js` contra
+  `wss://salas.pnyk.es/ws` con `https://slot.pnyk.es` pasa entero, y Orbit sigue igual.
+- **El push no reinició la aplicación**: nueve minutos después, `/estado` seguía con el
+  arranque de antes, aunque Plesk tenía el commit desplegado. Hizo falta *Restart App* a mano en
+  la pantalla de Node.js. Tras un push a `salas`, mirar que `/estado` cambie de `arranque`.

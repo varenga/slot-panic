@@ -71,15 +71,10 @@ la portada, con cuatro coches siempre, las mangas y *La judía* y *La ele*
 Cada uno en su dispositivo, en una sala privada con código: primero a dos, después hasta
 cuatro en la pista de cuatro. El diseño y sus razones, en `MULTIJUGADOR.md`; sigue los
 pasos del cooperativo de Orbit Panic y usa el servidor de salas común (`salas.pnyk.es`).
-La prueba de red (el bloque 0) la superó Orbit con el mismo servidor, y el bloque A (la
-red de mentira, `nucleo/red.js` y la sección 10 del arnés) está hecho (`BITACORA.md`). El
-orden importa:
+La prueba de red (el bloque 0) la superó Orbit con el mismo servidor; el bloque A (la
+red de mentira, `nucleo/red.js` y la sección 10 del arnés) y el B (`net.js` y el alta en
+`salas.pnyk.es`) están hechos (`BITACORA.md`). El orden importa:
 
-- [ ] **Bloque B: alta en salas.** Hecho en local: `net.js` (comun 1.3.0, rama
-      `68-comun-1.3.0`, traída a esta), en `CLASICOS` de `gen-pages.mjs`, y `slot-panic`
-      en `salas/juegos.js` (rama `02-slot-panic` de `salas`), probado sin `--dev` y con
-      dos pestañas. Falta publicar `salas` (push = despliegue) y el criterio:
-      `comprobar.js` contra producción con `slot-panic` y `https://slot.pnyk.es`.
 - [ ] **Bloque C: pantallas.** EN RED en CARRERA, unirse (las casillas del código) y la
       sala, en `sala.js`, en la mesa y en la lupa. Criterio: se entra en la sala con
       teclado, ratón y tacto, en los siete idiomas, y cada motivo de cierre se lee.
