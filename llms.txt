@@ -1,6 +1,6 @@
 # Slot Panic
 
-> Carreras de slot con vista cenital: solo apretar y soltar. Suelta antes de la curva o el coche se sale. Contra la CPU o a dos en la misma pantalla.
+> Carreras de slot con vista cenital: solo apretar y soltar. Suelta antes de la curva o el coche se sale. Contra la CPU, a dos en la misma pantalla o en red, cada uno en su móvil.
 
 Slot Panic es un juego de carreras de slot (coches enganchados a un carril) con vista
 cenital, jugable gratis en el navegador (HTML5 Canvas y JavaScript, sin instalación)
@@ -11,13 +11,13 @@ ampliada alrededor del coche y el mapa del circuito arriba, contra la CPU. Trece
 elegir (caricaturas de clásicos vistos desde arriba): cambian la forma, no la carrera.
 Está en siete idiomas, cada uno con su URL:
 
-- [Español (es)](https://slot.pnyk.es/): Carreras de slot con vista cenital: solo apretar y soltar. Suelta antes de la curva o el coche se sale. Contra la CPU o a dos en la misma pantalla.
-- [English (en)](https://slot.pnyk.es/en/): Top-down slot car racing: just press and release. Lift before the bend or the car flies off. Against the CPU or two players on the same screen.
-- [Português (pt)](https://slot.pnyk.es/pt/): Corridas de slot vistas de cima: só carregar e soltar. Solta antes da curva ou o carro sai. Contra a CPU ou a dois no mesmo ecrã.
-- [Galego (gl)](https://slot.pnyk.es/gl/): Carreiras de slot vistas desde arriba: só apertar e soltar. Solta antes da curva ou o coche sae. Contra a CPU ou a dous na mesma pantalla.
-- [Català (ca)](https://slot.pnyk.es/ca/): Curses de slot vistes des de dalt: només prémer i deixar anar. Deixa anar abans del revolt o el cotxe surt. Contra la CPU o a dos a la mateixa pantalla.
-- [Italiano (it)](https://slot.pnyk.es/it/): Corse di slot viste dall'alto: solo premere e rilasciare. Rilascia prima della curva o l'auto esce. Contro la CPU o in due sullo stesso schermo.
-- [Français (fr)](https://slot.pnyk.es/fr/): Courses de slot vues du dessus : il suffit d'appuyer et de relâcher. Lâche avant le virage ou la voiture sort. Contre le CPU ou à deux sur le même écran.
+- [Español (es)](https://slot.pnyk.es/): Carreras de slot con vista cenital: solo apretar y soltar. Suelta antes de la curva o el coche se sale. Contra la CPU, a dos en la misma pantalla o en red, cada uno en su móvil.
+- [English (en)](https://slot.pnyk.es/en/): Top-down slot car racing: just press and release. Lift before the bend or the car flies off. Against the CPU, two players on the same screen or online, each on their own phone.
+- [Português (pt)](https://slot.pnyk.es/pt/): Corridas de slot vistas de cima: só carregar e soltar. Solta antes da curva ou o carro sai. Contra a CPU, a dois no mesmo ecrã ou em rede, cada um no seu telemóvel.
+- [Galego (gl)](https://slot.pnyk.es/gl/): Carreiras de slot vistas desde arriba: só apertar e soltar. Solta antes da curva ou o coche sae. Contra a CPU, a dous na mesma pantalla ou en rede, cada un no seu móbil.
+- [Català (ca)](https://slot.pnyk.es/ca/): Curses de slot vistes des de dalt: només prémer i deixar anar. Deixa anar abans del revolt o el cotxe surt. Contra la CPU, a dos a la mateixa pantalla o en xarxa, cadascú al seu mòbil.
+- [Italiano (it)](https://slot.pnyk.es/it/): Corse di slot viste dall'alto: solo premere e rilasciare. Rilascia prima della curva o l'auto esce. Contro la CPU, in due sullo stesso schermo o online, ognuno sul suo telefono.
+- [Français (fr)](https://slot.pnyk.es/fr/): Courses de slot vues du dessus : il suffit d'appuyer et de relâcher. Lâche avant le virage ou la voiture sort. Contre le CPU, à deux sur le même écran ou en ligne, chacun sur son téléphone.
 
 ## Circuitos
 - LA HORQUILLA: dos curvas rápidas y un dedo con una horquilla cerrada.

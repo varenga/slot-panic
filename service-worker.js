@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-d13d25b6';
+const CACHE = 'slotpanic-9f21173e';
 
 const PRECACHE = [
   'index.html',
@@ -88,13 +88,13 @@ const PRECACHE = [
 
 // La huella del contenido de cada fichero de PRECACHE.
 const HUELLAS = {
-  'index.html':                   '8c24c7b4',
-  'en/index.html':                'c00172b5',
-  'pt/index.html':                'e53d8f26',
-  'gl/index.html':                '6563bd38',
-  'ca/index.html':                '1661c45b',
-  'it/index.html':                '1c79ae30',
-  'fr/index.html':                '3ac3835a',
+  'index.html':                   '5d145d5c',
+  'en/index.html':                '7a065860',
+  'pt/index.html':                '5a044215',
+  'gl/index.html':                '02a0986c',
+  'ca/index.html':                'a5cde5cf',
+  'it/index.html':                'e9833adc',
+  'fr/index.html':                '5b2a5935',
   'ajustes.js':                   'e250c8f6',
   'analitica.js':                 'bccaef26',
   'audio.js':                     'ae2b16b7',
@@ -116,13 +116,13 @@ const HUELLAS = {
   'estado.js':                    'feb8ab89',
   'galeria.js':                   '625d65a3',
   'i18n.js':                      '1859ef57',
-  'idiomas/ca.js':                'cf3b8d22',
-  'idiomas/en.js':                '82702c11',
-  'idiomas/es.js':                '3fb5dde5',
-  'idiomas/fr.js':                '3ee924b7',
-  'idiomas/gl.js':                'e87ea2cc',
-  'idiomas/it.js':                '39a916a7',
-  'idiomas/pt.js':                '8e3f2f20',
+  'idiomas/ca.js':                'a1b7f3a4',
+  'idiomas/en.js':                '32f094e2',
+  'idiomas/es.js':                '40e935a8',
+  'idiomas/fr.js':                '07ab0d53',
+  'idiomas/gl.js':                '3ad8502c',
+  'idiomas/it.js':                '33fc14b1',
+  'idiomas/pt.js':                '6276255b',
   'juego.js':                     'd8f501cf',
   'lupa.js':                      '3792e9cc',
   'luz.js':                       '4473708b',

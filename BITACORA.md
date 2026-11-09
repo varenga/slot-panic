@@ -2367,3 +2367,20 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   invitado sigue y acaba), y en *La horquilla* la carrera entera con el mismo resultado en los
   dos, la revancha bloqueada hasta que el invitado vuelve y el circuito cambiado mientras él
   estaba en el cartel. Una serie de mangas entera queda para el playtest. El arnés, 2454/2454.
+
+## En red, bloque G: preparar la publicación a dos (09/11/2026, rama `67-en-red`)
+
+- **Prosa**: `seo.description` dice ya «o en red, cada uno en su móvil», y la lista de cómo
+  se juega tiene un punto nuevo (`page.how11`): la sala, el código de cuatro letras, la CPU en
+  la pista de cuatro y que, si alguien se va, sigues contra la CPU. El JSON-LD no cambia:
+  `playMode` ya decía `MultiPlayer` (por la mesa a dos) y `numberOfPlayers` sigue en 2.
+- **Ficha de Play** (`app/store/listing/`), reescrita entera: se había quedado en tres
+  circuitos y cinco vueltas. Ahora cuenta los seis circuitos y la pista de cuatro, los trece
+  coches, el campeonato, los récords, la repetición, el constructor y la red (≈2500 caracteres
+  de 4000). En `play-console.md`, la interacción entre usuarios incluye la red (sin chat ni
+  texto) y, en la seguridad de los datos, que la red no añade ningún tipo: la IP solo en
+  memoria del servidor de salas, como cuenta la política común.
+- **Versiones**: `pnyk.json` a 1.20.0 y la app a `versionCode` 6, `versionName` 1.20.0.
+- **Lo que queda** (`TODO.md`): publicar la web, probar con dos móviles reales en redes
+  distintas y entre web y app, y subir el bundle. La ficha de Slot en `pnyk/proyectos.js`
+  sigue atrasada: se hace en pnyk.

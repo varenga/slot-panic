@@ -35,7 +35,9 @@ ya pasó por la consola.
   apuestas ni simulación de apuestas, sin compras. Interacción entre usuarios:
   **sí, desde la v0.8.0**: se comparte contenido generado por usuarios (los
   circuitos de la galería, con un alias de 3 letras); no hay chat, ni texto
-  libre, ni mensajes, ni imágenes. No comparte la ubicación. Resultado
+  libre, ni mensajes, ni imágenes. **Desde la v1.20.0, además, se juega en red
+  con otra persona** en una sala privada con código (sin cuentas, sin chat ni
+  texto: solo la propia carrera). No comparte la ubicación. Resultado
   esperado: PEGI 3 / Everyone, con la nota «Los usuarios interactúan».
 * **Contenido generado por usuarios** (política de UGC de Play), lo que pide y
   dónde está:
@@ -68,12 +70,21 @@ con que se publicó, o por correo; política común de pnyk.es).
 
 No hay cuentas ni correo; nada se usa para publicidad ni se vende.
 
+**Las carreras en red (v1.20.0)** no añaden ningún tipo de dato: pasan por el
+servidor de salas común (`salas.pnyk.es`), que usa la IP en memoria para la
+conexión y los topes por persona, sin guardarla en disco ni en registros, y no
+guarda lo que se envían los jugadores (la carrera). Si el formulario pregunta
+por el tratamiento efímero, es eso. Lo cuenta la sección «Juegos de PNYK» de la
+política común (párrafo «Jugar a dos»).
+
 ## Permisos
 
 `INTERNET`, que Capacitor declara siempre, y `VIBRATE`, para los choques, las
 salidas y los baches (se apaga en AJUSTES). Android concede los dos sin preguntar.
-El juego va entero dentro de la app; la red solo la usa la galería (`https://slot.pnyk.es/api.php`, con CORS
-para `https://localhost`), y sin red se juega igual.
+El juego va entero dentro de la app; la red solo la usan la galería y los récords
+(`https://slot.pnyk.es/api.php`, con CORS para `https://localhost`) y las carreras
+en red (`wss://salas.pnyk.es/ws`, que admite los orígenes de Capacitor), y sin red
+se juega igual.
 
 ## Versión
 

@@ -83,9 +83,14 @@ están hechos (`BITACORA.md`). El orden importa:
       listo?, ¿20 s de espera son muchos?, ¿se lee «Aún en la carrera» en la sala?, ¿y el aviso
       cuando el otro se va? Una serie de mangas en red entera (cuatro carreras), que en la prueba
       del bloque solo se vio empezar.
-- [ ] **Bloque G: publicación a dos.** Prosa y JSON-LD, ficha de Play, `pnyk.json` a
-      1.20.0, `BITACORA.md` y `CLAUDE.md`. Criterio: probado entre web y app de Android, y
-      con dos móviles reales en redes distintas.
+- [ ] **Bloque G: publicación a dos.** Preparado (`BITACORA.md`): la prosa, la ficha de
+      Play, `pnyk.json` a 1.20.0 y `versionCode` 6. Queda, en este orden: fusionar en
+      `master` y publicar la web (con su tag); probar con dos móviles reales en redes
+      distintas y entre la web y la app de Android (un APK de depuración contra
+      `salas.pnyk.es`); y, si va bien, el bundle 1.20.0 a la prueba cerrada de Play, con la
+      ficha nueva (`app/store/listing/`) y la clasificación (`play-console.md`).
+- [ ] La ficha de Slot en `pnyk/proyectos.js` está atrasada (dice cuatro circuitos y «a dos
+      en la misma pantalla»): ponerla al día con la red y propagarla en pnyk.
 - [ ] **Bloque S4: salas de cuatro.** El servidor admite `max` hasta 4 sin cambiar las
       salas de dos (Orbit), `net.js` a comun 1.4.0, la política común dice «con otras
       personas», y hasta cuatro personas en la pista de cuatro (`MULTIJUGADOR.md` §5.2).

@@ -250,6 +250,7 @@ ${jsonLd}
       <li>${esc(t('page.how8'))}</li>
       <li>${esc(t('page.how9'))}</li>
       <li>${esc(t('page.how10'))}</li>
+      <li>${esc(t('page.how11'))}</li>
     </ul>
 
     <h2>${esc(t('page.controlsTitle'))}</h2>

@@ -12,7 +12,7 @@ dosifica a toques), derrape antes de salirse, un puente que frena al subir y emp
 suma al derrape: siguen los dos, se sale uno o los dos; y uno que se sale se lleva por delante al
 otro), una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los seis seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil), dos en la misma pantalla o en red (cada uno en su dispositivo, en una sala privada con código del servidor de salas común; si uno se va, el otro sigue contra la CPU: `MULTIJUGADOR.md`), con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los seis seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo

@@ -240,7 +240,8 @@ Las casillas están en la Fase 6 del `TODO.md`. El orden importa:
    remotos en el dibujo y los eventos. **Hecho**; falta el playtest.
 5. **E. Reglas en red.** La salida que espera, la revancha, las mangas, la CPU en los huecos,
    segundo plano y desconexiones. **Hecho**; falta el playtest.
-6. **G. Publicación a dos.** Prosa, ficha de Play, versión 1.20.0 y `BITACORA.md`.
+6. **G. Publicación a dos.** Prosa, ficha de Play, versión 1.20.0 y `BITACORA.md`. **Preparado**;
+   falta publicar y probar con móviles reales.
 7. **S4. Salas de cuatro.** Servidor, `net.js` (comun 1.4.0), la política común y hasta cuatro
    personas en la pista de cuatro.
 
