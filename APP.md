@@ -157,8 +157,9 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
   `versionName` 1.17.0 (el atardecer fluido y empezar a jugar en horizontal, 2026-10-16).
   El último: `versionCode` 5, `versionName` 1.18.1 (los ajustes de rendimiento y los
   arreglos de la prueba por USB), subido el 2026-11-04. El 4 (1.18.0) se compiló pero no
-  se llegó a dar por bueno. Preparado el 6 (`versionName` 1.20.0, las carreras en red), con
-  la ficha reescrita: se compila cuando la web 1.20.0 esté publicada y probada.
+  se llegó a dar por bueno. El 6 (`versionName` 1.20.0, las carreras en red), con la ficha
+  reescrita, compilado y firmado el 2026-11-09 tras probar la red entre la web publicada y
+  un APK de depuración: falta subirlo a la prueba cerrada.
 
 ### Fase D — La de iOS
 
