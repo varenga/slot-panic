@@ -2384,3 +2384,7 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
 - **Lo que queda** (`TODO.md`): publicar la web, probar con dos móviles reales en redes
   distintas y entre web y app, y subir el bundle. La ficha de Slot en `pnyk/proyectos.js`
   sigue atrasada: se hace en pnyk.
+- **Publicada la web 1.20.0** (tag `v1.20.0`, 09/11/2026): `comprobar.js` contra
+  `salas.pnyk.es`, bien. Probado por el usuario entre la web publicada y un APK de
+  depuración en el Redmi: «funciona bien». Después, el bundle 1.20.0 (`versionCode` 6),
+  firmado y verificado con `jarsigner`.
