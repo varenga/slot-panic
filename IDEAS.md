@@ -71,6 +71,10 @@ En curso: `TODO.md` › Fase 4. Lo que queda aquí, sin fase:
 
 # 6. Partidas en línea
 
+**En curso: `TODO.md` › Fase 6, con su diseño en `MULTIJUGADOR.md`.** Allí se decidió el
+servidor de salas común (WebSocket) en vez de WebRTC, y la sala privada con código. Lo que
+sigue es la tormenta de entonces; de ella quedan sin fase las salas abiertas.
+
 Dos jugadores, cada uno en su dispositivo. **Sin registro, sin chat y sin nada que se
 compartan los jugadores** durante la partida: solo los coches.
 

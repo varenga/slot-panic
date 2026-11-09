@@ -2208,3 +2208,179 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
 - El veredicto, de oído: «suena más a pista real, me encaja bastante más».
 - Sin medir: el coste en un Android justo (cada coche lleva más filtros) y cuánto se pierde
   del retumbo en el altavoz de un móvil. Arnés sin cambios en lo medido: no toca la física.
+
+## En red, bloque A: la red de mentira (08/11/2026, rama `67-en-red`)
+
+> Fase 6 del `TODO.md`, con su diseño en `MULTIJUGADOR.md`: correr en red, cada uno en su
+> dispositivo, siguiendo los pasos del cooperativo de Orbit Panic. El bloque A va antes que
+> los sockets, como el de Orbit: separa los fallos del protocolo de los de conexión.
+
+- **Cada coche lo simula quien lo conduce; el anfitrión arbitra.** El diseño de partida era
+  el de Orbit: el anfitrión simula la carrera entera y el invitado adelanta su coche y lo
+  corrige. Se descartó antes de escribirlo: el anfitrión vería soltar el gatillo ~60 ms tarde,
+  y un coche que en la pantalla del invitado pasaba la curva se saldría en la suya. Ahora, en
+  los demás dispositivos el coche es `remoto` (`slot.js`): no se simula, rueda con lo que dijo
+  su dueño. Los choques y el ganador son del anfitrión, que manda el golpe a quien lo recibe.
+- **La misma hora de carrera.** Cada uno cuenta desde su propia salida, y el invitado sale
+  cuando le llega la del anfitrión: a la misma hora de carrera están a la par. El anfitrión
+  adelanta cada reporte lo que tardó más lo que el otro salió después (~120 ms con 60 de ida);
+  el invitado, a los demás, casi nada. Gana la llegada menor, cada una en el reloj de su dueño.
+- **El golpe** (`fotografiar` / `anotarGolpe` / `aplicarGolpe`): lo que un choque le cambia a un
+  coche remoto (velocidad, derrape y cola; cómo sale, respecto a su rumbo; o lo que lo mueve
+  fuera). Hasta que el invitado confirma que lo tiene, el anfitrión lo aplica encima de cada
+  reporte; si no, un reporte de antes del golpe lo deshacía y el coche se salía dos veces. Y lo
+  aplica **antes** de adelantarlo: adelantado con la velocidad de antes del golpe, lo veía
+  meterse en el otro más de lo que se mete, y en los encuentros salían los dos 10 veces contra
+  3 en la mesa; aplicándolo antes, 4 contra 3.
+- **Lo que viaja**: un coche como una lista de 13 números (más la pose fuera del carril, o de
+  dónde lo recoge la mano). El progreso no viaja, es siempre `s − largo`: quitarlo bajó la
+  instantánea de cuatro coches de 407 a ≤ 401 B. Reportes a 30 Hz e instantáneas a 20 Hz:
+  3,3 KB/s a dos y 5,4 con cuatro coches.
+- **El arnés, sección 10**, con una red de mentira (60 ms de ida, 20 de variación, en orden
+  como TCP, en JSON): en los seis oficiales a dos, en los tres de cuatro con dos CPU y en *El
+  ocho largo* con cuatro personas, el anfitrión tiene al invitado a 2,3-2,6 px (p95; máx 4,4)
+  de donde va y el invitado pinta a los demás a 1,1-1,4 (máx 2,5); la vuelta del invitado en
+  red es la suya sin red (12,55 / 12,55 s en *La horquilla*); mismo ganador, vueltas y
+  llegadas en todos. Encuentros (siguen / sale uno / los dos): mesa 47 / 6 / 2, red 47 / 5 / 3,
+  con las salidas del invitado cuadrando siempre. Con un hueco de 450 ms, acaba igual (el
+  propio se va a 17 px y vuelve).
+- **Nada cambia sin red**: las secciones 1 a 9 dan, línea a línea, la misma salida que antes
+  (2351 aserciones). Con la sección 10, 2454.
+
+## En red, bloque B: el alta en el servidor de salas (09/11/2026, rama `67-en-red`)
+
+- **`net.js`**, el cliente común, llega con comun 1.3.0 (`propagar.js --aplicar --solo
+  slot-panic`, que lo deja en su rama `68-comun-1.3.0`, fusionada en esta). Aquí no se copia a
+  la raíz como en Orbit: `vendor/pnyk/` ya se sirve (el `.htaccess` no lo deniega), así que va
+  en `CLASICOS` de `gen-pages.mjs`, con su `<script>` antes de `juego.js` y en `PRECACHE`.
+  `juego.js` le dice su juego (`slot-panic`) y la versión de sus mensajes (1). Es un `const`
+  de un script clásico: está en el ámbito global, no en `window`.
+- **`salas`**: `slot-panic` en `juegos.js`, con su dominio y los orígenes de la app. Antes de
+  publicarlo, `comprobar.js` contra el servidor en local **sin** `--dev` (que admite cualquier
+  juego): pasaba para Slot y para Orbit. Y la página de verdad, servida en local, con dos
+  pestañas contra el de desarrollo: crear, unirse en minúsculas, mensajes en los dos sentidos
+  y el aviso al irse, sin errores en la consola.
+- **Publicado** (`salas` 508666a) y comprobado en producción: `comprobar.js` contra
+  `wss://salas.pnyk.es/ws` con `https://slot.pnyk.es` pasa entero, y Orbit sigue igual.
+- **El push no reinició la aplicación**: nueve minutos después, `/estado` seguía con el
+  arranque de antes, aunque Plesk tenía el commit desplegado. Hizo falta *Restart App* a mano en
+  la pantalla de Node.js. Tras un push a `salas`, mirar que `/estado` cambie de `arranque`.
+
+## En red, bloque C: las pantallas (09/11/2026, rama `67-en-red`)
+
+- **`sala.js`**, presentación como `menu.js`: EN RED (crear o unirse, con el motivo del último
+  cierre debajo), UNIRSE y la sala, en la mesa y en la lupa. Se entra con **EN RED ›**, la
+  última fila de CARRERA, o con la tecla N. `juego.js` lleva la sala (`redUI`) y los
+  manejadores de `net`.
+- **El código, con un teclado en el lienzo** de las 31 letras de `NET_ALFABETO` y ⌫, no con
+  ▲▼ por casilla como la firma: eran hasta 15 toques por letra. Tecleado también (en UNIRSE la M
+  es una letra, no el sonido). Tocar una casilla borra desde ella: un fallo («no existe»,
+  «sin red»…) se queda junto al código y se corrige una letra sin escribirlo entero.
+- **La sala**: el código en grande, los dos puestos (rojo el anfitrión, azul el invitado: el
+  color es del puesto), el coche de cada uno (el propio, con ‹ › o K) y si está; el anfitrión
+  elige pista, circuito, vueltas y, en la de cuatro, la CPU, con las filas y las teclas de la
+  portada. Detrás, la exhibición en el circuito elegido. El invitado lo ve apagado.
+- **Dos mensajes** (versión 1, aún sin publicar): `{k:'yo', modelo}` del invitado al
+  anfitrión y `{k:'sala', clave, pub, duracion, nivel, modelos}` del anfitrión cada vez que
+  cambia algo. Un circuito de la cuadrícula viaja en su clave (`c-<código>`) y lo construye el
+  invitado; uno de la galería lleva además su nombre. Al salir, el invitado recupera el
+  circuito que tenía.
+- **Probado** con dos pestañas contra el servidor de salas en local, una en la mesa (en
+  gallego) y otra en la lupa (en gallego y en francés): crear, unirse con un código que no
+  existe y corregirlo, los cambios del anfitrión y su coche en el invitado, la pista de cuatro
+  con su fila de CPU, el aviso «tu rival ha cerrado la sala» y «sin red» con el servidor
+  parado. En la lupa, el título de la barra iba encima de VOLVER: ahora va a su derecha y se
+  encoge si no cabe.
+- **EMPEZAR** se ve (apagado hasta que hay rival) pero aún no arranca nada: es el bloque D.
+
+## En red, bloque D: la carrera a dos (09/11/2026, rama `67-en-red`)
+
+- **EMPEZAR** (o Intro) en la sala: el anfitrión manda la salida (`{k:'go', turno,
+  duracion}`) y sale ya; el invitado, cuando le llega, aunque esté en el cartel de fin o
+  viendo los momentos. Los dos crean la misma carrera: el circuito y los coches de la sala,
+  el color de cada puesto (`COLORES_RED`) y, en la pista de cuatro, la CPU en los carriles
+  libres, que solo simula el anfitrión. El turno sube en cada salida, así que la revancha ya
+  cambia de carril.
+- **El paso de la carrera**, en `avanzarMundo`: sin red, `avanzarSlot` como siempre; en red,
+  `avanzarAnfitrion` o `avanzarInvitado` (`nucleo/red.js`), y lo que devuelven, a `net`.
+  `alRecibir` lleva los reportes al anfitrión y las instantáneas y golpes al invitado. El
+  sonido, las partículas y la vibración salen de los mismos eventos de siempre (los del
+  invitado incluyen los que deduce de las instantáneas).
+- **Los mandos**: el propio, con cualquiera de las dos teclas del gatillo o un dedo en
+  cualquier sitio; los de la CPU, del anfitrión; los remotos, `null`.
+- **El coche propio no es siempre el 0**: el invitado lleva el 1. `humanos` dice solo cuál es
+  el propio (para el sonido y la vibración), y los nombres van por el puesto, J1 y J2 en los
+  dos dispositivos (`ponerPuestosRed` en `pantalla.js`). La lupa, el oído, el acelerador y la
+  depuración siguen al propio (`cochePropio`), y el marcador y el mapa de la lupa lo ponen a
+  la izquierda y resaltado (`propio` en `dibujarMarcadorLupa` y `dibujarMapa`, 0 por
+  defecto). Dos fallos de esto, vistos al probar: `aplicarVista` tomaba al invitado por «a
+  dos en la misma pantalla» (su `humanos[1]`) y quitaba la lupa, en carrera y al salir de
+  ella.
+- **Sin récords ni fantasma** en red: `conRecords()` es falso. La repetición de los momentos
+  sí, la de cada uno. En el cartel de fin, SALA (y MOMENTOS): de vuelta a la sala, que sigue
+  abierta. Si el «fin» llega dos veces en un fotograma (el del anfitrión y el de un reporte),
+  `terminarCarrera` corre una vez.
+- **Probado** con el anfitrión en una pestaña y el invitado en un `<iframe>` dentro de ella
+  (en lupa), contra el servidor de salas en local y a `?lag=60&jitter=20`: Chrome tenía la
+  ventana a 1,5 fps (no estaba a la vista) y `requestAnimationFrame` se cambió, solo para la
+  prueba, por un temporizador de 16 ms (~40 fps). En la pista de dos y en *El ocho largo*
+  con dos CPU: los coches en el mismo sitio en los dos lados, el mismo ganador, tiempo y
+  clasificación, la revancha con el turno cambiado y, si el invitado se va a media carrera,
+  «tu rival ha cerrado la sala» en el anfitrión. Lo que no se ha podido juzgar así (si el
+  propio responde sin retardo, si los demás se ven fluidos, si un golpe se entiende) queda
+  como playtest en `TODO.md`.
+
+## En red, bloque E: las reglas (09/11/2026, rama `67-en-red`)
+
+- **La salida espera a todos** (`salidaEnRed`): cada uno queda listo al pulsar una vez y se lo
+  dice al otro (`{k:'listo'}`); no hace falta seguir pulsando, porque con el retraso de la red
+  «los dos a la vez» no se ve igual en los dos lados. El anfitrión arranca cuando lo están todos,
+  o pasados 20 s (`ESPERA_RED`), y se lo dice al invitado (`{k:'arranca'}`), que cuenta su hora de
+  carrera desde ahí. En la guía, «PULSA/TOCA CUANDO ESTÉS LISTO», «¡LISTO!» y «ESPERANDO…» por
+  puesto; en la lupa, en el panel de abajo, sin cuenta ni semáforo hasta que arranca.
+- **La revancha espera al otro**: tras EMPEZAR, el anfitrión no puede lanzar otra hasta que el
+  invitado vuelva a la sala (`{k:'enSala'}`); mientras, su puesto dice «Aún en la carrera» y
+  EMPEZAR sale apagado. Si el anfitrión cambia la sala con el invitado aún en el cartel, el
+  invitado la pone al volver (`redUI.pendiente`): cambiar el circuito antes se llevaba por delante
+  la carrera que estaba viendo.
+- **Las mangas**: en un circuito de mangas, el anfitrión crea la serie y la manda con cada salida
+  (`go.serie`); acabada una manga, manda cómo la apunta (`{k:'manga'}`), porque los tiempos de
+  los que no llegan salen de lo que han corrido y el invitado lo ve con retraso: así la suma es la
+  misma en los dos. Entre manga y manga, la sala: EMPEZAR dice «MANGA 2 DE 4». Cambiar algo en la
+  sala empieza la serie de nuevo.
+- **Quien se va o cae**: a dos, el servidor cierra la sala; quien se queda sigue su carrera
+  (`quedarseSolo`): pasa a arbitrarla (`choques` y `arbitro`), los coches dejan de ser remotos, la
+  CPU coge el del otro (con el nombre «CPU») y sale el aviso del motivo con «Sigues contra la
+  CPU.». Igual se vaya el anfitrión o el invitado (antes el diseño acababa la carrera si se iba el
+  anfitrión: así queda en un estado usable y con menos piezas). En el fin, SALIR, a EN RED con el
+  motivo.
+- **Escape en carrera**, dos veces en 2 s: el primero solo avisa.
+- **Segundo plano**: oculta la pestaña, el gatillo queda suelto (teclas y dedos). El invitado sin
+  instantáneas medio segundo ve «Esperando al anfitrión…».
+- **La ayuda de la banda de abajo** en red ya no es la de la mesa a dos: cualquiera de las teclas
+  y «ESC DOS VECES DEJA LA SALA». `ponerPuestosRed` pasa a ser una lista (quién es persona), para
+  que el coche que coge la CPU se llame CPU. En la lupa, la suma es la del coche propio, no la del 0.
+- **Probado** con el anfitrión en una pestaña y el invitado en un `<iframe>` en lupa, contra el
+  servidor de salas en local y a `?lag=60&jitter=20` (con `requestAnimationFrame` cambiado por un
+  temporizador, como en el D): la salida que espera en *La judía* (manga 1 de 4), el invitado que
+  se va con Escape (el anfitrión sigue con la CPU y acaba la manga), el anfitrión que se va (el
+  invitado sigue y acaba), y en *La horquilla* la carrera entera con el mismo resultado en los
+  dos, la revancha bloqueada hasta que el invitado vuelve y el circuito cambiado mientras él
+  estaba en el cartel. Una serie de mangas entera queda para el playtest. El arnés, 2454/2454.
+
+## En red, bloque G: preparar la publicación a dos (09/11/2026, rama `67-en-red`)
+
+- **Prosa**: `seo.description` dice ya «o en red, cada uno en su móvil», y la lista de cómo
+  se juega tiene un punto nuevo (`page.how11`): la sala, el código de cuatro letras, la CPU en
+  la pista de cuatro y que, si alguien se va, sigues contra la CPU. El JSON-LD no cambia:
+  `playMode` ya decía `MultiPlayer` (por la mesa a dos) y `numberOfPlayers` sigue en 2.
+- **Ficha de Play** (`app/store/listing/`), reescrita entera: se había quedado en tres
+  circuitos y cinco vueltas. Ahora cuenta los seis circuitos y la pista de cuatro, los trece
+  coches, el campeonato, los récords, la repetición, el constructor y la red (≈2500 caracteres
+  de 4000). En `play-console.md`, la interacción entre usuarios incluye la red (sin chat ni
+  texto) y, en la seguridad de los datos, que la red no añade ningún tipo: la IP solo en
+  memoria del servidor de salas, como cuenta la política común.
+- **Versiones**: `pnyk.json` a 1.20.0 y la app a `versionCode` 6, `versionName` 1.20.0.
+- **Lo que queda** (`TODO.md`): publicar la web, probar con dos móviles reales en redes
+  distintas y entre web y app, y subir el bundle. La ficha de Slot en `pnyk/proyectos.js`
+  sigue atrasada: se hace en pnyk.

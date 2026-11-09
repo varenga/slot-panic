@@ -100,8 +100,9 @@ export function dibujarAvisos(avisos) {
   avisos.forEach((aviso, i) => {
     ctx.globalAlpha = Math.min(1, aviso.vida);
     const y = BANDA_TEXTO + 34 + i * 34 - (1.6 - aviso.vida) * 12;
-    panel(ANCHO / 2, y - 15, 260, 30);
-    texto(aviso.texto, ANCHO / 2, y, { tam: 20, color: aviso.color || COLOR.ambar, peso: 700 });
+    // Los de la red, más largos: más anchos y más pequeños.
+    panel(ANCHO / 2, y - 15, aviso.largo ? 560 : 260, 30);
+    texto(aviso.texto, ANCHO / 2, y, { tam: aviso.largo ? 16 : 20, color: aviso.color || COLOR.ambar, peso: 700 });
   });
   ctx.globalAlpha = 1;
 }
@@ -214,10 +215,11 @@ export function botonesFin(ids = ['repetir', 'menu'], y = ALTO / 2 + 130) {
 
 export const ETIQUETA_BOTON = {
   repetir: 'fin.botonRepetir', siguiente: 'fin.botonSiguiente', manga: 'fin.botonManga', menu: 'fin.botonMenu',
-  momentos: 'fin.botonMomentos', denunciar: 'fin.botonDenunciar', confirmarDenuncia: 'fin.botonConfirmarDenuncia', denunciado: 'fin.botonDenunciado'
+  momentos: 'fin.botonMomentos', denunciar: 'fin.botonDenunciar', confirmarDenuncia: 'fin.botonConfirmarDenuncia', denunciado: 'fin.botonDenunciado',
+  sala: 'fin.botonSala', salirRed: 'fin.botonSalirRed'
 };
 // Los que van destacados (en ámbar).
-export const DESTACADO = new Set(['repetir', 'siguiente', 'manga', 'confirmarDenuncia']);
+export const DESTACADO = new Set(['repetir', 'siguiente', 'manga', 'confirmarDenuncia', 'sala', 'salirRed']);
 
 function botones(cajas) {
   for (const caja of cajas) {
@@ -229,8 +231,20 @@ function botones(cajas) {
 
 // --- La carrera ----------------------------------------------------------------
 
+/*
+ * En red, quién lleva cada coche: J1 el anfitrión y J2 el invitado, iguales
+ * en los dos dispositivos (`humanos` solo dice cuál es el propio), y la CPU
+ * el resto, también el de quien se ha ido. `personas`: una lista, true en
+ * los coches de una persona. Fuera de una carrera en red, null.
+ */
+let puestosRed = null;
+export function ponerPuestosRed(personas) {
+  puestosRed = personas;
+}
+
 /** «J1», «J2» o «CPU»: quién lleva cada carril. */
 export function nombreSlot(i, humanos) {
+  if (puestosRed) return puestosRed[i] ? t('slot.jugador', { n: i + 1 }) : t('slot.cpu');
   return humanos[i] ? t('slot.jugador', { n: i + 1 }) : t('slot.cpu');
 }
 
@@ -365,17 +379,22 @@ function guiaSlot(carrera, humanos, tactil, rotulo, espera) {
     texto(nombreGuia(i, humanos, uno), cx, cy - 14, { tam: 22, color: slot.coche.color, peso: 800 });
     // Lo que tiene que hacer cada humano (tocando, apoyar el dedo; con teclado, sus teclas); la CPU, nada.
     let ayuda = '', color = COLOR.hud;
-    if (humanos[i] && tactil && espera) {
+    if (puestosRed && espera) {
+      // En red, la salida espera a todos: el propio pulsa, del otro se ve si ya está.
+      if (puestosRed[i]) ayuda = t(espera[i] ? 'slot.listo' : humanos[i] ? (tactil ? 'slot.tocaListo' : 'slot.pulsaListo') : 'slot.esperandoRival');
+      if (espera[i]) color = COLOR.verde;
+    } else if (humanos[i] && tactil && espera) {
       ayuda = t(espera[i] ? 'slot.listo' : 'slot.mantenerSalir');
       if (espera[i]) color = COLOR.verde;
-    } else if (humanos[i]) ayuda = tactil ? t('slot.mantener') : t('slot.teclas' + (i + 1));
+    } else if (humanos[i]) ayuda = tactil ? t('slot.mantener') : t(puestosRed ? 'slot.teclasRed' : 'slot.teclas' + (i + 1));
     if (ayuda) texto(ayuda, cx, cy + 14, { tam: cuatro ? 13 : 15, color, peso: 700 });
   });
   if (tactil) anillos(carrera, humanos);
   etiquetasParrilla(carrera, humanos, uno);
   // La barra de arriba es el marcador: la ayuda va abajo.
   bandas(false);
-  const ayuda = tactil ? (uno ? 'slot.controlesUno' : 'slot.controlesTactil') : 'slot.controles';
+  // En red, cada uno tiene su pantalla y cualquiera de las teclas: no es la ayuda de la mesa a dos.
+  const ayuda = tactil ? (uno ? 'slot.controlesUno' : 'slot.controlesTactil') : puestosRed ? 'slot.controlesRed' : 'slot.controles';
   texto(t(ayuda), ANCHO / 2, ALTO - BANDA_TEXTO / 2, { tam: tactil ? 15 : 13, color: COLOR.hud, peso: tactil ? 600 : 500 });
 }
 
@@ -459,8 +478,14 @@ export function dibujarFinSlot(carrera, humanos, tactil, { campeonato = null, se
     texto((cuatro ? `${k + 1}.  ` : '') + nombreSlot(i, humanos), x - 234, fila, { tam: 16, color: COLOR.hud, peso: 800, alinear: 'left' });
     texto(t('slot.resumen', { tiempo: formatearTiempo(mejorVueltaSlot(slot)), n: slot.salidas }), x + 260, fila, { tam: 16, color: COLOR.texto, alinear: 'right' });
   });
-  if (!tactil) texto(t('fin.repetir'), x, y + 95, { tam: 14, color: COLOR.texto, peso: 500 });
+  if (!tactil) texto(t(pistaFin(ids, 'fin.repetir')), x, y + 95, { tam: 14, color: COLOR.texto, peso: 500 });
   botones(botonesFin(ids));
+}
+
+/* Lo que dice el fin con teclado: en red, volver a la sala o, cerrada, salir. */
+function pistaFin(ids, normal) {
+  if (!puestosRed) return normal;
+  return ids.includes('sala') ? 'fin.volverSala' : 'fin.salirRed';
 }
 
 /*
@@ -499,7 +524,7 @@ function dibujarFinSerie(carrera, humanos, tactil, serie, ids) {
   pintarCabeceraSerie(carrera, humanos, serie, x, y - 165, 40);
   pintarTablaSerie(serie, carrera, humanos, { x, y: y - 90, mitad: 380, tam: 16, fila: 30 });
   botones(botonesFin(ids));
-  if (!tactil) texto(t(serieAcabada(serie) ? 'fin.repetir' : 'fin.siguienteManga'), x, y + 205, { tam: 14, color: COLOR.texto, peso: 500 });
+  if (!tactil) texto(t(pistaFin(ids, serieAcabada(serie) ? 'fin.repetir' : 'fin.siguienteManga')), x, y + 205, { tam: 14, color: COLOR.texto, peso: 500 });
 }
 
 /** El titular de una manga y, debajo, cuál era; acabada la serie, quién gana la suma. Lo comparte la lupa. */

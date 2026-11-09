@@ -27,12 +27,15 @@ export const GRUPOS = ['carrera', 'coche', 'circuitos', 'ajustes'];
 
 /** La tecla directa de cada opción (con teclado), que funciona con el panel cerrado. */
 export const TECLA_OPCION = {
-  modo: 'T', pista: 'P', circuito: 'C', duracion: 'V', nivel: 'D', j1: '1', j2: '2', escenario: 'E', hora: 'H', sonido: 'M', idioma: 'L'
+  modo: 'T', pista: 'P', circuito: 'C', duracion: 'V', nivel: 'D', j1: '1', j2: '2', red: 'N', escenario: 'E', hora: 'H', sonido: 'M', idioma: 'L'
 };
 
-/** Las filas de un grupo. Quién juega solo se elige con teclado: tocando, se entra tocando. */
-export function opcionesGrupo(grupo, eligeJugadores) {
-  if (grupo === 'carrera') return ['modo', 'pista', 'circuito', 'duracion', 'nivel', ...(eligeJugadores ? ['j1', 'j2'] : [])];
+/*
+ * Las filas de un grupo. Quién juega solo se elige con teclado: tocando, se
+ * entra tocando. EN RED, al final de CARRERA, si la página trae `net.js`.
+ */
+export function opcionesGrupo(grupo, eligeJugadores, enRed = false) {
+  if (grupo === 'carrera') return ['modo', 'pista', 'circuito', 'duracion', 'nivel', ...(eligeJugadores ? ['j1', 'j2'] : []), ...(enRed ? ['red'] : [])];
   if (grupo === 'ajustes') return ['escenario', 'hora', 'sonido', 'idioma', 'rendimiento'];
   if (grupo === 'rendimiento') return OPCIONES.map((o) => o.id);
   return [];
@@ -74,7 +77,7 @@ export function dibujarGrupos(vista, abierto) {
  * cambia de modelo, las flechas, lo que tiene y los colores); al final, LISTO.
  * Devuelve también el alto del panel, que se ajusta a lo que lleva.
  */
-export function cajasMenu(marco, grupo, { columnas = 2, eligeJugadores = false, lupa = false }) {
+export function cajasMenu(marco, grupo, { columnas = 2, eligeJugadores = false, enRed = false, lupa = false }) {
   const cx = marco.x + marco.ancho / 2;
   const fila = lupa ? 52 : 42, hueco = 10;
   const cajas = [];
@@ -112,7 +115,7 @@ export function cajasMenu(marco, grupo, { columnas = 2, eligeJugadores = false, 
     y = fondo + 22;
   } else {
     const ancho = Math.min(460, marco.ancho - 40);
-    for (const opcion of opcionesGrupo(grupo, eligeJugadores)) {
+    for (const opcion of opcionesGrupo(grupo, eligeJugadores, enRed)) {
       cajas.push({ id: 'opcion', opcion, x: cx - ancho / 2, y, ancho, alto: fila });
       y += fila + hueco;
     }
@@ -135,10 +138,10 @@ export function etiquetaOpcion(id, e, teclado) {
   else if (id === 'sonido') v = t(silenciado() ? 'sonido.no' : 'sonido.si');
   else if (id === 'idioma') v = idiomaActual().nombre.toUpperCase();
   else if (id === 'calidad') v = t('ajustes.' + elegido('calidad')) + (autoBajada() ? ` (${t('ajustes.baja')})` : '');
-  else if (id === 'rendimiento') v = null;
+  else if (id === 'rendimiento' || id === 'red') v = null;
   else if (OPCIONES.some((o) => o.id === id)) v = valorAjuste(id);
   let etiqueta;
-  if (id === 'rendimiento') etiqueta = t('grupo.rendimiento') + '  ›';
+  if (id === 'rendimiento' || id === 'red') etiqueta = t('grupo.' + id) + '  ›';
   else if (id === 'j1' || id === 'j2') {
     const n = id === 'j1' ? 1 : 2;
     etiqueta = t('opcion.jugador', { j: t('slot.jugador', { n }), v: t(e.jugadores[n - 1] === 'humano' ? 'jugador.humano' : 'slot.cpu') });
@@ -156,8 +159,8 @@ function valorAjuste(id) {
  * El panel abierto. `e` es el estado (circuito, modelos, colores…); en la
  * lupa, `columnas` es 1: solo el coche del J1 (el otro es de la CPU).
  */
-export function dibujarMenu(marco, grupo, e, { columnas = 2, eligeJugadores = false, lupa = false, teclado = false }) {
-  const { cajas, alto, ancho } = cajasMenu(marco, grupo, { columnas, eligeJugadores, lupa });
+export function dibujarMenu(marco, grupo, e, { columnas = 2, eligeJugadores = false, enRed = false, lupa = false, teclado = false }) {
+  const { cajas, alto, ancho } = cajasMenu(marco, grupo, { columnas, eligeJugadores, enRed, lupa });
   const cx = marco.x + marco.ancho / 2;
   // Más opaco que el de la portada: encima de la pista, las filas tienen que leerse.
   ctx.fillStyle = 'rgba(18, 20, 26, 0.9)';

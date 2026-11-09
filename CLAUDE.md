@@ -12,7 +12,7 @@ dosifica a toques), derrape antes de salirse, un puente que frena al subir y emp
 suma al derrape: siguen los dos, se sale uno o los dos; y uno que se sale se lleva por delante al
 otro), una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla (fácil, normal o difícil) o dos en la misma pantalla, con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los seis seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil), dos en la misma pantalla o en red (cada uno en su dispositivo, en una sala privada con código del servidor de salas común; si uno se va, el otro sigue contra la CPU: `MULTIJUGADOR.md`), con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los seis seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
@@ -43,6 +43,8 @@ lo que ha pasado el arnés; el trabajo se hace en ramas.
 - `IDEAS.md` — tormenta de ideas a futuro. No compromete nada: una idea entra en
   `TODO.md` cuando toca.
 - `APP.md` — la app de las tiendas (Capacitor en `/app`): decisiones y roadmap por fases.
+- `MULTIJUGADOR.md` — el modo en red (Fase 6): reglas, servidor de salas común, protocolo y
+  bloques.
 
 **Ante una discrepancia, manda `TODO.md`.** Al terminar un bloque de trabajo, muévelo de
 `TODO.md` a `BITACORA.md` con lo que se haya medido: `TODO.md` no acumula tareas marcadas.
@@ -76,7 +78,11 @@ de `pnyk/comun/` (no se edita aquí: se actualiza desde pnyk con `node tools/pro
 `red.js` + `pie.js` dan los enlaces a los demás juegos de la familia Panic: `index.html`
 los carga con `<script>` (son scripts clásicos, no módulos ES; dejan `pieRed` en `window`)
 y `textosDelDocumento()` de `juego.js` pinta con ellos la línea «Otros juegos» del pie
-(`#otros`, clave `pie.otros`), también al cambiar de idioma.
+(`#otros`, clave `pie.otros`), también al cambiar de idioma. `net.js` es el transporte de
+las carreras en red con el servidor de salas común (`salas.pnyk.es`, repositorio
+`C:\html\salas`, donde `slot-panic` está en `juegos.js`): también lo carga `index.html` antes
+que el juego, deja `net` en el ámbito global y `juego.js` le dice su juego y la versión de
+sus mensajes (`MULTIJUGADOR.md` §5).
 
 Google Analytics 4 se carga **solo tras consentimiento**: `index.html` carga el aviso común
 (`vendor/pnyk/consentimiento.js`) y `analitica.js` lo inicia; el botón «Cookies» (`#cookies`)
@@ -206,6 +212,16 @@ demás, en `BITACORA.md`). Mide y comprueba:
 9. **Los ajustes de rendimiento** (`ajustes.js`): los de serie, las vueltas de cada fila,
    lo guardado que no vale, Baja (lo gráfico al mínimo sin tocar lo elegido) y Alta, Auto
    (no baja con lentos sueltos; con 2 s lento, una vez) y que cada fila tiene su texto.
+10. **En red** (`nucleo/red.js`, `MULTIJUGADOR.md` §11): carreras con el anfitrión y sus
+   invitados unidos por una red de mentira (60 ms de ida, 20 de variación, en orden como
+   TCP), en los oficiales a dos, en los de cuatro con dos CPU y en *El ocho largo* con
+   cuatro personas. El anfitrión tiene a cada invitado a < 3,5 px de donde va a la misma
+   hora de carrera (p95; hoy ~2,5) y el invitado pinta a los demás a < 2,5 (hoy ~1,3); la
+   vuelta del invitado en red es la suya sin red (< 2 %); el ganador, las vueltas y las
+   llegadas son las mismas en todos; la instantánea < 500 B (hoy ≤ 401). En los
+   encuentros de la sección 3, con el invitado al otro lado, chocan donde en la mesa, sus
+   salidas cuadran en los dos lados y salen los dos como mucho el doble que en la mesa; y
+   con un hueco de 450 ms, acaba igual.
 
 Verificar un cambio visual significa además abrir la página y jugar. Sirviendo en local
 aparece la depuración: FPS, velocidad y exigencia del J1 (100 % se sale).
@@ -263,6 +279,9 @@ nucleo/campeonato.js   el campeonato: los oficiales en orden, victorias, tiempos
                        del que no acaba, a su ritmo) y el desempate
 nucleo/mangas.js       las mangas: cuántas pide un circuito (mangasDe), la serie y
                        su suma, también a media manga (sumaEnCarrera)
+nucleo/red.js          la carrera en red (MULTIJUGADOR.md §6), sin red ni DOM: el
+                       anfitrión (reportes, golpes, instantáneas) y el invitado
+                       (su coche, los golpes y los demás, a su hora de carrera)
 nucleo/fantasma.js     cada vuelta grabada a 1/30 s y reproducida con su reloj;
                        codificar() / decodificar() para guardarla y enviarla
 nucleo/momentos.js     los mejores momentos: el búfer de poses de la carrera, los
@@ -321,6 +340,8 @@ galeria.js             COMUNIDAD (galería o constructor) y la galería de circu
 publicos.js            la red de la galería (api.php): nunca bloquea el juego
 records.js             la red de los récords de vuelta (api.php): la tabla y firmar
 tablaRecords.js        RÉCORDS (la tabla y el fantasma elegido) y la firma
+sala.js                las pantallas en red (MULTIJUGADOR.md §4): EN RED, unirse
+                       (el código) y la sala. Presentación: no ve `net`
 api.php                los circuitos públicos (PHP + MySQL); config.php, fuera de git
 servidor/cuadricula.php  la cuadrícula en PHP: la validación del servidor (no se sirve)
 servidor/records.php   qué vuelta se acepta como récord (no se sirve)
@@ -418,6 +439,11 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
   una por carril, cada coche al carril de al lado en cada una (el `turno`); gana la
   menor suma, y en el campeonato cuenta la suma. Si los paneles de la cuenta atrás no
   caben donde siempre, el circuito dice dónde (`guia`).
+- **En red, cada coche lo simula quien lo conduce** (`MULTIJUGADOR.md` §6): en los demás
+  dispositivos es `remoto` (no se simula, rueda con lo que dijo su dueño) y `nucleo/red.js`
+  lo pone donde dice, a la propia hora de carrera. Los choques y el ganador, el anfitrión,
+  que manda el golpe a quien lo recibe (`aplicarGolpe`). Sin coches remotos, `slot.js` es
+  el de siempre: la sección 10 del arnés lo exige con las mismas cifras en las demás.
 - **Un dedo por jugador**: a dos, la mitad izquierda es J1 y la derecha J2; a uno, toda
   la pantalla. Tocando en la mesa, cuántos juegan lo dicen los dos botones de la portada
   (un toque fuera no arranca nada) y la salida espera a que cada uno apoye el dedo

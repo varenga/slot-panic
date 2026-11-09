@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Slot Panic — corridas de slot grátis: solta antes da curva</title>
-  <meta name="description" content="Corridas de slot vistas de cima: só carregar e soltar. Solta antes da curva ou o carro sai. Contra a CPU ou a dois no mesmo ecrã.">
-  <meta name="pnyk-version" content="1.19.0">
+  <meta name="description" content="Corridas de slot vistas de cima: só carregar e soltar. Solta antes da curva ou o carro sai. Contra a CPU, a dois no mesmo ecrã ou em rede, cada um no seu telemóvel.">
+  <meta name="pnyk-version" content="1.20.0">
   <meta name="keywords" content="slot, corridas de slot, carros de slot, jogo de corridas, dois jogadores, jogo HTML5, grátis">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#12141a">
@@ -84,6 +84,7 @@
   <link rel="modulepreload" href="../nucleo/momentos.js">
   <link rel="modulepreload" href="../nucleo/piezas.js">
   <link rel="modulepreload" href="../nucleo/piloto.js">
+  <link rel="modulepreload" href="../nucleo/red.js">
   <link rel="modulepreload" href="../nucleo/slot.js">
   <link rel="modulepreload" href="../nucleo/trazo.js">
   <link rel="modulepreload" href="../nucleo/validar.js">
@@ -93,6 +94,7 @@
   <link rel="modulepreload" href="../publicos.js">
   <link rel="modulepreload" href="../records.js">
   <link rel="modulepreload" href="../repeticion.js">
+  <link rel="modulepreload" href="../sala.js">
   <link rel="modulepreload" href="../tablaRecords.js">
   <link rel="modulepreload" href="../idiomas/pt.js">
 
@@ -102,7 +104,7 @@
       "@type": "VideoGame",
       "name": "Slot Panic",
       "url": "https://slot.pnyk.es/pt/",
-      "description": "Corridas de slot vistas de cima: só carregar e soltar. Solta antes da curva ou o carro sai. Contra a CPU ou a dois no mesmo ecrã.",
+      "description": "Corridas de slot vistas de cima: só carregar e soltar. Solta antes da curva ou o carro sai. Contra a CPU, a dois no mesmo ecrã ou em rede, cada um no seu telemóvel.",
       "inLanguage": "pt",
       "availableLanguage": [
         "es",
@@ -147,42 +149,42 @@
           "name": "Slot Panic",
           "url": "https://slot.pnyk.es/",
           "inLanguage": "es",
-          "description": "Carreras de slot con vista cenital: solo apretar y soltar. Suelta antes de la curva o el coche se sale. Contra la CPU o a dos en la misma pantalla."
+          "description": "Carreras de slot con vista cenital: solo apretar y soltar. Suelta antes de la curva o el coche se sale. Contra la CPU, a dos en la misma pantalla o en red, cada uno en su móvil."
         },
         {
           "@type": "VideoGame",
           "name": "Slot Panic",
           "url": "https://slot.pnyk.es/en/",
           "inLanguage": "en",
-          "description": "Top-down slot car racing: just press and release. Lift before the bend or the car flies off. Against the CPU or two players on the same screen."
+          "description": "Top-down slot car racing: just press and release. Lift before the bend or the car flies off. Against the CPU, two players on the same screen or online, each on their own phone."
         },
         {
           "@type": "VideoGame",
           "name": "Slot Panic",
           "url": "https://slot.pnyk.es/gl/",
           "inLanguage": "gl",
-          "description": "Carreiras de slot vistas desde arriba: só apertar e soltar. Solta antes da curva ou o coche sae. Contra a CPU ou a dous na mesma pantalla."
+          "description": "Carreiras de slot vistas desde arriba: só apertar e soltar. Solta antes da curva ou o coche sae. Contra a CPU, a dous na mesma pantalla ou en rede, cada un no seu móbil."
         },
         {
           "@type": "VideoGame",
           "name": "Slot Panic",
           "url": "https://slot.pnyk.es/ca/",
           "inLanguage": "ca",
-          "description": "Curses de slot vistes des de dalt: només prémer i deixar anar. Deixa anar abans del revolt o el cotxe surt. Contra la CPU o a dos a la mateixa pantalla."
+          "description": "Curses de slot vistes des de dalt: només prémer i deixar anar. Deixa anar abans del revolt o el cotxe surt. Contra la CPU, a dos a la mateixa pantalla o en xarxa, cadascú al seu mòbil."
         },
         {
           "@type": "VideoGame",
           "name": "Slot Panic",
           "url": "https://slot.pnyk.es/it/",
           "inLanguage": "it",
-          "description": "Corse di slot viste dall'alto: solo premere e rilasciare. Rilascia prima della curva o l'auto esce. Contro la CPU o in due sullo stesso schermo."
+          "description": "Corse di slot viste dall'alto: solo premere e rilasciare. Rilascia prima della curva o l'auto esce. Contro la CPU, in due sullo stesso schermo o online, ognuno sul suo telefono."
         },
         {
           "@type": "VideoGame",
           "name": "Slot Panic",
           "url": "https://slot.pnyk.es/fr/",
           "inLanguage": "fr",
-          "description": "Courses de slot vues du dessus : il suffit d'appuyer et de relâcher. Lâche avant le virage ou la voiture sort. Contre le CPU ou à deux sur le même écran."
+          "description": "Courses de slot vues du dessus : il suffit d'appuyer et de relâcher. Lâche avant le virage ou la voiture sort. Contre le CPU, à deux sur le même écran ou en ligne, chacun sur son téléphone."
         }
       ]
     }
@@ -211,6 +213,7 @@
       <li>Campeonato: os seis circuitos seguidos. Ganha quem vencer mais corridas e, em caso de empate, o menor tempo total.</li>
       <li>Galeria: publica os teus circuitos com um alias de três letras e corre os dos outros, os novos ou os mais jogados.</li>
       <li>Recordes de volta nos seis circuitos oficiais: assina a tua com três letras e corre contra o teu fantasma ou o do recorde.</li>
+      <li>Em rede: cria uma sala e passa o código de quatro letras a quem vai correr contigo, cada um no seu telemóvel ou computador e com o seu carro. Na pista de quatro, os outros dois são da CPU; se alguém sair, continuas contra a CPU.</li>
     </ul>
 
     <h2>Controlos</h2>
@@ -246,7 +249,7 @@
       </ul>
     </nav>
 
-    <p class="legal">Slot Panic 1.19.0 · <a href="https://pnyk.es/en/privacy/#games">Privacidade</a></p>
+    <p class="legal">Slot Panic 1.20.0 · <a href="https://pnyk.es/en/privacy/#games">Privacidade</a></p>
   </article>
 
   <!-- Pie discreto bajo el circuito: enlaces a la familia Panic (los pone juego.js con
@@ -259,6 +262,8 @@
   <script src="../vendor/pnyk/pie.js"></script>
   <!-- Aviso de cookies común de PNYK: GA4 solo si el jugador acepta (analitica.js lo inicia). -->
   <script src="../vendor/pnyk/consentimiento.js"></script>
+  <!-- El transporte de las carreras en red, con el servidor de salas común (salas.pnyk.es). -->
+  <script src="../vendor/pnyk/net.js"></script>
   <script type="module" src="../juego.js"></script>
 </body>
 </html>

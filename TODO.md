@@ -65,3 +65,33 @@ la portada, con cuatro coches siempre, las mangas y *La judía* y *La ele*
 - [ ] Playtest de *La judía* y *La ele*: ¿se entiende que el carril de fuera va casi a
       fondo y el de dentro hay que soltar?, ¿el carril de dentro de *La ele* (radio 25)
       se ve demasiado cerrado?
+
+# Fase 6 — En red
+
+Cada uno en su dispositivo, en una sala privada con código: primero a dos, después hasta
+cuatro en la pista de cuatro. El diseño y sus razones, en `MULTIJUGADOR.md`; sigue los
+pasos del cooperativo de Orbit Panic y usa el servidor de salas común (`salas.pnyk.es`).
+La prueba de red (el bloque 0) la superó Orbit con el mismo servidor; el bloque A (la
+red de mentira, `nucleo/red.js` y la sección 10 del arnés), el B (`net.js` y el alta en
+`salas.pnyk.es`), el C (las pantallas, `sala.js`), el D (la carrera a dos) y el E (las reglas)
+están hechos (`BITACORA.md`). El orden importa:
+
+- [ ] **Playtest del bloque D**, a dos pestañas en ventanas separadas (o dos dispositivos) y
+      a `?lag=60&jitter=20`: ¿el coche propio responde sin retardo?, ¿los demás se ven
+      fluidos?, ¿un golpe que llega 60 ms tarde se entiende en quien lo recibe?
+- [ ] **Playtest del bloque E**, en dos dispositivos: ¿se entiende que hay que pulsar para estar
+      listo?, ¿20 s de espera son muchos?, ¿se lee «Aún en la carrera» en la sala?, ¿y el aviso
+      cuando el otro se va? Una serie de mangas en red entera (cuatro carreras), que en la prueba
+      del bloque solo se vio empezar.
+- [ ] **Bloque G: publicación a dos.** Preparado (`BITACORA.md`): la prosa, la ficha de
+      Play, `pnyk.json` a 1.20.0 y `versionCode` 6. Queda, en este orden: fusionar en
+      `master` y publicar la web (con su tag); probar con dos móviles reales en redes
+      distintas y entre la web y la app de Android (un APK de depuración contra
+      `salas.pnyk.es`); y, si va bien, el bundle 1.20.0 a la prueba cerrada de Play, con la
+      ficha nueva (`app/store/listing/`) y la clasificación (`play-console.md`).
+- [ ] La ficha de Slot en `pnyk/proyectos.js` está atrasada (dice cuatro circuitos y «a dos
+      en la misma pantalla»): ponerla al día con la red y propagarla en pnyk.
+- [ ] **Bloque S4: salas de cuatro.** El servidor admite `max` hasta 4 sin cambiar las
+      salas de dos (Orbit), `net.js` a comun 1.4.0, la política común dice «con otras
+      personas», y hasta cuatro personas en la pista de cuatro (`MULTIJUGADOR.md` §5.2).
+      Criterio: Orbit sigue igual y cuatro navegadores corren juntos.
