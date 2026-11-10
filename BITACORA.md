@@ -2388,3 +2388,16 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   `salas.pnyk.es`, bien. Probado por el usuario entre la web publicada y un APK de
   depuración en el Redmi: «funciona bien». Después, el bundle 1.20.0 (`versionCode` 6),
   firmado y verificado con `jarsigner`.
+
+## La ficha de Slot en pnyk.es, al día (10/11/2026, rama `17-ficha-slot` de pnyk)
+
+- La ficha de `pnyk/proyectos.js` decía cuatro circuitos y «a dos en la misma pantalla». Ahora,
+  en español y en inglés: la red (cada uno en su dispositivo, sala privada con código), los tres
+  niveles de la CPU, los seis circuitos (con las estrechas y el puente), la pista de cuatro
+  carriles con tres más y cuatro coches, los trece coches, carrera suelta o campeonato y la
+  repetición de los mejores momentos. Fuera «sin menús: cada uno toma su carril al apretar»,
+  que ya no es verdad.
+- **Privacidad**: lo que guarda un récord incluye ya el coche (la columna `coche` de `records`,
+  desde la 1.3.0), que la política común no enumeraba.
+- Nada que propagar: `comun/red.js` no cambia (`propagar.js` en seco, «sin cambios»). Publicado
+  con el push de `master` de pnyk.
