@@ -87,8 +87,6 @@ están hechos (`BITACORA.md`). El orden importa:
       la web y la app (`BITACORA.md`). Queda subir el bundle (`versionCode` 6, ya firmado) a
       la prueba cerrada de Play, con la ficha nueva (`app/store/listing/`) y la
       clasificación y la seguridad de los datos como dice `play-console.md`.
-- [ ] La ficha de Slot en `pnyk/proyectos.js` está atrasada (dice cuatro circuitos y «a dos
-      en la misma pantalla»): ponerla al día con la red y propagarla en pnyk.
 - [ ] **Bloque S4: salas de cuatro.** El servidor admite `max` hasta 4 sin cambiar las
       salas de dos (Orbit), `net.js` a comun 1.4.0, la política común dice «con otras
       personas», y hasta cuatro personas en la pista de cuatro (`MULTIJUGADOR.md` §5.2).
