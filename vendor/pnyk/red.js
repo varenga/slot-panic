@@ -4,7 +4,7 @@
 // Red de proyectos PNYK: la usa comun/pie.js (también en vendor/pnyk/ de cada proyecto).
 
 const PNYK_RED = {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "origin": "https://pnyk.es/",
   "proyectos": [
     {
@@ -191,7 +191,13 @@ const PNYK_RED = {
       "category": "aprendizaje",
       "langs": [
         "es",
-        "en"
+        "en",
+        "pt",
+        "fr",
+        "de",
+        "it",
+        "gl",
+        "ca"
       ]
     }
   ]

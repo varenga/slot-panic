@@ -12,7 +12,7 @@ dosifica a toques), derrape antes de salirse, un puente que frena al subir y emp
 suma al derrape: siguen los dos, se sale uno o los dos; y uno que se sale se lleva por delante al
 otro), una curva deslizante y una mano que devuelve el
 coche; uno
-contra una CPU que falla (fácil, normal o difícil), dos en la misma pantalla o en red (cada uno en su dispositivo, en una sala privada con código del servidor de salas común; si uno se va, el otro sigue contra la CPU: `MULTIJUGADOR.md`), con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los seis seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
+contra una CPU que falla (fácil, normal o difícil), dos en la misma pantalla o en red (cada uno en su dispositivo, en una sala privada con código del servidor de salas común; hasta cuatro en la pista de cuatro, que la sala elige sola al entrar el tercero; si uno se va, la CPU coge su coche: `MULTIJUGADOR.md`), con trece coches a elegir (cada uno con su largo y su carácter: aceleración, agarre y punta), carrera suelta o campeonato (los seis seguidos), de 3, 5 o 10 vueltas, la repetición de los mejores momentos al acabar, y récords de vuelta online con
 fantasma en los oficiales. Un constructor: el circuito
 se dibuja con el dedo en una cuadrícula, se prueba, se guarda en el dispositivo, se
 comparte con un enlace (`?c=`) y se publica en la galería (`api.php`, MySQL en Plesk). Con el móvil en vertical, el modo
@@ -432,13 +432,17 @@ Invariantes que cualquier cambio debe respetar. Las razones y las medidas, en
 - **Lo pulsable se define una vez**: la misma función da la caja para dibujarla y para
   saber si se ha pulsado.
 - **La pista de cuatro, un modo**: si el circuito es de cuatro carriles, la carrera es de
-  cuatro coches (PISTA, tecla P, cambia de lista). Solo los coches 0 y 1 pueden ser de
-  una persona; el 2 y el 3 son siempre de la CPU.
+  cuatro coches (PISTA, tecla P, cambia de lista). En la mesa, solo los coches 0 y 1
+  pueden ser de una persona y el 2 y el 3 son siempre de la CPU; en red, hasta los cuatro.
 - **Un circuito cerrado que no es un ocho no es justo por carriles**: gira 360° y el
   carril de fuera da 2π · 90 px más por vuelta. Se corre en mangas (`estado.serie`),
   una por carril, cada coche al carril de al lado en cada una (el `turno`); gana la
   menor suma, y en el campeonato cuenta la suma. Si los paneles de la cuenta atrás no
   caben donde siempre, el circuito dice dónde (`guia`).
+- **En red, el puesto es el coche**: la sala es de hasta cuatro (`PUESTOS_RED`), el anfitrión
+  es el 0 y el invitado del puesto `i` lleva el coche `i`. Con alguien en los puestos 2 o 3, la
+  pista es la de cuatro (`cabeEnDos`). Si se va un invitado, la sala sigue y la CPU del
+  anfitrión coge su coche (`soltarRemoto`); si se va el anfitrión, se cierra para todos.
 - **En red, cada coche lo simula quien lo conduce** (`MULTIJUGADOR.md` §6): en los demás
   dispositivos es `remoto` (no se simula, rueda con lo que dijo su dueño) y `nucleo/red.js`
   lo pone donde dice, a la propia hora de carrera. Los choques y el ganador, el anfitrión,

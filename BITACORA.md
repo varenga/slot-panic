@@ -2389,6 +2389,39 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   depuración en el Redmi: «funciona bien». Después, el bundle 1.20.0 (`versionCode` 6),
   firmado y verificado con `jarsigner`.
 
+## En red, bloque S4: salas de hasta cuatro (16/11/2026, rama `70-salas-de-cuatro`)
+
+> El servidor de salas lo comparten Orbit, Slot y Traffic: lo primero era no tocar las salas de
+> dos de nadie, tampoco las de las apps de Play, que tardan en actualizarse.
+
+- **Servidor** (`salas`, rama `04-salas-de-cuatro`): `{"t":"crear","max":4}` admite de 2 a 4;
+  sin `max`, 2. Cada uno sabe su puesto (`sala`), el anfitrión oye `compa` y `sale` con él, lo
+  de un invitado le llega con `de` (añadido sin parsear antes de la última llave) y lo suyo va
+  a todos o, con `para` justo detrás de `t`, a uno. Las salas de dos se reenvían como siempre,
+  así que `SERVIDOR` no sube. `comprobar.js` pasa de 14 a 26 comprobaciones (34 con Orbit), y
+  pasa con Orbit, Slot y Traffic. El `net.js` 1.3.0 de Traffic y Orbit, contra el servidor
+  nuevo, se empareja, reenvía y cierra igual.
+- **Común 1.4.0** (pnyk, rama `19-comun-1-4-0`): `net.crear(max)`, `net.puesto`,
+  `net.alSale`, `alRecibir(datos, de)` y `net.enviar(datos, para)`. Sin `max`, el mensaje de
+  siempre. La política común pasa de «Jugar a dos» a «Jugar con otras personas» (es y en).
+- **Aquí**: `RED.version` 2 (los mensajes cambian: la sala lleva `presentes`, la salida
+  `personas`, y hay `listos` y `fuera`). La sala es siempre de cuatro (`PUESTOS_RED`), con un
+  puesto por carril: dos, o cuatro en la pista de cuatro, en fila en la mesa y de dos en dos en
+  la lupa. **El puesto es el coche**: el invitado del puesto `i` lleva el coche `i`, así que
+  con alguien en los puestos 2 o 3 la pista de dos no cabe, y la sala pasa sola a la de cuatro
+  (decidido con el usuario: mejor que dejar mirando al tercero o que la sala dependa de la
+  pista con que se creó). **Si se va un invitado**, la sala sigue: el anfitrión suelta su coche
+  (`soltarRemoto`) para que lo lleve su CPU, se lo dice a los demás (`fuera`) y todos ven
+  «J3 se ha ido: lo lleva la CPU». Si se va el anfitrión, todos siguen solos, como a dos.
+  `red.intro` y `page.how11` ya no dicen «para dos», y el JSON-LD dice hasta 4.
+- **Arnés**: la sección 10 ya corría *El ocho largo* con cuatro personas; ahora además una se
+  va a los 15 s y la CPU lleva su coche de 1,02 a 5,03 vueltas, con el mismo ganador y las
+  mismas vueltas en los tres que siguen. 2456/2456.
+- **Probado en local**: un anfitrión en Chrome y tres invitados de mentira en Node contra
+  `salas.js --dev`: cuatro puestos, el salto a *El ocho largo* al entrar el puesto 2, PISTA
+  que no vuelve a dos, la salida con X1-X4 y, al irse los tres, sus coches a la CPU con los
+  tres avisos. Falta la prueba con cuatro dispositivos de verdad (`TODO.md`).
+
 ## La ficha de Slot en pnyk.es, al día (10/11/2026, rama `17-ficha-slot` de pnyk)
 
 - La ficha de `pnyk/proyectos.js` decía cuatro circuitos y «a dos en la misma pantalla». Ahora,

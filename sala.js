@@ -8,8 +8,9 @@
  *            código (NET_ALFABETO): con ▲▼, como la firma, eran hasta 15 toques
  *            por letra. Tecleado también. Los fallos se quedan aquí, junto al
  *            código, para corregir una letra sin escribirlo entero.
- *   LA SALA  el código en grande, los dos puestos (su color, su coche y si
- *            están) y, abajo, lo que arma el anfitrión: pista, circuito,
+ *   LA SALA  el código en grande, los puestos (dos, o cuatro en la pista de
+ *            cuatro: su color, su coche y si están) y, abajo, lo que arma el
+ *            anfitrión: pista, circuito,
  *            vueltas, la CPU en la de cuatro y EMPEZAR. El invitado lo ve, sin
  *            tocarlo. Solo se sale con SALIR o Escape.
  *
@@ -25,8 +26,11 @@ import { t } from './i18n.js';
 
 const BARRA = 56, MARGEN = 14;
 
+/** Los puestos de una sala: el anfitrión (0) y hasta tres invitados (MULTIJUGADOR.md §5.2). */
+export const PUESTOS_RED = 4;
+
 /** El color de cada puesto: el mismo en todos los dispositivos (MULTIJUGADOR.md §3). */
-export const COLORES_RED = [COLORES_COCHE[0], COLORES_COCHE[1]];
+export const COLORES_RED = COLORES_COCHE.slice(0, PUESTOS_RED);
 
 /** Las filas de la sala que elige el anfitrión: la CPU, solo en la pista de cuatro. */
 export const opcionesSala = (cuatro) => ['pista', 'circuito', 'duracion', ...(cuatro ? ['nivel'] : [])];
@@ -183,26 +187,30 @@ export function dibujarUnirse(vista, { alfabeto, codigo, motivo, conectando, tac
 // --- LA SALA ----------------------------------------------------------------------
 
 /*
- * De arriba abajo: el código, los dos puestos (el propio, con ‹ › para el
- * coche) y las filas del anfitrión con EMPEZAR. `puesto`: el propio (0, el
- * anfitrión; 1, el invitado).
+ * De arriba abajo: el código, los puestos (el propio, con ‹ › para el coche) y
+ * las filas del anfitrión con EMPEZAR. `puesto`: el propio (0, el anfitrión; 1
+ * a 3, los invitados). Un puesto por carril: dos, o cuatro en la pista de
+ * cuatro, en fila en la mesa y de dos en dos en la lupa.
  */
 export function cajasSala({ ancho, alto }, { puesto, cuatro }) {
   const lupa = ancho <= 800;
   const cajas = [{ ...cajaVolver(ancho), id: 'salir' }];
   let y = BARRA + (lupa ? 150 : 128);
-  const entre = 20, anchoPuesto = Math.min(300, (ancho - 2 * MARGEN - entre) / 2), altoPuesto = 116;
-  const x0 = ancho / 2 - anchoPuesto - entre / 2;
-  for (let i = 0; i < 2; i++) {
-    const x = x0 + i * (anchoPuesto + entre);
-    cajas.push({ id: 'puesto', i, x, y, ancho: anchoPuesto, alto: altoPuesto });
+  const n = cuatro ? PUESTOS_RED : 2, porFila = lupa ? 2 : n;
+  const entre = cuatro && !lupa ? 16 : 20, altoPuesto = 116, entreFilas = 12;
+  const anchoPuesto = Math.min(300, (ancho - 2 * MARGEN - (porFila - 1) * entre) / porFila);
+  const x0 = ancho / 2 - (porFila * anchoPuesto + (porFila - 1) * entre) / 2;
+  for (let i = 0; i < n; i++) {
+    const x = x0 + (i % porFila) * (anchoPuesto + entre);
+    const yp = y + Math.floor(i / porFila) * (altoPuesto + entreFilas);
+    cajas.push({ id: 'puesto', i, x, y: yp, ancho: anchoPuesto, alto: altoPuesto });
     if (i === puesto) {
-      const lado = 40, yFlechas = y + altoPuesto - lado - 10;
+      const lado = 40, yFlechas = yp + altoPuesto - lado - 10;
       cajas.push({ id: 'modelo', paso: -1, x: x + 10, y: yFlechas, ancho: lado, alto: lado });
       cajas.push({ id: 'modelo', paso: 1, x: x + anchoPuesto - 10 - lado, y: yFlechas, ancho: lado, alto: lado });
     }
   }
-  y += altoPuesto + (lupa ? 34 : 22);
+  y += Math.ceil(n / porFila) * (altoPuesto + entreFilas) - entreFilas + (lupa ? 34 : 22);
   const fila = lupa ? 48 : 40, hueco = 8, anchoFila = Math.min(460, ancho - 2 * MARGEN);
   for (const opcion of opcionesSala(cuatro)) {
     cajas.push({ id: 'opcion', opcion, x: ancho / 2 - anchoFila / 2, y, ancho: anchoFila, alto: fila });
@@ -213,7 +221,7 @@ export function cajasSala({ ancho, alto }, { puesto, cuatro }) {
 }
 
 /*
- * `sala`: { codigo, puesto, compa, enSala, modelos }. `e`: lo que enseñan
+ * `sala`: { codigo, puesto, presentes, enSala, modelos }, por puesto. `e`: lo que enseñan
  * las filas (circuito, duracion, nivel), el de la sala; `manga` ({ n, total }),
  * a media serie de mangas: EMPEZAR corre la siguiente. Encima del mundo (la
  * exhibición en el circuito elegido), con un velo.
@@ -227,13 +235,14 @@ export function dibujarSala(vista, sala, e, { tactil, tiempo, manga = null }) {
   ctx.fillRect(0, 0, ancho, BARRA);
   tituloBarra(t('sala.titulo'), ancho);
   const anfitrion = sala.puesto === 0;
+  const otros = sala.presentes.some((p, i) => p && i !== sala.puesto);
   const cajas = cajasSala(vista, { puesto: sala.puesto, cuatro: e.circuito.carriles.length === 4 });
   // El código, en grande: lo que el anfitrión tiene que pasar.
   const yCodigo = BARRA + (lupa ? 74 : 62);
   texto(t('sala.codigo'), ancho / 2, BARRA + 26, { tam: 14, color: COLOR.texto, peso: 700 });
   if (sala.codigo) texto(sala.codigo.split('').join(' '), ancho / 2, yCodigo, { tam: lupa ? 56 : 52, color: COLOR.ambar, peso: 800 });
   else texto(t('red.conectando'), ancho / 2, yCodigo, { tam: 22, color: COLOR.hud, peso: 700 });
-  if (sala.codigo && anfitrion && !sala.compa) {
+  if (sala.codigo && anfitrion && !otros) {
     texto(t('sala.pasalo'), ancho / 2, yCodigo + (lupa ? 50 : 42), { tam: 14, color: COLOR.texto, peso: 600 });
   }
   for (const caja of cajas) {
@@ -252,8 +261,8 @@ export function dibujarSala(vista, sala, e, { tactil, tiempo, manga = null }) {
         texto(rotulo ? `${rotulo} · ${espera}` : espera, ancho / 2, caja.y + caja.alto / 2, { tam: 15, color: COLOR.texto, peso: 600 });
         continue;
       }
-      // La revancha espera a que el otro haya vuelto a la sala.
-      ctx.globalAlpha = sala.compa && sala.enSala ? 1 : 0.4;
+      // La revancha espera a que todos hayan vuelto a la sala.
+      ctx.globalAlpha = otros && sala.presentes.every((p, i) => !p || sala.enSala[i]) ? 1 : 0.4;
       boton(caja, (tactil ? '' : '↵ · ') + (rotulo || t('sala.empezar')), true, rotulo ? 18 : 20);
       ctx.globalAlpha = 1;
     }
@@ -264,11 +273,14 @@ export function dibujarSala(vista, sala, e, { tactil, tiempo, manga = null }) {
   }
 }
 
-/* Un puesto: su color, quién es (TÚ o RIVAL), su coche y si está. */
+/*
+ * Un puesto: su color, quién es (TÚ o RIVAL), su coche y si está. Vacío,
+ * esperando a alguien; en la pista de cuatro, mientras tanto lo lleva la CPU.
+ */
 function puesto(caja, sala, tiempo) {
   const { i } = caja;
   const propio = i === sala.puesto;
-  const esta = propio || sala.compa;
+  const esta = propio || sala.presentes[i];
   const color = COLORES_RED[i];
   ctx.fillStyle = propio ? 'rgba(230, 232, 238, 0.12)' : 'rgba(230, 232, 238, 0.06)';
   rectanguloRedondo(caja.x, caja.y, caja.ancho, caja.alto, 10);
@@ -281,12 +293,13 @@ function puesto(caja, sala, tiempo) {
     // Esperando a alguien: tres puntos que se encienden por turno.
     const n = Math.floor(tiempo * 2.5) % 4;
     texto(t('sala.esperando') + '.'.repeat(n), cx, caja.y + caja.alto / 2 + 8, { tam: 15, color: COLOR.texto, peso: 600 });
+    if (i >= 2) texto(t('slot.cpu'), cx, caja.y + caja.alto - 22, { tam: 13, color: COLOR.texto, peso: 700 });
     return;
   }
   const modelo = sala.modelos[i];
   texto(modelo ? t('coche.' + modelo) : '…', cx, caja.y + caja.alto - 30, { tam: 17, color: COLOR.hud, peso: 700 });
   // El otro, aún en el cartel de fin de la anterior: el anfitrión no puede empezar todavía.
-  const fuera = !propio && sala.puesto === 0 && !sala.enSala;
+  const fuera = !propio && sala.puesto === 0 && !sala.enSala[i];
   const estadoPuesto = propio ? 'sala.tuCoche' : fuera ? 'sala.enCarrera' : 'sala.conectado';
   texto(t(estadoPuesto), cx, caja.y + 50, { tam: 12, color: propio || fuera ? COLOR.texto : COLOR.verde, peso: 600 });
 }

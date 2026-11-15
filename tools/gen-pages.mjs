@@ -164,7 +164,7 @@ function pagina(codigo) {
     applicationCategory: 'Game',
     operatingSystem: 'Any (HTML5 browser)',
     playMode: ['SinglePlayer', 'MultiPlayer'],
-    numberOfPlayers: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 2 },
+    numberOfPlayers: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 4 },
     isAccessibleForFree: true,
     image: SITE_ORIGIN + 'og.jpg',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR', availability: 'https://schema.org/InStock' },

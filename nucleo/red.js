@@ -136,6 +136,15 @@ export function crearAnfitrion(carrera, remotos) {
 }
 
 /*
+ * Quien conducía el coche `i` se ha ido y la carrera sigue (una sala de más de
+ * dos): el anfitrión lo simula desde donde está, y lo lleva la CPU.
+ */
+export function soltarRemoto(anf, i) {
+  if (!anf.remotos.delete(i)) return;
+  anf.carrera.coches[i].remoto = false;
+}
+
+/*
  * El reporte de un coche remoto (`{k:'c', t, ag, c}`): su hora de carrera,
  * el último golpe que ha aplicado y el coche. Se pone a la hora de carrera
  * del anfitrión, con los golpes que aún no ha visto encima. Si alguno lo

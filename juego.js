@@ -60,8 +60,8 @@ import { cajasDialogo, cambiarLetra, crearDialogo, dibujarDialogo, escribirLetra
 import { cajasCircuitos, cajasGaleria, dibujarCircuitos, dibujarGaleria } from './galeria.js';
 import { cargarRecords, entraEnTabla, enviarRecord, tablaDe } from './records.js';
 import { cajasFirma, cajasRecords, dibujarFirma, dibujarRecords } from './tablaRecords.js';
-import { cajasRed, cajasSala, cajasUnirse, COLORES_RED, dibujarRed, dibujarSala, dibujarUnirse } from './sala.js';
-import { avanzarAnfitrion, avanzarInvitado, crearAnfitrion, crearInvitado, recibirDelAnfitrion, recibirReporte } from './nucleo/red.js';
+import { cajasRed, cajasSala, cajasUnirse, COLORES_RED, dibujarRed, dibujarSala, dibujarUnirse, PUESTOS_RED } from './sala.js';
+import { avanzarAnfitrion, avanzarInvitado, crearAnfitrion, crearInvitado, recibirDelAnfitrion, recibirReporte, soltarRemoto } from './nucleo/red.js';
 import { guardarHora, leerHora, luzDeCarrera, ORDEN_HORAS, oscurecer, pintarHora } from './luz.js';
 import { ajuste, cambiarAjuste, OPCIONES, ponerAjustes, vigilar } from './ajustes.js';
 import { anotarFotograma, crearMedida } from './medida.js';
@@ -89,7 +89,7 @@ const RED = typeof net === 'undefined' ? null : net;
 const ALFABETO_RED = typeof NET_ALFABETO === 'undefined' ? '' : NET_ALFABETO;
 if (RED) {
   RED.juego = 'slot-panic';
-  RED.version = 1;
+  RED.version = 2;   // 2: salas de hasta cuatro (el bloque S4)
 }
 
 /*
@@ -677,22 +677,52 @@ const redUI = {
   motivo: null,       // el de NET_MOTIVOS del último cierre, o null
   conectando: false,  // unirse: esperando al servidor
   codigo: '',         // unirse: lo escrito
-  sala: null,         // { codigo, puesto, compa, enSala, modelos, duracion, nivel }
+  sala: null,         // { codigo, puesto, presentes, enSala, modelos, duracion, nivel }: por puesto (0 a 3)
   antes: null,        // el invitado: el circuito que tenía antes de entrar
   pendiente: null     // el invitado: la sala que le contaron mientras no estaba en ella
 };
 const LARGO_CODIGO = 4;
 
+/*
+ * Una sala, por puesto (0, el anfitrión; 1 a 3, los invitados): quién está
+ * (`presentes`), quién ha vuelto ya de la carrera anterior (`enSala`) y el
+ * coche de cada uno. El invitado sabe que el anfitrión está.
+ */
+function salaNueva(codigo, puesto) {
+  const sala = {
+    codigo, puesto,
+    presentes: Array.from({ length: PUESTOS_RED }, (_, i) => i === puesto || i === 0),
+    enSala: Array(PUESTOS_RED).fill(true),
+    modelos: Array(PUESTOS_RED).fill(null),
+    duracion: estado.duracion, nivel: estado.nivel
+  };
+  sala.modelos[puesto] = estado.modelos[0];
+  return sala;
+}
+
+/** Hay alguien más en la sala. */
+const hayOtros = (sala) => sala.presentes.some((p, i) => p && i !== sala.puesto);
+
+/** Las personas caben en la pista de dos: solo los puestos 0 y 1 (MULTIJUGADOR.md §5.2). */
+const cabeEnDos = (sala) => sala.presentes.every((p, i) => !p || i < 2);
+
+/*
+ * El anfitrión: con alguien en los puestos 2 o 3, a la pista de cuatro (y de
+ * ella no se vuelve mientras estén). En carrera, al volver a la sala.
+ */
+function ajustarPista() {
+  const { sala } = redUI;
+  if (!sala || sala.puesto !== 0 || estado.fase !== 'sala' || cuatro() || cabeEnDos(sala)) return;
+  estado.serie = null;
+  cambiarPista();
+}
+
 if (RED) {
-  RED.alEntrar = (codigo, rol) => {
+  RED.alEntrar = (codigo, rol, puesto) => {
     const anfitrion = rol === 'anfitrion';
     redUI.conectando = false;
     redUI.motivo = null;
-    redUI.sala = {
-      codigo, puesto: anfitrion ? 0 : 1, compa: !anfitrion, enSala: true,
-      modelos: anfitrion ? [estado.modelos[0], null] : [null, estado.modelos[0]],
-      duracion: estado.duracion, nivel: estado.nivel
-    };
+    redUI.sala = salaNueva(codigo, puesto);
     if (!anfitrion) {
       redUI.antes = estado.circuito;
       RED.enviar({ k: 'yo', modelo: estado.modelos[0] });
@@ -702,30 +732,56 @@ if (RED) {
     exhibicion();
     evento(anfitrion ? 'crear_sala' : 'unirse_sala', { lupa: estado.lupa });
   };
-  RED.alCompa = () => {
-    if (!redUI.sala) return;
-    redUI.sala.compa = true;
-    redUI.sala.enSala = true;
+  // Entra alguien (lo oye el anfitrión): a su puesto, y la sala, a todos.
+  RED.alCompa = (puesto) => {
+    const { sala } = redUI;
+    if (!sala || !(puesto > 0 && puesto < PUESTOS_RED)) return;
+    sala.presentes[puesto] = true;
+    sala.enSala[puesto] = true;
+    sala.modelos[puesto] = null;
+    ajustarPista();
     contarSala();
   };
-  RED.alRecibir = (datos) => {
+  // Se va un invitado de una sala que sigue (lo oye el anfitrión). En carrera, su coche, a la CPU.
+  RED.alSale = (puesto) => {
+    const { sala } = redUI;
+    if (!sala || !(puesto > 0 && puesto < PUESTOS_RED)) return;
+    sala.presentes[puesto] = false;
+    sala.enSala[puesto] = true;
+    sala.modelos[puesto] = null;
+    if (estado.red?.anf && !estado.red.solo) {
+      soltarCoche(puesto);
+      RED.enviar({ k: 'fuera', puesto });
+    }
+    contarSala();
+  };
+  RED.alRecibir = (datos, de) => {
     const { sala } = redUI;
     if (!sala || !datos) return;
     const { red } = estado;
-    if (datos.k === 'yo' && sala.puesto === 0) {
-      sala.modelos[1] = modeloValido(datos.modelo);
+    const anfitrion = sala.puesto === 0;
+    // Lo del anfitrión, solo de él; lo de un invitado, de un puesto que está.
+    if (anfitrion ? !(de > 0 && de < PUESTOS_RED && sala.presentes[de]) : de !== 0) return;
+    if (datos.k === 'yo' && anfitrion) {
+      sala.modelos[de] = modeloValido(datos.modelo);
       contarSala();
-    } else if (datos.k === 'sala' && sala.puesto === 1) ponerSala(datos);
-    else if (datos.k === 'go' && sala.puesto === 1) salirInvitado(datos);
-    else if (datos.k === 'enSala' && sala.puesto === 0) sala.enSala = true;
-    // La salida que espera a todos: quién está listo y, el anfitrión, cuándo arranca.
-    else if (datos.k === 'listo' && red) red.listos[1 - sala.puesto] = true;
-    else if (datos.k === 'arranca' && red?.inv) {
+    } else if (datos.k === 'sala' && !anfitrion) ponerSala(datos);
+    else if (datos.k === 'go' && !anfitrion) salirInvitado(datos);
+    else if (datos.k === 'enSala' && anfitrion) sala.enSala[de] = true;
+    // La salida que espera a todos: cada invitado dice que está listo y el
+    // anfitrión cuenta a todos quién lo está; después, cuándo arranca.
+    else if (datos.k === 'listo' && red?.anf && red.personas[de]) {
+      red.listos[de] = true;
+      RED.enviar({ k: 'listos', l: red.listos });
+    } else if (datos.k === 'listos' && red?.inv && Array.isArray(datos.l)) {
+      red.listos = red.listos.map((listo, i) => listo || datos.l[i] === true);
+    } else if (datos.k === 'arranca' && red?.inv) {
       red.arranca = true;
       red.llegada = reloj;
     } else if (datos.k === 'manga' && red?.inv) ponerManga(datos);
+    else if (datos.k === 'fuera' && red?.inv && !red.solo) soltarCoche(datos.puesto);
     // La carrera (nucleo/red.js): reportes al anfitrión; instantáneas y golpes al invitado.
-    else if (datos.k === 'c' && red?.anf) recibirReporte(red.anf, 1, datos);
+    else if (datos.k === 'c' && red?.anf) recibirReporte(red.anf, de, datos);
     else if ((datos.k === 's' || datos.k === 'g') && red?.inv) {
       if (datos.k === 's') red.llegada = reloj;
       recibirDelAnfitrion(red.inv, datos);
@@ -764,10 +820,10 @@ function pulsarRed(id) {
   } else if (id === 'crear') {
     // A la sala ya: el código llega en cuanto contesta el servidor.
     redUI.motivo = null;
-    redUI.sala = { codigo: null, puesto: 0, compa: false, enSala: true, modelos: [estado.modelos[0], null] };
+    redUI.sala = salaNueva(null, 0);
     estado.fase = 'sala';
     exhibicion();
-    RED.crear();
+    RED.crear(PUESTOS_RED);
   } else if (id === 'unirse') {
     redUI.motivo = null;
     estado.fase = 'unirse';
@@ -836,10 +892,13 @@ function salirTrasRed() {
  */
 function contarSala() {
   const { sala } = redUI;
-  if (!RED || !sala || sala.puesto !== 0 || !sala.compa) return;
+  if (!RED || !sala || sala.puesto !== 0 || !hayOtros(sala)) return;
   const { circuito } = estado;
   const pub = circuito.publico ? { adjetivo: circuito.publico.adjetivo, sustantivo: circuito.publico.sustantivo } : null;
-  RED.enviar({ k: 'sala', clave: circuito.clave, pub, duracion: estado.duracion, nivel: estado.nivel, modelos: sala.modelos });
+  RED.enviar({
+    k: 'sala', clave: circuito.clave, pub, duracion: estado.duracion, nivel: estado.nivel,
+    presentes: sala.presentes, modelos: sala.modelos
+  });
 }
 
 /*
@@ -855,7 +914,12 @@ function ponerSala(datos) {
   }
   if (CARRERAS.some((c) => c.id === datos.duracion)) sala.duracion = datos.duracion;
   if (NIVELES_CPU.some((n) => n.id === datos.nivel)) sala.nivel = datos.nivel;
-  sala.modelos[0] = modeloValido(datos.modelos?.[0]);
+  // Quién está y con qué coche; el propio, el que tiene.
+  for (let i = 0; i < PUESTOS_RED; i++) {
+    if (i === sala.puesto) continue;
+    sala.presentes[i] = i === 0 || datos.presentes?.[i] === true;
+    sala.modelos[i] = sala.presentes[i] ? modeloValido(datos.modelos?.[i]) : null;
+  }
   if (datos.clave === estado.circuito.clave) return;
   const circuito = circuitoDeRed(datos);
   if (!circuito) return;
@@ -884,7 +948,10 @@ function cambiarModeloEnSala(paso) {
 
 /* Lo que elige el anfitrión en la sala; el invitado no toca nada. */
 function opcionSala(id) {
-  if (redUI.sala?.puesto !== 0) return;
+  const { sala } = redUI;
+  if (sala?.puesto !== 0) return;
+  // Con alguien en los puestos 2 o 3, la pista de dos no se elige.
+  if (id === 'pista' && cuatro() && !cabeEnDos(sala)) return;
   // Otro circuito, otras vueltas u otra CPU: las mangas empiezan de nuevo.
   estado.serie = null;
   if (id === 'pista') cambiarPista();
@@ -920,20 +987,27 @@ function datosSala() {
  */
 function empezarEnRed() {
   const { sala } = redUI;
-  if (!sala || sala.puesto !== 0 || !sala.compa || !sala.enSala) return;
+  if (!sala || sala.puesto !== 0 || !listaSala(sala) || (!cuatro() && !cabeEnDos(sala))) return;
   const total = mangasDe(estado.circuito);
   if (total < 2) estado.serie = null;
   else if (!estado.serie || serieAcabada(estado.serie)) estado.serie = crearSerie(total);
   estado.turno = (estado.turno + 1) % estado.circuito.carriles.length;
-  const salida = { k: 'go', turno: estado.turno, duracion: estado.duracion, serie: estado.serie };
-  sala.enSala = false;
+  const personas = sala.presentes.slice(0, estado.circuito.carriles.length);
+  const salida = { k: 'go', turno: estado.turno, duracion: estado.duracion, serie: estado.serie, personas };
+  sala.enSala = sala.enSala.map((dentro, i) => dentro && !(i > 0 && sala.presentes[i]));
   RED.enviar(salida);
   correrEnRed(salida, 0);
 }
 
+/** EMPEZAR vale: hay alguien más y todos han vuelto ya a la sala de la carrera anterior. */
+const listaSala = (sala) => hayOtros(sala) && sala.presentes.every((p, i) => !p || sala.enSala[i]);
+
 function salirInvitado(datos) {
   const n = estado.circuito.carriles.length;
   if (!Number.isInteger(datos.turno) || datos.turno < 0 || datos.turno >= n || !CARRERAS.some((c) => c.id === datos.duracion)) return;
+  // Quién corre: una persona por puesto, de los que caben en la pista, y entre ellos el propio.
+  const { personas } = datos;
+  if (!Array.isArray(personas) || personas.length !== n || personas[redUI.sala.puesto] !== true) return;
   const serie = serieDeRed(datos.serie, n);
   if (datos.serie && !serie) return;
   estado.serie = serie;
@@ -970,10 +1044,10 @@ function ponerManga({ n, m }) {
  */
 const ESPERA_RED = 20;   // s que la salida espera al que no pulsa: después, sale parado
 
-function correrEnRed({ turno, duracion }, propio) {
+function correrEnRed({ turno, duracion, personas }, propio) {
   const { sala } = redUI;
   const n = estado.circuito.carriles.length;
-  const colores = [...COLORES_RED, ...COLORES_COCHE.filter((c) => !COLORES_RED.includes(c))].slice(0, n);
+  const colores = COLORES_RED.slice(0, n);
   const modelos = colores.map((_, i) => sala.modelos[i] ?? COCHE_REFERENCIA);
   const carrera = crearCarreraSlot(estado.circuito, colores, turno, { vueltas: CARRERAS.find((c) => c.id === duracion).vueltas, modelos });
   carrera.anochece = !!CARRERAS.find((c) => c.id === duracion).anochece;
@@ -981,16 +1055,18 @@ function correrEnRed({ turno, duracion }, propio) {
     fase: 'carrera', carrera, campeonato: null, denuncia: null, menu: null, espera: true, fantasma: null,
     ultimaAvisada: false, trasMeta: 0, momentos: null, reproduccion: null, avisoFin: null
   });
-  // `humanos`: el propio. Los nombres, por el puesto (J1 y J2), los ponen ponerPuestosRed.
+  // `humanos`: el propio. Los nombres, por el puesto (J1 a J4), los ponen ponerPuestosRed.
   estado.humanos = carrera.coches.map((_, i) => i === propio);
-  ponerPuestosRed(carrera.coches.map((_, i) => i < COLORES_RED.length));
+  const conPersona = carrera.coches.map((_, i) => personas[i] === true);
+  ponerPuestosRed(conPersona);
   const { piloto } = NIVELES_CPU.find((nv) => nv.id === (propio === 0 ? estado.nivel : sala.nivel ?? estado.nivel));
   estado.pilotos = carrera.coches.map(() => crearPiloto({ ...piloto, semilla: semilla() }));
   estado.red = {
     propio,
-    anf: propio === 0 ? crearAnfitrion(carrera, [1]) : null,
-    inv: propio === 0 ? null : crearInvitado(carrera, 1),
-    listos: COLORES_RED.map(() => false),   // por puesto: quién ha pulsado ya para salir
+    anf: propio === 0 ? crearAnfitrion(carrera, conPersona.flatMap((p, i) => (p && i > 0 ? [i] : []))) : null,
+    inv: propio === 0 ? null : crearInvitado(carrera, propio),
+    personas: conPersona, // por coche: lo lleva una persona (la CPU, el resto)
+    listos: conPersona.map((p) => !p),   // por coche: quién ha pulsado ya para salir; la CPU, siempre
     esperado: 0,          // el anfitrión: s esperando la salida
     arranca: false,       // el invitado: el anfitrión ha dado la salida
     llegada: 0,           // el invitado: `reloj` de lo último que llegó del anfitrión
@@ -1015,7 +1091,7 @@ function salidaEnRed(dt) {
   const { red } = estado;
   if (pulsadoPropio() && !red.listos[red.propio]) {
     red.listos[red.propio] = true;
-    if (!red.solo) RED.enviar({ k: 'listo' });
+    if (!red.solo) RED.enviar(red.anf ? { k: 'listos', l: red.listos } : { k: 'listo' });
   }
   if (red.inv) return red.arranca;
   red.esperado += dt;
@@ -1024,7 +1100,24 @@ function salidaEnRed(dt) {
   return true;
 }
 
-/* Quién está listo, por puesto; el coche de quien se ha ido ya lo lleva la CPU. */
+/*
+ * Se va uno de una sala que sigue (de cuatro): su coche lo coge la CPU. En el
+ * anfitrión, que lo arbitra, deja de ser remoto; en los demás, solo cambia el
+ * nombre. Si aún no había salido, ya no se le espera.
+ */
+function soltarCoche(puesto) {
+  const { red, carrera } = estado;
+  if (!red || !red.personas[puesto] || puesto === red.propio) return;
+  red.personas = red.personas.map((p, i) => p && i !== puesto);
+  red.listos[puesto] = true;
+  if (red.anf) soltarRemoto(red.anf, puesto);
+  ponerPuestosRed(red.personas);
+  if (estado.fase === 'carrera' && carrera.fase !== 'fin') {
+    estado.avisos.push({ texto: t('red.seVa', { n: puesto + 1 }), vida: 4, color: COLOR.ambar, largo: true });
+  }
+}
+
+/* Quién está listo, por coche; el coche de quien se ha ido ya lo lleva la CPU. */
 function listosRed() {
   const { red } = estado;
   return red.listos.map((listo, i) => listo || (red.solo && i !== red.propio));
@@ -1071,11 +1164,15 @@ function volverASala() {
   Object.assign(estado, { fase: 'sala', momentos: null, reproduccion: null, trasMeta: 0, avisoFin: null });
   punteros.clear();
   exhibicion();
-  if (redUI.sala.puesto === 1) {
+  if (redUI.sala.puesto !== 0) {
     const { pendiente } = redUI;
     redUI.pendiente = null;
     if (pendiente) ponerSala(pendiente);
     RED.enviar({ k: 'enSala' });
+  } else {
+    // Quien entró durante la carrera puede pedir la pista de cuatro.
+    ajustarPista();
+    contarSala();
   }
   aplicarVista();
 }
@@ -1711,7 +1808,7 @@ function avanzarMundo(mandosCoches, dt) {
   else {
     // En red, el anfitrión arbitra y el invitado sigue: lo que salga, a la red.
     const salida = red.anf ? avanzarAnfitrion(red.anf, mandosCoches, dt) : avanzarInvitado(red.inv, mandosCoches[red.propio], dt);
-    for (const { d } of salida) RED?.enviar(d);
+    for (const { para, d } of salida) RED?.enviar(d, para);
   }
   for (const evento of carrera.eventos) {
     // Rápido por los baches, cada uno levanta polvo.

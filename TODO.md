@@ -87,7 +87,14 @@ están hechos (`BITACORA.md`). El orden importa:
       la web y la app (`BITACORA.md`). Queda subir el bundle (`versionCode` 6, ya firmado) a
       la prueba cerrada de Play, con la ficha nueva (`app/store/listing/`) y la
       clasificación y la seguridad de los datos como dice `play-console.md`.
-- [ ] **Bloque S4: salas de cuatro.** El servidor admite `max` hasta 4 sin cambiar las
-      salas de dos (Orbit), `net.js` a comun 1.4.0, la política común dice «con otras
-      personas», y hasta cuatro personas en la pista de cuatro (`MULTIJUGADOR.md` §5.2).
-      Criterio: Orbit sigue igual y cuatro navegadores corren juntos.
+- [ ] **Bloque S4: publicar las salas de cuatro.** Hecho en ramas locales (`BITACORA.md`):
+      `salas` (`04-salas-de-cuatro`), pnyk (`19-comun-1-4-0`) y aquí (`70-salas-de-cuatro`,
+      1.21.0). Queda, en este orden: push de `salas` y `comprobar.js` contra producción con
+      Orbit, Slot y Traffic (y mirar `/estado`); push de pnyk (la política «con otras
+      personas»); fusionar aquí y publicar; `propagar.js` a Orbit y Traffic cuando les toque
+      (no cambian nada: sus salas son de dos).
+- [ ] **Playtest de las salas de cuatro**, con cuatro dispositivos (o cuatro ventanas, que
+      una pestaña en segundo plano no pinta): ¿se entiende el salto a la pista de cuatro al
+      entrar el tercero?, ¿los paneles de la cuenta atrás de los puestos 3 y 4 hacen falta
+      (hoy solo salen los de J1 y J2)?, ¿el aviso «J3 se ha ido: lo lleva la CPU» se lee?, ¿y
+      quien entra en la sala a media carrera, se entera de que espera?
