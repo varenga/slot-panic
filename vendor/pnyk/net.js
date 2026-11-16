@@ -1,4 +1,4 @@
-// PNYK — transporte del juego a dos con el servidor de salas común
+// PNYK — transporte del juego con otras personas, con el servidor de salas común
 // (https://salas.pnyk.es, repositorio C:\html\salas). Vive en pnyk/comun/ y llega a
 // cada juego como vendor/pnyk/net.js con tools/propagar.js: no se edita en el juego.
 //
@@ -15,11 +15,17 @@
 // Uso:
 //   net.juego   = 'orbit-panic';          // el slug de pnyk, dado de alta en salas/juegos.js
 //   net.version = 1;                      // la de los mensajes de partida del juego
-//   net.alEntrar  = (codigo, rol) => {}   // 'anfitrion' o 'invitado'
-//   net.alCompa   = () => {}              // el invitado ha entrado (lo oye el anfitrión)
-//   net.alRecibir = (datos) => {}         // lo que el otro mandó con net.enviar()
+//   net.alEntrar  = (codigo, rol, puesto) => {}  // 'anfitrion' (puesto 0) o 'invitado'
+//   net.alCompa   = (puesto) => {}        // un invitado ha entrado (lo oye el anfitrión)
+//   net.alSale    = (puesto) => {}        // un invitado se fue de una sala de más de dos
+//   net.alRecibir = (datos, de) => {}     // lo que otro mandó con net.enviar(); de, su puesto
 //   net.alCerrar  = (motivo) => {}        // ver NET_MOTIVOS
 //   net.crear();  net.unir('AB3K');  net.enviar({...});  net.salir();
+//
+// Salas de más de dos (desde comun 1.4.0): net.crear(4) admite hasta cuatro. El
+// anfitrión es el puesto 0 y cada invitado sabe el suyo (net.puesto). Los invitados
+// solo hablan con el anfitrión; el anfitrión, con todos, o con uno:
+// net.enviar(datos, puesto). Sin número, la sala es de dos, la de siempre.
 
 // La versión de lo que se dicen este cliente y el servidor (SERVIDOR en
 // salas/salas.js). La del juego es net.version: el servidor compara la de los dos
@@ -36,12 +42,12 @@ const NET_CODIGO_LEN = 4;
 //   sin-red    no se llegó a conectar (sin red, servidor caído, origen rechazado)
 //   corte      la conexión se cayó a mitad
 //   no-existe  el código no corresponde a ninguna sala de este juego
-//   llena      la sala ya tiene invitado
+//   llena      la sala ya está completa
 //   intentos   demasiadas salas creadas o códigos fallados seguidos
 //   lleno      el servidor no admite más salas
 //   version    los dos jugadores, o el juego y el servidor, no hablan lo mismo
 //   caducada   diez minutos sin invitado
-//   compa      el otro jugador se fue
+//   compa      el otro jugador se fue (en una sala de más de dos, el anfitrión)
 //   fin        el otro jugador terminó la partida
 const NET_MOTIVOS = ['archivo', 'sin-red', 'corte', 'no-existe', 'llena', 'intentos', 'lleno',
   'version', 'caducada', 'compa', 'fin'];
@@ -75,12 +81,16 @@ const net = {
 
   rol: null,            // 'anfitrion' | 'invitado' | null
   codigo: null,
-  emparejado: false,
+  puesto: null,         // 0 el anfitrión; 1 a 3 los invitados
+  emparejado: false,    // hay alguien más en la sala
 
   alEntrar: null,
   alCompa: null,
+  alSale: null,
   alRecibir: null,
   alCerrar: null,
+
+  _otros: null,         // los puestos de los invitados, para el anfitrión
 
   _ws: null,
   _hola: false,
@@ -88,13 +98,17 @@ const net = {
   _salidaAt: 0,
   _entradaAt: 0,
 
-  crear() { this._abrir({ t: 'crear' }); },
+  // Sin max (o con 2), el mensaje de siempre: así una sala de dos es igual con
+  // cualquier versión del servidor.
+  crear(max) { this._abrir(max > 2 ? { t: 'crear', max } : { t: 'crear' }); },
   unir(codigo) { this._abrir({ t: 'unir', codigo: String(codigo).toUpperCase() }); },
 
-  enviar(datos) {
+  // `para`, solo el anfitrión de una sala de más de dos: el puesto que lo recibe.
+  // El servidor lo lee al principio del texto sin parsear: va justo detrás de t.
+  enviar(datos, para) {
     const ws = this._ws;
     if (!ws || ws.readyState !== WebSocket.OPEN || !this.emparejado) return;
-    const texto = JSON.stringify({ t: 'm', d: datos });
+    const texto = JSON.stringify(para == null ? { t: 'm', d: datos } : { t: 'm', para, d: datos });
     this._retrasar('_salidaAt', () => {
       if (ws === this._ws && ws.readyState === WebSocket.OPEN) ws.send(texto);
     });
@@ -135,8 +149,10 @@ const net = {
       let msg;
       try { msg = JSON.parse(ev.data); } catch (e) { return; }
       if (msg.t === 'm') {
+        // En una sala de dos no viene de quién: es el otro.
+        const de = Number.isInteger(msg.de) ? msg.de : (this.rol === 'anfitrion' ? 1 : 0);
         this._retrasar('_entradaAt', () => {
-          if (ws === this._ws && this.alRecibir) this.alRecibir(msg.d);
+          if (ws === this._ws && this.alRecibir) this.alRecibir(msg.d, de);
         });
         return;
       }
@@ -147,11 +163,19 @@ const net = {
       } else if (msg.t === 'sala') {
         this.rol = msg.rol;
         this.codigo = msg.codigo;
+        this.puesto = Number.isInteger(msg.puesto) ? msg.puesto : (msg.rol === 'anfitrion' ? 0 : 1);
+        this._otros = new Set();
         this.emparejado = msg.rol === 'invitado';
-        if (this.alEntrar) this.alEntrar(msg.codigo, msg.rol);
+        if (this.alEntrar) this.alEntrar(msg.codigo, msg.rol, this.puesto);
       } else if (msg.t === 'compa') {
+        const puesto = Number.isInteger(msg.puesto) ? msg.puesto : 1;
+        this._otros.add(puesto);
         this.emparejado = true;
-        if (this.alCompa) this.alCompa();
+        if (this.alCompa) this.alCompa(puesto);
+      } else if (msg.t === 'sale') {
+        this._otros.delete(msg.puesto);
+        this.emparejado = this._otros.size > 0;
+        if (this.alSale) this.alSale(msg.puesto);
       } else if (msg.t === 'cierre') {
         this._terminar(NET_MOTIVOS.includes(msg.motivo) ? msg.motivo : 'corte');
       }
@@ -170,6 +194,8 @@ const net = {
     this._ws = null;
     this.rol = null;
     this.codigo = null;
+    this.puesto = null;
+    this._otros = null;
     this.emparejado = false;
     if (ws) {
       ws.onmessage = ws.onclose = ws.onerror = null;

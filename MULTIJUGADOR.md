@@ -243,7 +243,7 @@ Las casillas están en la Fase 6 del `TODO.md`. El orden importa:
 6. **G. Publicación a dos.** Prosa, ficha de Play, versión 1.20.0 y `BITACORA.md`. **Preparado**;
    falta publicar y probar con móviles reales.
 7. **S4. Salas de cuatro.** Servidor, `net.js` (comun 1.4.0), la política común y hasta cuatro
-   personas en la pista de cuatro.
+   personas en la pista de cuatro. **Hecho** en ramas; falta publicar y el playtest con cuatro.
 
 Para probar: dos pestañas en local con el servidor en Node (`npm run dev` en `salas`), con `?lag=`
 y `?jitter=`; y al final, siempre, dos móviles reales en redes distintas (y en el S4, cuatro).

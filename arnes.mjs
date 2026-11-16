@@ -42,7 +42,7 @@ import {
 import { claveRotulo } from './repeticion.js';
 import { ajuste, autoBajada, cambiarAjuste, elegido, OPCIONES, ponerAjustes, reiniciarAjustes, vigilar } from './ajustes.js';
 import {
-  avanzarAnfitrion, avanzarInvitado, crearAnfitrion, crearInvitado, recibirDelAnfitrion, recibirReporte
+  avanzarAnfitrion, avanzarInvitado, crearAnfitrion, crearInvitado, recibirDelAnfitrion, recibirReporte, soltarRemoto
 } from './nucleo/red.js';
 
 // Los siete catálogos (el juego solo baja el suyo).
@@ -1740,7 +1740,7 @@ function redDeMentira({ lag, jitter, hueco = null, semilla = 7 }) {
  * por la hora de carrera, para compararlas al final. `preparar` coloca los
  * coches igual en todos los lados.
  */
-function correrEnRed(circuito, { invitados = [1], cpu = [], red: opcionesRed, vueltas = 5, pilotos = {}, preparar = null, mando = null, duracion = 400 }) {
+function correrEnRed(circuito, { invitados = [1], cpu = [], red: opcionesRed, vueltas = 5, pilotos = {}, preparar = null, mando = null, duracion = 400, seVa = null }) {
   const red = redDeMentira(opcionesRed);
   const n = 1 + invitados.length + cpu.length;
   const piloto = (i) => crearPiloto(cpu.includes(i) ? { ...CPU_SLOT, semilla: 11 + i } : (pilotos[i] ?? { prudencia: 1 }));
@@ -1758,18 +1758,25 @@ function correrEnRed(circuito, { invitados = [1], cpu = [], red: opcionesRed, vu
   const salenEnAnf = new Map(invitados.map((i) => [i, 0]));
   const incidentes = carrera.coches.map(() => []);   // horas de carrera de choques, salidas y la mano de cada coche
   let noFinito = false, ahora = 0, finEn = null, golpes = 0, nChoques = 0;
+  // `seVa` ({ i, en }): el invitado i se va a los `en` s, y la sala sigue; su coche, a la CPU del anfitrión.
+  let quedan = lados, alIrse = null;
   const clave = (t) => Math.round(t * 600);
   const pose = (c) => ({ x: c.coche.x, y: c.coche.y, estado: c.estado });
   const finito = (s) => [s.coche.x, s.coche.y, s.coche.angulo, s.v, s.s, s.progreso].every(Number.isFinite);
   for (const l of lados) red.enviar('a', l.i, { k: 'go' }, 0);
   while (ahora < duracion && (finEn === null || ahora < finEn + 1.5)) {
     ahora += DT;
+    if (seVa && alIrse === null && ahora >= seVa.en) {
+      quedan = lados.filter((l) => l.i !== seVa.i);
+      soltarRemoto(anf, seVa.i);
+      alIrse = carrera.coches[seVa.i].progreso;
+    }
     // El anfitrión.
-    for (const l of lados) for (const d of red.recibir(l.i, 'a', ahora)) recibirReporte(anf, l.i, d);
-    const mandos = carrera.coches.map((c, i) => (invitados.includes(i) ? null : manda(pilotosAnf[i], c)));
+    for (const l of quedan) for (const d of red.recibir(l.i, 'a', ahora)) recibirReporte(anf, l.i, d);
+    const mandos = carrera.coches.map((c, i) => (c.remoto ? null : manda(pilotosAnf[i], c)));
     for (const { para, d } of avanzarAnfitrion(anf, mandos, DT)) {
       if (d.k === 'g') golpes++;
-      for (const l of lados) if (para === null || para === l.i) red.enviar('a', l.i, d, ahora);
+      for (const l of quedan) if (para === null || para === l.i) red.enviar('a', l.i, d, ahora);
     }
     for (const e of carrera.eventos) {
       if (e.tipo === 'choque') nChoques++;
@@ -1780,7 +1787,7 @@ function correrEnRed(circuito, { invitados = [1], cpu = [], red: opcionesRed, vu
     if (carrera.fase === 'fin' && finEn === null) finEn = ahora;
     if (!carrera.coches.every(finito)) noFinito = true;
     // Cada invitado.
-    for (const l of lados) {
+    for (const l of quedan) {
       for (const d of red.recibir('a', l.i, ahora)) {
         if (d.k === 'go') l.inv = crearInvitado(nueva(), l.i);
         else recibirDelAnfitrion(l.inv, d);
@@ -1811,18 +1818,19 @@ function correrEnRed(circuito, { invitados = [1], cpu = [], red: opcionesRed, vu
     return { max: d.at(-1) ?? 0, p95: d[Math.floor(d.length * 0.95)] ?? 0 };
   }
   const delAnfitrion = [0, ...cpu];
+  // Lo que se compara, entre los que siguen en la sala.
   return {
-    carrera, lados, golpes, nChoques, noFinito, red,
+    carrera, lados, golpes, nChoques, noFinito, red, alIrse,
     // El anfitrión, de cada invitado; y cada invitado, de los coches del anfitrión y la CPU.
-    propio: lados.map((l) => desvio(historia, l.historia, l.i)),
-    ajenos: lados.flatMap((l) => delAnfitrion.map((i) => desvio(l.historia, historia, i))),
+    propio: quedan.map((l) => desvio(historia, l.historia, l.i)),
+    ajenos: quedan.flatMap((l) => delAnfitrion.map((i) => desvio(l.historia, historia, i))),
     // Las salidas de cada invitado, las que ha visto el anfitrión y las suyas.
-    salidasCuadran: lados.every((l) => salenEnAnf.get(l.i) === l.inv.carrera.coches[l.i].salidas),
-    salidas: lados.map((l) => `${salenEnAnf.get(l.i)}/${l.inv.carrera.coches[l.i].salidas}`),
-    mismoGanador: lados.every((l) => l.inv.carrera.ganador === carrera.ganador),
-    mismasVueltas: lados.every((l) => l.inv.carrera.coches.every((s, i) =>
+    salidasCuadran: quedan.every((l) => salenEnAnf.get(l.i) === l.inv.carrera.coches[l.i].salidas),
+    salidas: quedan.map((l) => `${salenEnAnf.get(l.i)}/${l.inv.carrera.coches[l.i].salidas}`),
+    mismoGanador: quedan.every((l) => l.inv.carrera.ganador === carrera.ganador),
+    mismasVueltas: quedan.every((l) => l.inv.carrera.coches.every((s, i) =>
       s.completadas === carrera.coches[i].completadas && (i === l.i || s.vueltas.every((v, k) => Math.abs(v - carrera.coches[i].vueltas[k]) < 0.002)))),
-    terminados: lados.every((l) => carrera.coches[l.i].terminado === l.inv.carrera.coches[l.i].terminado
+    terminados: quedan.every((l) => carrera.coches[l.i].terminado === l.inv.carrera.coches[l.i].terminado
       || Math.abs(carrera.coches[l.i].terminado - l.inv.carrera.coches[l.i].terminado) < 0.002)
   };
 }
@@ -1927,6 +1935,14 @@ console.log('\nEn red');
   const h = correrEnRed(CIRCUITOS.find((c) => c.clave === 'resbalon'), { red: { ...RED, hueco: [6, 6.45] }, pilotos: { 1: { prudencia: 1.2 } } });
   console.log(`  con un hueco de 450 ms: ${h.golpes} golpes, salidas ${h.salidas.join(' ')}, el propio a ${h.propio[0].p95.toFixed(1)} px (máx ${h.propio[0].max.toFixed(1)})`);
   comprobar(!h.noFinito && h.mismoGanador && h.mismasVueltas && h.salidasCuadran, 'con un hueco en la red, la carrera no acaba igual en los dos');
+
+  // Cuatro personas y una se va a media carrera (bloque S4): la sala sigue y su coche lo lleva la CPU del anfitrión.
+  const ochoLargo = CIRCUITOS_CUATRO[0];
+  const v = correrEnRed(ochoLargo, { invitados: [1, 2, 3], red: RED, seVa: { i: 2, en: 15 } });
+  const ido = v.carrera.coches[2];
+  console.log(`  a cuatro, el J3 se va a los 15 s: la CPU lo lleva de ${(v.alIrse / ochoLargo.largo).toFixed(2)} a ${(ido.progreso / ochoLargo.largo).toFixed(2)} vueltas`);
+  comprobar(!v.noFinito && v.mismoGanador && v.mismasVueltas && v.salidasCuadran, 'a cuatro, si uno se va, la carrera no acaba igual en los que siguen');
+  comprobar(!ido.remoto && ido.progreso - v.alIrse > ochoLargo.largo, 'a cuatro, el coche del que se va no lo lleva la CPU');
 }
 
 console.log(`\n${aserciones - fallos}/${aserciones} aserciones en verde`);
