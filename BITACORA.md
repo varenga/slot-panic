@@ -2398,8 +2398,8 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   sin `max`, 2. Cada uno sabe su puesto (`sala`), el anfitrión oye `compa` y `sale` con él, lo
   de un invitado le llega con `de` (añadido sin parsear antes de la última llave) y lo suyo va
   a todos o, con `para` justo detrás de `t`, a uno. Las salas de dos se reenvían como siempre,
-  así que `SERVIDOR` no sube. `comprobar.js` pasa de 14 a 26 comprobaciones (34 con Orbit), y
-  pasa con Orbit, Slot y Traffic. El `net.js` 1.3.0 de Traffic y Orbit, contra el servidor
+  así que `SERVIDOR` no sube. `comprobar.js` pasa de 15 a 27 comprobaciones (de 16 a 28 con
+  Orbit, que prueba además su cliente antiguo), y pasa con Orbit, Slot y Traffic. El `net.js` 1.3.0 de Traffic y Orbit, contra el servidor
   nuevo, se empareja, reenvía y cierra igual.
 - **Común 1.4.0** (pnyk, rama `19-comun-1-4-0`): `net.crear(max)`, `net.puesto`,
   `net.alSale`, `alRecibir(datos, de)` y `net.enviar(datos, para)`. Sin `max`, el mensaje de
@@ -2421,6 +2421,13 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   `salas.js --dev`: cuatro puestos, el salto a *El ocho largo* al entrar el puesto 2, PISTA
   que no vuelve a dos, la salida con X1-X4 y, al irse los tres, sus coches a la CPU con los
   tres avisos. Falta la prueba con cuatro dispositivos de verdad (`TODO.md`).
+- **Publicado** (16/11/2026), por este orden: el servidor (`salas` en `7ccac87`; Passenger no
+  recargó solo y hubo que pulsar Restart App en Plesk, `/estado` con otro `arranque`) y
+  `comprobar.js` contra `salas.pnyk.es` con Orbit (28/28), Slot y Traffic (27/27); después
+  pnyk (`6311f9d`, la política «Jugar con otras personas» en pnyk.es) y, al final, la web
+  1.21.0 (tag `v1.21.0`), que sirve ya el `net.js` 1.4.0. El tag se hizo antes de comitear
+  la fecha nueva del sitemap (`c0ae264`, solo el `lastmod`): lo publicado es lo mismo.
+  Orbit y Traffic siguen con `net.js` 1.3.0 y no lo necesitan: `propagar.js` cuando les toque.
 
 ## La ficha de Slot en pnyk.es, al día (10/11/2026, rama `17-ficha-slot` de pnyk)
 
