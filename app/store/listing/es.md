@@ -26,7 +26,7 @@ CÓMO SE JUEGA
 CONTRA LA CPU, A DOS O EN RED
 • Contra una CPU que también se equivoca, en tres niveles.
 • A dos en la misma pantalla: la mitad izquierda es el coche rojo y la derecha, el azul.
-• En red: crea una sala y pasa el código de cuatro letras a quien vaya a correr contigo, cada uno en su móvil. Sin cuentas: quien no tiene el código no entra. Si alguien se va, sigues contra la CPU.
+• En red: crea una sala y pasa el código de cuatro letras a quien vaya a correr contigo, cada uno en su móvil; en la pista de cuatro, hasta cuatro personas. Sin cuentas: quien no tiene el código no entra. Si alguien se va, la CPU coge su coche y la carrera sigue.
 • Con el móvil en vertical, el modo lupa: la pista ampliada alrededor de tu coche y el mapa arriba.
 
 CIRCUITOS
