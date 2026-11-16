@@ -83,8 +83,8 @@ están hechos (`BITACORA.md`). El orden importa:
       listo?, ¿20 s de espera son muchos?, ¿se lee «Aún en la carrera» en la sala?, ¿y el aviso
       cuando el otro se va? Una serie de mangas en red entera (cuatro carreras), que en la prueba
       del bloque solo se vio empezar.
-- [ ] **Bloque G: publicación a dos.** La web 1.20.0 está publicada y la red probada entre
-      la web y la app (`BITACORA.md`). Queda subir el bundle (`versionCode` 6, ya firmado) a
+- [ ] **Bloque G: la app en red.** Queda subir el bundle 1.21.0 (`versionCode` 7, ya firmado;
+      el 6 ya no vale: habla la versión 1 de los mensajes y no entra en las salas de la web) a
       la prueba cerrada de Play, con la ficha nueva (`app/store/listing/`) y la
       clasificación y la seguridad de los datos como dice `play-console.md`.
 - [ ] **Playtest de las salas de cuatro**, con cuatro dispositivos (o cuatro ventanas, que

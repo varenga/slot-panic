@@ -25,7 +25,7 @@ HOW TO PLAY
 AGAINST THE CPU, TWO PLAYERS OR ONLINE
 • Against a CPU that makes mistakes too, at three levels.
 • Two players on the same screen: the left half is the red car and the right half, the blue one.
-• Online: create a room and give the four-letter code to whoever is racing you, each on their own phone. No accounts: without the code nobody gets in. If someone leaves, you carry on against the CPU.
+• Online: create a room and give the four-letter code to whoever is racing you, each on their own phone; on the four-lane track, up to four people. No accounts: without the code nobody gets in. If someone leaves, the CPU takes their car and the race goes on.
 • With the phone upright, magnifier mode: the track zoomed in around your car and the map on top.
 
 CIRCUITS

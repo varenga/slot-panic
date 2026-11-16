@@ -2429,6 +2429,18 @@ píxeles. Así que los ajustes recortan pantallas enteras, no cálculos.
   la fecha nueva del sitemap (`c0ae264`, solo el `lastmod`): lo publicado es lo mismo.
   Orbit y Traffic siguen con `net.js` 1.3.0 y no lo necesitan: `propagar.js` cuando les toque.
 
+## El bundle 1.21.0 (16/11/2026, rama `72-bundle-1-21-0`)
+
+- **Por qué no el 6**: el bundle 1.20.0 (`versionCode` 6) habla la versión 1 de los mensajes
+  de red (`RED.version`), y la web 1.21.0, la 2. El servidor compara las dos al unirse y
+  cierra con `version`: una app 1.20.0 no podría correr con nadie de la web. No se llegó a
+  subir, así que se salta.
+- **El 7**: `versionCode` 7, `versionName` 1.21.0, 74 ficheros de `PRECACHE` en `www/`.
+  Firmado (`jarsigner -verify`: «jar verified»), con el `net.js` 1.4.0 y `RED.version = 2`
+  dentro. La ficha (`app/store/listing/`, es y en) dice ya «hasta cuatro personas» en la
+  pista de cuatro y que, si alguien se va, la CPU coge su coche (3078 y 2860 caracteres de
+  4000).
+
 ## La ficha de Slot en pnyk.es, al día (10/11/2026, rama `17-ficha-slot` de pnyk)
 
 - La ficha de `pnyk/proyectos.js` decía cuatro circuitos y «a dos en la misma pantalla». Ahora,

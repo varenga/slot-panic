@@ -159,7 +159,10 @@ La web se publica primero, y la app se corta de una revisión que ya está en pr
   arreglos de la prueba por USB), subido el 2026-11-04. El 4 (1.18.0) se compiló pero no
   se llegó a dar por bueno. El 6 (`versionName` 1.20.0, las carreras en red), con la ficha
   reescrita, compilado y firmado el 2026-11-09 tras probar la red entre la web publicada y
-  un APK de depuración: falta subirlo a la prueba cerrada.
+  un APK de depuración; no se llegó a subir. El 7 (`versionName` 1.21.0, las salas de hasta
+  cuatro), compilado y firmado el 2026-11-16: es el que hay que subir, porque el 6 habla la
+  versión 1 de los mensajes de red y el servidor no lo deja entrar en las salas de la web
+  1.21.0.
 
 ### Fase D — La de iOS
 
