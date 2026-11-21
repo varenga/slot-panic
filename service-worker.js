@@ -7,7 +7,7 @@
 // Los módulos ES no llevan ?v=: es esta caché, una por versión, la que impide
 // que un módulo nuevo se mezcle con uno viejo.
 
-const CACHE = 'slotpanic-df437028';
+const CACHE = 'slotpanic-85fce8fd';
 
 const PRECACHE = [
   'index.html',
@@ -151,7 +151,7 @@ const HUELLAS = {
   'repeticion.js':                '080fef0c',
   'sala.js':                      'ef1b1ebf',
   'tablaRecords.js':              '68277b09',
-  'vendor/pnyk/red.js':           '81877b5b',
+  'vendor/pnyk/red.js':           '87a011d2',
   'vendor/pnyk/pie.js':           'bc866a2f',
   'vendor/pnyk/consentimiento.js':'df9a1409',
   'vendor/pnyk/net.js':           '9103d418',

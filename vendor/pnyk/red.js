@@ -4,7 +4,7 @@
 // Red de proyectos PNYK: la usa comun/pie.js (también en vendor/pnyk/ de cada proyecto).
 
 const PNYK_RED = {
-  "version": "1.4.0",
+  "version": "1.4.2",
   "origin": "https://pnyk.es/",
   "proyectos": [
     {
@@ -198,6 +198,28 @@ const PNYK_RED = {
         "it",
         "gl",
         "ca"
+      ]
+    },
+    {
+      "slug": "glotpanic",
+      "name": "Glotpanic",
+      "url": "https://glot.pnyk.es/",
+      "type": "VideoGame",
+      "category": "aprendizaje",
+      "langs": [
+        "es",
+        "en"
+      ]
+    },
+    {
+      "slug": "geopanic",
+      "name": "Geo Panic",
+      "url": "https://geo.pnyk.es/",
+      "type": "VideoGame",
+      "category": "aprendizaje",
+      "langs": [
+        "es",
+        "en"
       ]
     }
   ]
